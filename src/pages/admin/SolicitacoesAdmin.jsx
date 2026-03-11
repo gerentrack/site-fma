@@ -1,0 +1,1342 @@
+/**
+ * SolicitacoesAdmin.jsx — Painel admin de análise de solicitações de Permit e Chancela.
+ * Exporta: SolicitacoesList, SolicitacaoEditor
+ * Rotas:
+ *   /admin/solicitacoes        → SolicitacoesList
+ *   /admin/solicitacoes/:id    → SolicitacaoEditor
+ *
+ * SolicitacoesList:
+ *   - Dashboard de contadores por status (clicáveis como filtro)
+ *   - Tabela com busca, filtro por status/tipo, ordenação por data
+ *   - Ações rápidas: mudar status direto na tabela
+ *
+ * SolicitacaoEditor (análise completa):
+ *   - Aba 1: Dados da solicitação (evento + campos livres do organizador)
+ *   - Aba 2: Arquivos (listagem, download, upload pela FMA, exclusão)
+ *   - Aba 3: Análise FMA (responsável, parecer, protocolo, mudança de status)
+ *   - Aba 4: Histórico completo (todas movimentações, incluindo as internas)
+ */
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate, useParams, Link } from "react-router-dom";
+import AdminLayout from "../../components/admin/AdminLayout";
+import { COLORS, FONTS } from "../../styles/colors";
+import {
+  SOLICITACAO_STATUS, SOLICITACAO_TIPOS, MOVIMENTACAO_TIPOS, ARQUIVO_CATEGORIAS,
+} from "../../config/navigation";
+import {
+  SolicitacoesService, OrganizersService, ArquivosService, MovimentacoesService,
+  CalendarService,
+} from "../../services/index";
+import { normalizarCamposTecnicos, totalEstimativaInscritos, modalidadesLabel } from "../../utils/permitDefaults";
+
+// ── Constantes e helpers ──────────────────────────────────────────────────────
+const statusMap = Object.fromEntries(SOLICITACAO_STATUS.map(s => [s.value, s]));
+const tipoMap   = Object.fromEntries(SOLICITACAO_TIPOS.map(t => [t.value, t]));
+const movMap    = MOVIMENTACAO_TIPOS;
+
+function fmt(d) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+}
+function fmtDT(d) {
+  if (!d) return "—";
+  return new Date(d).toLocaleString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+function fmtSize(bytes) {
+  if (!bytes) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1048576).toFixed(1)} MB`;
+}
+
+function StatusBadge({ status, size = "md" }) {
+  const s = statusMap[status] || { label: status, color: COLORS.gray, bg: "#f3f4f6", icon: "📋" };
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 4,
+      padding: size === "lg" ? "6px 14px" : "3px 9px",
+      borderRadius: 20, fontSize: size === "lg" ? 13 : 11,
+      fontFamily: FONTS.heading, fontWeight: 700,
+      background: s.bg, color: s.color, border: `1px solid ${s.color}30`,
+    }}>
+      {s.icon} {s.label}
+    </span>
+  );
+}
+
+function TipoBadge({ tipo }) {
+  const t = tipoMap[tipo] || { label: tipo, icon: "📋" };
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 9px",
+      borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700,
+      background: tipo === "permit" ? "#fff3cd" : "#e3f8f0",
+      color: tipo === "permit" ? "#856404" : "#065f46",
+      border: `1px solid ${tipo === "permit" ? "#ffc10740" : "#34d39940"}` }}>
+      {t.icon} {t.label}
+    </span>
+  );
+}
+
+// ── LISTA ─────────────────────────────────────────────────────────────────────
+export function SolicitacoesList() {
+  const navigate = useNavigate();
+  const [items, setItems] = useState([]);
+  const [organizers, setOrganizers] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterTipo, setFilterTipo] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const [rSol, rOrg] = await Promise.all([
+      SolicitacoesService.list({}),
+      OrganizersService.list(),
+    ]);
+    if (rSol.data) setItems(rSol.data);
+    if (rOrg.data) {
+      const map = {};
+      rOrg.data.forEach(o => { map[o.id] = o; });
+      setOrganizers(map);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const filtered = items.filter(item => {
+    if (filterStatus && item.status !== filterStatus) return false;
+    if (filterTipo   && item.tipo !== filterTipo)     return false;
+    if (search) {
+      const q = search.toLowerCase();
+      const org = organizers[item.organizerId];
+      if (!item.nomeEvento?.toLowerCase().includes(q) &&
+          !item.cidadeEvento?.toLowerCase().includes(q) &&
+          !org?.name?.toLowerCase().includes(q) &&
+          !org?.organization?.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
+  // Contadores por status
+  const counts = SOLICITACAO_STATUS.filter(s => s.value).reduce((acc, s) => {
+    acc[s.value] = items.filter(i => i.status === s.value).length;
+    return acc;
+  }, {});
+
+  const card = { background: "#fff", borderRadius: 12, padding: "24px 28px", boxShadow: "0 1px 8px rgba(0,0,0,0.07)", marginBottom: 28 };
+
+  return (
+    <AdminLayout>
+      <div style={{ padding: "32px 32px 60px" }}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", color: COLORS.primary, marginBottom: 4 }}>Portal de Organizadores</div>
+            <h1 style={{ fontFamily: FONTS.heading, fontSize: 28, fontWeight: 900, textTransform: "uppercase", color: COLORS.dark, margin: 0 }}>Solicitações</h1>
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <Link to="/admin/organizadores" style={{ padding: "10px 18px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+              🏢 Organizadores
+            </Link>
+            <a href="/portal" target="_blank" rel="noreferrer" style={{ padding: "10px 18px", borderRadius: 8, background: "#0f172a", color: "#60a5fa", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
+              🔗 Abrir Portal
+            </a>
+          </div>
+        </div>
+
+        {/* Dashboard de contadores */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))", gap: 12, marginBottom: 28 }}>
+          <button onClick={() => setFilterStatus("")}
+            style={{ background: filterStatus === "" ? COLORS.dark : "#fff", border: `2px solid ${filterStatus === "" ? COLORS.dark : COLORS.grayLight}`, borderRadius: 12, padding: "16px", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
+            <div style={{ fontFamily: FONTS.heading, fontSize: 24, fontWeight: 900, color: filterStatus === "" ? "#fff" : COLORS.dark }}>{items.length}</div>
+            <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: filterStatus === "" ? "rgba(255,255,255,0.7)" : COLORS.gray, marginTop: 2 }}>Total</div>
+          </button>
+          {SOLICITACAO_STATUS.filter(s => s.value).map(s => (
+            <button key={s.value} onClick={() => setFilterStatus(filterStatus === s.value ? "" : s.value)}
+              style={{ background: filterStatus === s.value ? s.bg : "#fff", border: `2px solid ${filterStatus === s.value ? s.color : COLORS.grayLight}`, borderRadius: 12, padding: "16px", cursor: "pointer", textAlign: "left", transition: "all 0.15s" }}>
+              <div style={{ fontSize: 18, marginBottom: 4 }}>{s.icon}</div>
+              <div style={{ fontFamily: FONTS.heading, fontSize: 22, fontWeight: 900, color: s.color }}>{counts[s.value] || 0}</div>
+              <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: s.color, marginTop: 2, lineHeight: 1.2 }}>{s.label}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* Filtros */}
+        <div style={{ ...card, padding: "16px 20px" }}>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Buscar por evento, cidade ou organizador..."
+              style={{ flex: 1, minWidth: 220, padding: "9px 13px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 14, outline: "none" }} />
+            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+              style={{ padding: "9px 13px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 13, cursor: "pointer" }}>
+              <option value="">Todos os status</option>
+              {SOLICITACAO_STATUS.filter(s => s.value).map(s => (
+                <option key={s.value} value={s.value}>{s.icon} {s.label}</option>
+              ))}
+            </select>
+            <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)}
+              style={{ padding: "9px 13px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 13, cursor: "pointer" }}>
+              <option value="">Permit e Chancela</option>
+              {SOLICITACAO_TIPOS.map(t => (
+                <option key={t.value} value={t.value}>{t.icon} {t.label}</option>
+              ))}
+            </select>
+            {(search || filterStatus || filterTipo) && (
+              <button onClick={() => { setSearch(""); setFilterStatus(""); setFilterTipo(""); }}
+                style={{ padding: "9px 14px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, fontFamily: FONTS.body, fontSize: 13, cursor: "pointer" }}>
+                ✕ Limpar
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Tabela */}
+        <div style={card}>
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "40px", fontFamily: FONTS.body, color: COLORS.gray }}>⏳ Carregando...</div>
+          ) : filtered.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "40px", fontFamily: FONTS.body, color: COLORS.gray }}>Nenhuma solicitação encontrada.</div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: `2px solid ${COLORS.grayLight}` }}>
+                    {["Tipo", "Evento", "Organizador", "Data Evento", "Status", "Protocolo", "Responsável FMA", "Enviado em", ""].map(h => (
+                      <th key={h} style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, padding: "10px 12px", textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(item => {
+                    const org = organizers[item.organizerId];
+                    return (
+                      <tr key={item.id} style={{ borderBottom: `1px solid ${COLORS.grayLight}` }}
+                        onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
+                        onMouseLeave={e => e.currentTarget.style.background = ""}>
+                        <td style={{ padding: "12px" }}><TipoBadge tipo={item.tipo} /></td>
+                        <td style={{ padding: "12px", minWidth: 200 }}>
+                          <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark }}>{item.nomeEvento}</div>
+                          <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>📍 {item.cidadeEvento}</div>
+                        </td>
+                        <td style={{ padding: "12px" }}>
+                          <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.dark }}>{org?.name || item.organizerId}</div>
+                          {org?.organization && <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>{org.organization}</div>}
+                        </td>
+                        <td style={{ padding: "12px", fontFamily: FONTS.body, fontSize: 13, color: COLORS.grayDark, whiteSpace: "nowrap" }}>{fmt(item.dataEvento)}</td>
+                        <td style={{ padding: "12px" }}><StatusBadge status={item.status} /></td>
+                        <td style={{ padding: "12px", whiteSpace: "nowrap" }}>
+                          {item.protocoloFMA ? (
+                            <span style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800,
+                              color: "#15803d", background: "#f0fdf4", padding: "3px 8px",
+                              borderRadius: 6, border: "1px solid #86efac" }}>
+                              🔖 {item.protocoloFMA}
+                            </span>
+                          ) : (
+                            <span style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>—</span>
+                          )}
+                        </td>
+                        <td style={{ padding: "12px", fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>{item.responsavelFMA || "—"}</td>
+                        <td style={{ padding: "12px", fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, whiteSpace: "nowrap" }}>{fmt(item.enviadoEm)}</td>
+                        <td style={{ padding: "12px" }}>
+                          <button onClick={() => navigate(`/admin/solicitacoes/${item.id}`)}
+                            style={{ padding: "7px 14px", borderRadius: 6, background: COLORS.primary, color: "#fff", border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>
+                            Analisar →
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <div style={{ padding: "12px 12px 0", fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>
+                {filtered.length} solicitação(ões) exibida(s) de {items.length} total
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </AdminLayout>
+  );
+}
+
+// ── EDITOR (análise completa) ─────────────────────────────────────────────────
+export function SolicitacaoEditor() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+
+  const [sol, setSol] = useState(null);
+  const [organizer, setOrganizer] = useState(null);
+  const [arquivos, setArquivos] = useState([]);
+  const [movimentacoes, setMovimentacoes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [aba, setAba] = useState("dados");
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState({ text: "", type: "" });
+
+  // Formulário de análise FMA — protocoloFMA REMOVIDO: gerado automaticamente
+  const [analise, setAnalise] = useState({
+    responsavelFMA: "", parecerFMA: "", observacaoFMA: "",
+  });
+  const [novoStatus, setNovoStatus] = useState("");
+
+  // Upload pela FMA
+  const [uploading, setUploading] = useState(false);
+  const [uploadDesc, setUploadDesc] = useState("");
+
+  // Vinculação de evento de calendário
+  const [eventoVinculado, setEventoVinculado]     = useState(null);   // objeto EventoCalendario
+  const [vinculoMode, setVinculoMode]             = useState(null);   // null | "buscar" | "criar"
+  const [calendarioItems, setCalendarioItems]     = useState([]);     // lista para busca
+  const [calendarioBusca, setCalendarioBusca]     = useState("");     // filtro de busca
+  const [vinculoSaving, setVinculoSaving]         = useState(false);
+  const [criarOpts, setCriarOpts]                 = useState({       // overrides ao criar
+    published: false, featured: false,
+  });
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const r = await SolicitacoesService.get(id);
+    if (r.error) { navigate("/admin/solicitacoes"); return; }
+    setSol(r.data);
+    setNovoStatus(r.data.status);
+    setAnalise({
+      responsavelFMA: r.data.responsavelFMA || "",
+      parecerFMA: r.data.parecerFMA || "",
+      observacaoFMA: r.data.observacaoFMA || "",
+    });
+    const [rOrg, rArq, rMov] = await Promise.all([
+      OrganizersService.get(r.data.organizerId),
+      ArquivosService.listBySolicitacao(id),
+      MovimentacoesService.listBySolicitacao(id, { apenasVisiveis: false }),
+    ]);
+    if (rOrg.data) setOrganizer(rOrg.data);
+    if (rArq.data) setArquivos(rArq.data);
+    if (rMov.data) setMovimentacoes(rMov.data);
+
+    // Carregar evento vinculado (se houver) e lista para busca
+    if (r.data.eventoCalendarioId) {
+      const rEvento = await CalendarService.get(r.data.eventoCalendarioId);
+      setEventoVinculado(rEvento.data || null);
+    } else {
+      setEventoVinculado(null);
+    }
+    const rCal = await CalendarService.list({ publishedOnly: false });
+    setCalendarioItems(rCal.data || []);
+
+    setVinculoMode(null);
+    setLoading(false);
+  }, [id]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const flash = (text, type = "ok") => {
+    setMsg({ text, type });
+    setTimeout(() => setMsg({ text: "", type: "" }), 3500);
+  };
+
+  // ── Salvar análise ──────────────────────────────────────────────────────────
+  const handleSalvarAnalise = async () => {
+    setSaving(true);
+    // 1. Atualizar campos de análise (responsável, parecer, observação interna)
+    const rUpdate = await SolicitacoesService.update(id, analise);
+    if (rUpdate.error) { flash(rUpdate.error, "err"); setSaving(false); return; }
+
+    // 2. Se status mudou, usar changeStatus
+    //    Se o novo status for "em_analise", o protocolo é gerado automaticamente
+    //    dentro de SolicitacoesService.changeStatus → api.changeStatus → garantirProtocolo
+    let protocoloNovoMensagem = "";
+    if (novoStatus !== sol.status) {
+      const rStatus = await SolicitacoesService.changeStatus(id, novoStatus);
+      if (rStatus.error) { flash(rStatus.error, "err"); setSaving(false); return; }
+
+      // Capturar protocolo gerado nesta transição para mostrar no flash
+      if (rStatus.data?._protocoloGerado) {
+        protocoloNovoMensagem = ` Protocolo ${rStatus.data.protocoloFMA} gerado.`;
+      }
+
+      // Registrar movimentação de mudança de status
+      await MovimentacoesService.registrar({
+        solicitacaoId: id,
+        tipoEvento: novoStatus === "pendencia" ? "pendencia_aberta" : "status_alterado",
+        statusAnterior: sol.status,
+        statusNovo: novoStatus,
+        descricao: `Status alterado para "${statusMap[novoStatus]?.label || novoStatus}" pelo analista da FMA.${analise.parecerFMA ? ` Parecer: ${analise.parecerFMA.slice(0, 80)}${analise.parecerFMA.length > 80 ? "…" : ""}` : ""}`,
+        autor: "fma",
+        autorNome: analise.responsavelFMA || "Equipe FMA",
+        autorId: "admin",
+        visivel: true,
+      });
+    }
+
+    flash(`Análise salva com sucesso.${protocoloNovoMensagem}`, "ok");
+    setSaving(false);
+    load();
+  };
+
+  // ── Upload pela FMA ─────────────────────────────────────────────────────────
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { flash("Arquivo muito grande (máx. 5 MB).", "err"); return; }
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const r = await ArquivosService.upload({
+        solicitacaoId: id,
+        nome: file.name,
+        tamanho: file.size,
+        tipo: file.type,
+        descricao: uploadDesc || `Documento enviado pela FMA`,
+        categoria: "resposta_fma",
+        enviadoPor: "fma",
+        enviadoById: "admin",
+        enviadoPorNome: analise.responsavelFMA || "Equipe FMA",
+        dataUrl: ev.target.result,
+      });
+      if (r.data) {
+        await MovimentacoesService.registrar({
+          solicitacaoId: id,
+          tipoEvento: "arquivo_enviado",
+          statusAnterior: sol.status, statusNovo: sol.status,
+          descricao: `Arquivo "${file.name}" enviado pela FMA.`,
+          autor: "fma", autorNome: analise.responsavelFMA || "Equipe FMA",
+          autorId: "admin", visivel: true,
+        });
+        setUploadDesc("");
+        load();
+        flash(`"${file.name}" enviado com sucesso.`, "ok");
+      } else {
+        flash("Erro ao enviar arquivo.", "err");
+      }
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleDeleteArquivo = async (arq) => {
+    if (!confirm(`Excluir "${arq.nome}"?`)) return;
+    await ArquivosService.delete(arq.id);
+    load();
+  };
+
+  // ── Status transitions permitidas ──────────────────────────────────────────
+  const TRANSITIONS = {
+    rascunho:   ["rascunho", "enviada", "em_analise"],
+    enviada:    ["enviada", "em_analise"],
+    em_analise: ["em_analise", "pendencia", "aprovada", "indeferida"],
+    pendencia:  ["pendencia", "em_analise", "aprovada", "indeferida"],
+    aprovada:   ["aprovada", "concluida"],
+    indeferida: ["indeferida", "concluida"],
+    concluida:  ["concluida"],
+  };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", fontFamily: FONTS.body, color: COLORS.gray }}>⏳ Carregando solicitação...</div>
+      </AdminLayout>
+    );
+  }
+
+  const tipo = tipoMap[sol.tipo] || { label: sol.tipo, icon: "📋" };
+  const abas = [
+    { key: "dados",    label: "📄 Dados",    count: null },
+    { key: "arquivos", label: "📎 Arquivos",  count: arquivos.length },
+    { key: "analise",  label: "🔍 Análise",   count: null },
+    { key: "historico",label: "📋 Histórico", count: movimentacoes.length },
+  ];
+
+  const card = { background: "#fff", borderRadius: 12, padding: "24px 28px", boxShadow: "0 1px 8px rgba(0,0,0,0.06)", marginBottom: 20 };
+  const lbl = (text) => (
+    <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase",
+      letterSpacing: 1.5, color: COLORS.gray, marginBottom: 4 }}>{text}</div>
+  );
+  const val = (text) => (
+    <div style={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.dark, marginBottom: 14 }}>{text || "—"}</div>
+  );
+  const inp = (extra = {}) => ({
+    width: "100%", padding: "10px 13px", borderRadius: 8, border: `1.5px solid ${COLORS.grayLight}`,
+    fontFamily: FONTS.body, fontSize: 14, outline: "none", boxSizing: "border-box", background: "#fff", ...extra,
+  });
+
+  return (
+    <AdminLayout>
+      <div style={{ padding: "32px 32px 60px", maxWidth: 980, margin: "0 auto" }}>
+
+        {/* Header */}
+        <div style={{ marginBottom: 24 }}>
+          <Link to="/admin/solicitacoes" style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+            ← Voltar para solicitações
+          </Link>
+          <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+                <TipoBadge tipo={sol.tipo} />
+                <StatusBadge status={sol.status} size="lg" />
+              </div>
+              <h1 style={{ fontFamily: FONTS.heading, fontSize: 24, fontWeight: 900, textTransform: "uppercase", color: COLORS.dark, margin: 0 }}>
+                {sol.nomeEvento}
+              </h1>
+              <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, marginTop: 4 }}>
+                📍 {sol.cidadeEvento} · 📅 {fmt(sol.dataEvento)}
+                {sol.responsavelFMA && ` · 👤 ${sol.responsavelFMA}`}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Flash message */}
+        {msg.text && (
+          <div style={{ marginBottom: 16, padding: "12px 16px", borderRadius: 8, fontFamily: FONTS.body, fontSize: 13,
+            background: msg.type === "ok" ? "#f0fdf4" : "#fff5f5",
+            color: msg.type === "ok" ? "#15803d" : "#dc2626",
+            border: `1px solid ${msg.type === "ok" ? "#86efac" : "#fca5a5"}` }}>
+            {msg.type === "ok" ? "✅" : "⚠️"} {msg.text}
+          </div>
+        )}
+
+        {/* Abas */}
+        <div style={{ display: "flex", gap: 0, marginBottom: 24, background: "#fff", borderRadius: 10, padding: "4px", boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}>
+          {abas.map(a => (
+            <button key={a.key} onClick={() => setAba(a.key)}
+              style={{ flex: 1, padding: "10px 8px", borderRadius: 7, border: "none", cursor: "pointer",
+                fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, transition: "all 0.15s",
+                background: aba === a.key ? COLORS.dark : "transparent",
+                color: aba === a.key ? "#fff" : COLORS.gray }}>
+              {a.label}{a.count !== null ? ` (${a.count})` : ""}
+            </button>
+          ))}
+        </div>
+
+        {/* ── ABA DADOS ────────────────────────────────────────────────────── */}
+        {aba === "dados" && (
+          <>
+            {/* Dados do organizador */}
+            <div style={card}>
+              <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 18px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
+                🏢 Organizador
+              </h3>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
+                {lbl("Nome")}{val(organizer?.name)}
+                {lbl("Organização")}{val(organizer?.organization)}
+                {lbl("E-mail")}{val(organizer?.email)}
+                {lbl("Telefone")}{val(organizer?.phone)}
+                {lbl("Cidade / UF")}{val(`${organizer?.city || ""}${organizer?.state ? ` / ${organizer.state}` : ""}`)}
+                {lbl("CPF / CNPJ")}{val(organizer?.cpfCnpj)}
+              </div>
+              {organizer && (
+                <Link to={`/admin/organizadores/${organizer.id}`} style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, color: COLORS.primary, textDecoration: "none" }}>
+                  Ver perfil completo →
+                </Link>
+              )}
+            </div>
+
+            {/* Dados do evento */}
+            <div style={card}>
+              <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 18px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
+                🏃 Dados do Evento
+              </h3>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
+                {lbl("Tipo de solicitação")}{val(`${tipo.icon} ${tipo.label}`)}
+                {lbl("Nome do evento")}{val(sol.nomeEvento)}
+                {lbl("Data do evento")}{val(fmt(sol.dataEvento))}
+                {lbl("Cidade")}{val(sol.cidadeEvento)}
+              </div>
+              {lbl("Local / endereço")}{val(sol.localEvento)}
+              {lbl("Descrição do evento")}
+              <div style={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.dark, marginBottom: 14, lineHeight: 1.6 }}>{sol.descricaoEvento || "—"}</div>
+            </div>
+
+            {/* Campos livres (objeto campos) */}
+            {/* Campos técnicos estruturados (novo formato) */}
+            <CamposTecnicosView sol={sol} card={card} lbl={lbl} val={val} fmt={fmt} />
+
+            {/* Datas do ciclo de vida */}
+            <div style={card}>
+              <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 18px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
+                🕐 Ciclo de vida
+              </h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 16 }}>
+                {[
+                  { label: "Criado em",    val: sol.criadoEm },
+                  { label: "Enviado em",   val: sol.enviadoEm },
+                  { label: "Em análise desde", val: sol.analisadoEm },
+                  { label: "Encerrado em", val: sol.encerradoEm },
+                  { label: "Última atualização", val: sol.atualizadoEm },
+                ].map(item => (
+                  <div key={item.label} style={{ background: "#f9fafb", borderRadius: 8, padding: "12px 14px" }}>
+                    <div style={{ fontFamily: FONTS.heading, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, marginBottom: 4 }}>{item.label}</div>
+                    <div style={{ fontFamily: FONTS.body, fontSize: 13, color: item.val ? COLORS.dark : COLORS.gray, fontStyle: item.val ? "normal" : "italic" }}>{item.val ? fmtDT(item.val) : "—"}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── ABA ARQUIVOS ─────────────────────────────────────────────────── */}
+        {aba === "arquivos" && (
+          <>
+            {/* Upload pela FMA */}
+            <div style={card}>
+              <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 16px" }}>
+                ⬆️ Enviar arquivo pela FMA
+              </h3>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, marginBottom: 5 }}>Descrição</div>
+                  <input value={uploadDesc} onChange={e => setUploadDesc(e.target.value)}
+                    placeholder="Ex: Contrato, Parecer técnico, Documento de resposta..."
+                    style={inp()} />
+                </div>
+                <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                  style={{ padding: "10px 18px", borderRadius: 8, background: uploading ? COLORS.gray : "#0f172a", color: "#fff", border: "none", cursor: uploading ? "wait" : "pointer", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, whiteSpace: "nowrap" }}>
+                  {uploading ? "⏳ Enviando..." : "📎 Selecionar arquivo"}
+                </button>
+                <input ref={fileInputRef} type="file" style={{ display: "none" }} onChange={handleFileSelect}
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx" />
+              </div>
+              <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, marginTop: 8 }}>
+                Formatos: PDF, DOC, DOCX, JPG, PNG, XLS, XLSX · Máximo 5 MB
+              </div>
+            </div>
+
+            {/* Listagem de arquivos */}
+            <div style={card}>
+              <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 16px" }}>
+                📁 Arquivos da solicitação ({arquivos.length})
+              </h3>
+              {arquivos.length === 0 ? (
+                <div style={{ padding: "32px", textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray, fontStyle: "italic" }}>Nenhum arquivo enviado ainda.</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {arquivos.map(arq => {
+                    const isFma = arq.enviadoPor === "fma";
+                    const isImg = arq.tipo?.startsWith("image/");
+                    return (
+                      <div key={arq.id} style={{ display: "flex", gap: 14, alignItems: "flex-start", padding: "14px", borderRadius: 10, border: `1px solid ${isFma ? "#fed7aa" : COLORS.grayLight}`, background: isFma ? "#fff7ed" : "#fafafa" }}>
+                        <div style={{ fontSize: 28, flexShrink: 0 }}>{isImg ? "🖼️" : arq.tipo?.includes("pdf") ? "📕" : arq.tipo?.includes("spreadsheet") || arq.tipo?.includes("excel") ? "📊" : "📄"}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark }}>{arq.nome}</div>
+                          {arq.descricao && <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 2 }}>{arq.descricao}</div>}
+                          <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, marginTop: 4, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                            <span>{fmtSize(arq.tamanho)}</span>
+                            <span>·</span>
+                            <span>{isFma ? `📋 Enviado pela FMA (${arq.enviadoPorNome})` : `👤 Enviado pelo organizador`}</span>
+                            <span>·</span>
+                            <span>{fmtDT(arq.uploadedAt)}</span>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                          {arq.dataUrl && (
+                            <a href={arq.dataUrl} download={arq.nome}
+                              style={{ padding: "6px 12px", borderRadius: 6, background: "#0f172a", color: "#fff", textDecoration: "none", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
+                              ⬇️ Baixar
+                            </a>
+                          )}
+                          <button onClick={() => handleDeleteArquivo(arq)}
+                            style={{ padding: "6px 10px", borderRadius: 6, background: "#fff5f5", color: COLORS.primary, border: `1px solid #fca5a5`, cursor: "pointer", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* ── ABA ANÁLISE FMA ──────────────────────────────────────────────── */}
+        {aba === "analise" && (
+          <div style={card}>
+            <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 24px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
+              🔍 Análise da FMA
+            </h3>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
+              <div>
+                <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, display: "block", marginBottom: 5 }}>Analista responsável</label>
+                <input value={analise.responsavelFMA} onChange={e => setAnalise(a => ({ ...a, responsavelFMA: e.target.value }))}
+                  placeholder="Nome do analista da FMA" style={inp()} />
+              </div>
+              <div>
+                <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, display: "block", marginBottom: 5 }}>
+                  Número de protocolo
+                  <span style={{ fontFamily: FONTS.body, fontSize: 10, fontWeight: 400, textTransform: "none", marginLeft: 6 }}>
+                    (gerado automaticamente ao iniciar análise)
+                  </span>
+                </label>
+                {sol.protocoloFMA ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                      padding: "9px 16px", borderRadius: 8,
+                      background: "#f0fdf4", border: "1.5px solid #86efac",
+                      fontFamily: FONTS.heading, fontSize: 15, fontWeight: 900,
+                      color: "#15803d", letterSpacing: 1,
+                    }}>
+                      🔖 {sol.protocoloFMA}
+                    </span>
+                    <span style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>
+                      Protocolo emitido — não pode ser alterado.
+                    </span>
+                  </div>
+                ) : (
+                  <div style={{
+                    padding: "10px 14px", borderRadius: 8,
+                    background: "#fffbeb", border: "1.5px dashed #fcd34d",
+                    fontFamily: FONTS.body, fontSize: 12, color: "#92400e",
+                    display: "flex", alignItems: "center", gap: 8,
+                  }}>
+                    ⏳ Será gerado automaticamente ao mudar o status para <strong>Em análise</strong>.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── SEÇÃO: EVENTO VINCULADO ────────────────────────────────── */}
+            <EventoVinculadoSection
+              sol={sol}
+              organizer={organizer}
+              eventoVinculado={eventoVinculado}
+              vinculoMode={vinculoMode}
+              setVinculoMode={setVinculoMode}
+              calendarioItems={calendarioItems}
+              calendarioBusca={calendarioBusca}
+              setCalendarioBusca={setCalendarioBusca}
+              criarOpts={criarOpts}
+              setCriarOpts={setCriarOpts}
+              vinculoSaving={vinculoSaving}
+              setVinculoSaving={setVinculoSaving}
+              onSuccess={(msg) => { flash(msg, "ok"); load(); }}
+              onError={(msg) => flash(msg, "err")}
+              inp={inp}
+            />
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, display: "block", marginBottom: 5 }}>
+                Parecer FMA <span style={{ fontFamily: FONTS.body, fontSize: 10, fontWeight: 400, textTransform: "none" }}>(visível ao organizador)</span>
+              </label>
+              <textarea value={analise.parecerFMA} onChange={e => setAnalise(a => ({ ...a, parecerFMA: e.target.value }))}
+                rows={5} placeholder="Descreva o parecer técnico, documentos necessários, condicionantes da aprovação, motivo do indeferimento, etc."
+                style={{ ...inp(), resize: "vertical", lineHeight: 1.5 }} />
+            </div>
+
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, display: "block", marginBottom: 5 }}>
+                Observação interna <span style={{ fontFamily: FONTS.body, fontSize: 10, fontWeight: 400, textTransform: "none", color: COLORS.primary }}>(NÃO visível ao organizador)</span>
+              </label>
+              <textarea value={analise.observacaoFMA} onChange={e => setAnalise(a => ({ ...a, observacaoFMA: e.target.value }))}
+                rows={3} placeholder="Anotações internas da equipe FMA (não aparecem para o organizador)..."
+                style={{ ...inp({ borderColor: "#fed7aa", background: "#fff7ed" }), resize: "vertical", lineHeight: 1.5 }} />
+            </div>
+
+            {/* Mudança de status */}
+            <div style={{ padding: "20px 20px", background: "#f9fafb", borderRadius: 10, marginBottom: 24, border: `1px solid ${COLORS.grayLight}` }}>
+              <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, display: "block", marginBottom: 10 }}>
+                Alterar status da solicitação
+              </label>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {(TRANSITIONS[sol.status] || [sol.status]).map(s => {
+                  const st = statusMap[s];
+                  if (!st) return null;
+                  return (
+                    <button key={s} onClick={() => setNovoStatus(s)}
+                      style={{ padding: "8px 16px", borderRadius: 8, cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, transition: "all 0.15s",
+                        border: `2px solid ${novoStatus === s ? st.color : COLORS.grayLight}`,
+                        background: novoStatus === s ? st.bg : "#fff",
+                        color: novoStatus === s ? st.color : COLORS.gray }}>
+                      {st.icon} {st.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {novoStatus !== sol.status && (
+                <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 6, background: "#fffbeb", border: "1px solid #fde68a", fontFamily: FONTS.body, fontSize: 12, color: "#92400e" }}>
+                  ⚠️ O status será alterado de <strong>{statusMap[sol.status]?.label}</strong> para <strong>{statusMap[novoStatus]?.label}</strong> ao salvar.
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+              <button onClick={load}
+                style={{ padding: "11px 20px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, cursor: "pointer", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700 }}>
+                Descartar alterações
+              </button>
+              <button onClick={handleSalvarAnalise} disabled={saving}
+                style={{ padding: "11px 28px", borderRadius: 8, border: "none", background: saving ? COLORS.gray : COLORS.primary, color: "#fff", cursor: saving ? "wait" : "pointer", fontFamily: FONTS.heading, fontSize: 14, fontWeight: 700 }}>
+                {saving ? "Salvando..." : "💾 Salvar análise"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── ABA HISTÓRICO ────────────────────────────────────────────────── */}
+        {aba === "historico" && (
+          <div style={card}>
+            <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 20px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
+              📋 Trilha completa de movimentações ({movimentacoes.length})
+            </h3>
+            {movimentacoes.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px", fontFamily: FONTS.body, color: COLORS.gray, fontStyle: "italic" }}>Nenhuma movimentação registrada.</div>
+            ) : (
+              <div style={{ position: "relative" }}>
+                {[...movimentacoes].reverse().map((mov, i, arr) => {
+                  const mt = movMap[mov.tipoEvento] || { icon: "📋", color: COLORS.gray };
+                  const isOrg = mov.autor === "organizador";
+                  const isLast = i === arr.length - 1;
+                  return (
+                    <div key={mov.id} style={{ display: "flex", gap: 14, position: "relative" }}>
+                      {!isLast && <div style={{ position: "absolute", left: 19, top: 40, bottom: -12, width: 2, background: COLORS.grayLight, zIndex: 0 }} />}
+                      <div style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0, zIndex: 1,
+                        background: isOrg ? "#eff6ff" : "#fff5f5",
+                        border: `2px solid ${isOrg ? "#93c5fd" : "#fca5a5"}`,
+                        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+                        {mt.icon}
+                      </div>
+                      <div style={{ flex: 1, paddingBottom: isLast ? 0 : 24 }}>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
+                          <span style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark }}>{mov.descricao}</span>
+                          {!mov.visivel && <span style={{ padding: "2px 7px", borderRadius: 10, fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, background: "#fef3c7", color: "#92400e" }}>🔒 Interno</span>}
+                        </div>
+                        {mov.statusAnterior && mov.statusNovo && mov.statusAnterior !== mov.statusNovo && (
+                          <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 4 }}>
+                            <StatusBadge status={mov.statusAnterior} /><span style={{ fontSize: 11, color: COLORS.gray }}>→</span><StatusBadge status={mov.statusNovo} />
+                          </div>
+                        )}
+                        <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>
+                          {isOrg ? "👤" : "🏛️"} {mov.autorNome} · {fmtDT(mov.criadoEm)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </AdminLayout>
+  );
+}
+
+// ── COMPONENTE: Seção de Evento Vinculado ─────────────────────────────────────
+/**
+ * EventoVinculadoSection — Exibida dentro da aba Análise.
+ *
+ * Estados da seção:
+ *   A) Sem evento vinculado + solicitação aprovada → alerta pendência + opções
+ *   B) Sem evento vinculado + outros status → opções disponíveis
+ *   C) Evento vinculado → card com dados + link + botão desvincular
+ *   D) Mode "buscar" → input de busca + lista de eventos existentes
+ *   E) Mode "criar"  → preview dos dados mapeados + confirmação
+ */
+function EventoVinculadoSection({
+  sol, organizer, eventoVinculado,
+  vinculoMode, setVinculoMode,
+  calendarioItems, calendarioBusca, setCalendarioBusca,
+  criarOpts, setCriarOpts,
+  vinculoSaving, setVinculoSaving,
+  onSuccess, onError, inp,
+}) {
+  const navigate = useNavigate();
+
+  const sectionStyle = {
+    marginBottom: 24,
+    padding: "20px 20px",
+    borderRadius: 10,
+    border: "1.5px solid #e0e7ff",
+    background: "#f5f7ff",
+  };
+
+  const btnBase = {
+    padding: "8px 16px", borderRadius: 8, cursor: "pointer",
+    fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700,
+    border: "none", transition: "opacity 0.15s",
+  };
+
+  // Filtra eventos pelo texto de busca
+  const eventosFiltrados = calendarioBusca.trim().length > 1
+    ? calendarioItems.filter(e =>
+        e.title?.toLowerCase().includes(calendarioBusca.toLowerCase()) ||
+        e.city?.toLowerCase().includes(calendarioBusca.toLowerCase())
+      ).slice(0, 8)
+    : calendarioItems.slice(0, 6);
+
+  const handleCriar = async () => {
+    setVinculoSaving(true);
+    const orgName = organizer?.name || organizer?.organization || "";
+    const r = await SolicitacoesService.criarEVincularEvento(sol, orgName, criarOpts);
+    setVinculoSaving(false);
+    if (r.error) { onError("Erro ao criar evento: " + r.error); return; }
+    onSuccess(`Evento criado e vinculado com sucesso! Acesse o calendário para publicar.`);
+  };
+
+  const handleVincular = async (evento) => {
+    setVinculoSaving(true);
+    const r = await SolicitacoesService.vincularEvento(sol.id, evento.id, evento.title, sol.status);
+    setVinculoSaving(false);
+    if (r.error) { onError("Erro ao vincular: " + r.error); return; }
+    onSuccess(`Evento "${evento.title}" vinculado com sucesso.`);
+  };
+
+  const handleDesvincular = async () => {
+    if (!confirm(`Desvincular o evento "${eventoVinculado?.title}"?\nO evento NÃO será excluído.`)) return;
+    setVinculoSaving(true);
+    const r = await SolicitacoesService.desvincularEvento(sol.id, eventoVinculado?.title, sol.status);
+    setVinculoSaving(false);
+    if (r.error) { onError("Erro ao desvincular: " + r.error); return; }
+    onSuccess("Vínculo removido. O evento permanece no calendário.");
+  };
+
+  const labelStyle = {
+    fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800,
+    textTransform: "uppercase", letterSpacing: 1.5, color: "#4338ca",
+    display: "flex", alignItems: "center", gap: 6, marginBottom: 12,
+  };
+
+  return (
+    <div style={sectionStyle}>
+      <div style={labelStyle}>
+        📅 Evento vinculado no calendário
+      </div>
+
+      {/* ── C: JÁ TEM EVENTO VINCULADO ──────────────────────────────────── */}
+      {eventoVinculado ? (
+        <div>
+          <div style={{
+            padding: "14px 16px", borderRadius: 8,
+            background: "#fff", border: "1.5px solid #a5b4fc",
+            display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12,
+          }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, color: COLORS.dark, marginBottom: 4 }}>
+                ✅ {eventoVinculado.title}
+              </div>
+              <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginBottom: 8 }}>
+                📍 {eventoVinculado.city}
+                {eventoVinculado.date && ` · 📅 ${new Date(eventoVinculado.date + "T12:00:00").toLocaleDateString("pt-BR")}`}
+                {" · "}
+                <span style={{
+                  padding: "1px 8px", borderRadius: 10, fontSize: 11, fontWeight: 700,
+                  background: eventoVinculado.published ? "#f0fdf4" : "#fff7ed",
+                  color: eventoVinculado.published ? "#15803d" : "#92400e",
+                }}>
+                  {eventoVinculado.published ? "Publicado" : "Não publicado"}
+                </span>
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button
+                  onClick={() => navigate(`/admin/calendario/${eventoVinculado.id}`)}
+                  style={{ ...btnBase, background: "#4338ca", color: "#fff", fontSize: 11 }}>
+                  ✏️ Editar evento
+                </button>
+                <button
+                  onClick={() => window.open(`/eventos/${eventoVinculado.id}`, "_blank")}
+                  style={{ ...btnBase, background: "#f0fdf4", color: "#15803d", border: "1px solid #86efac", fontSize: 11 }}>
+                  👁 Ver no site
+                </button>
+                <button
+                  onClick={handleDesvincular}
+                  disabled={vinculoSaving}
+                  style={{ ...btnBase, background: "#fff5f5", color: "#dc2626", border: "1px solid #fca5a5", fontSize: 11 }}>
+                  🔗 Desvincular
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {!eventoVinculado.published && (
+            <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 6, background: "#fffbeb", border: "1px solid #fde68a", fontFamily: FONTS.body, fontSize: 12, color: "#92400e" }}>
+              ⚠️ O evento ainda <strong>não está publicado</strong> no calendário público. Acesse o editor para publicá-lo quando estiver pronto.
+            </div>
+          )}
+        </div>
+
+      ) : (
+        <div>
+          {/* Alerta de pendência quando solicitação aprovada sem evento */}
+          {["aprovada", "concluida"].includes(sol.status) && (
+            <div style={{ padding: "10px 14px", borderRadius: 8, background: "#fffbeb", border: "1.5px solid #fcd34d", fontFamily: FONTS.body, fontSize: 12, color: "#92400e", marginBottom: 12, display: "flex", gap: 8, alignItems: "flex-start" }}>
+              <span style={{ fontSize: 16 }}>⚠️</span>
+              <span>Solicitação <strong>aprovada sem evento vinculado</strong>. Crie ou vincule um evento para que o permit/chancela apareça no calendário público.</span>
+            </div>
+          )}
+
+          {/* Botões de ação quando não há modo ativo */}
+          {!vinculoMode && (
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button
+                onClick={() => setVinculoMode("criar")}
+                style={{ ...btnBase, background: "#4338ca", color: "#fff" }}>
+                ✨ Criar evento automaticamente
+              </button>
+              <button
+                onClick={() => setVinculoMode("buscar")}
+                style={{ ...btnBase, background: "#fff", color: "#4338ca", border: "1.5px solid #a5b4fc" }}>
+                🔍 Vincular evento existente
+              </button>
+            </div>
+          )}
+
+          {/* ── D: MODE BUSCAR ──────────────────────────────────────────── */}
+          {vinculoMode === "buscar" && (
+            <div>
+              <input
+                value={calendarioBusca}
+                onChange={e => setCalendarioBusca(e.target.value)}
+                placeholder="Buscar por título ou cidade do evento..."
+                style={{ ...inp(), marginBottom: 10 }}
+                autoFocus
+              />
+              <div style={{ maxHeight: 280, overflowY: "auto", borderRadius: 8, border: `1px solid ${COLORS.grayLight}` }}>
+                {eventosFiltrados.length === 0 ? (
+                  <div style={{ padding: 20, textAlign: "center", fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray }}>
+                    Nenhum evento encontrado.
+                  </div>
+                ) : eventosFiltrados.map(ev => (
+                  <div key={ev.id} style={{
+                    padding: "12px 16px", borderBottom: `1px solid ${COLORS.grayLight}`,
+                    display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+                    background: "#fff",
+                  }}>
+                    <div>
+                      <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark }}>{ev.title}</div>
+                      <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>
+                        📍 {ev.city}
+                        {ev.date && ` · ${new Date(ev.date + "T12:00:00").toLocaleDateString("pt-BR")}`}
+                        {" · "}
+                        <span style={{ color: ev.published ? "#15803d" : "#92400e" }}>
+                          {ev.published ? "Publicado" : "Não publicado"}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleVincular(ev)}
+                      disabled={vinculoSaving}
+                      style={{ ...btnBase, background: "#4338ca", color: "#fff", fontSize: 11, whiteSpace: "nowrap" }}>
+                      Vincular →
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => { setVinculoMode(null); setCalendarioBusca(""); }}
+                style={{ ...btnBase, marginTop: 10, background: "transparent", color: COLORS.gray, border: `1px solid ${COLORS.grayLight}` }}>
+                ← Cancelar
+              </button>
+            </div>
+          )}
+
+          {/* ── E: MODE CRIAR ───────────────────────────────────────────── */}
+          {vinculoMode === "criar" && (
+            <div>
+              <div style={{ padding: "14px 16px", borderRadius: 8, background: "#fff", border: `1px solid ${COLORS.grayLight}`, marginBottom: 12 }}>
+                <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, marginBottom: 10 }}>
+                  Preview — dados que serão criados no calendário:
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "120px 1fr", gap: "6px 12px", fontFamily: FONTS.body, fontSize: 12 }}>
+                  {[
+                    ["Título",    sol.nomeEvento    || "—"],
+                    ["Data",      sol.dataEvento ? new Date(sol.dataEvento + "T12:00:00").toLocaleDateString("pt-BR") : "—"],
+                    ["Cidade",    sol.cidadeEvento  || "—"],
+                    ["Local",     sol.localEvento   || "—"],
+                    ["Categoria", sol.tipo === "permit" ? "Corrida de Rua" : "Outros"],
+                    ["Organizador", organizer?.name || organizer?.organization || "—"],
+                  ].map(([label, valor]) => (
+                    <React.Fragment key={label}>
+                      <span style={{ color: COLORS.gray, fontWeight: 600 }}>{label}:</span>
+                      <span style={{ color: COLORS.dark }}>{valor}</span>
+                    </React.Fragment>
+                  ))}
+                </div>
+                <div style={{ marginTop: 12, padding: "8px 12px", borderRadius: 6, background: "#fffbeb", border: "1px solid #fde68a", fontFamily: FONTS.body, fontSize: 11, color: "#92400e" }}>
+                  ℹ️ O evento será criado como <strong>não publicado</strong>. Você poderá editar e publicar no calendário quando estiver pronto.
+                </div>
+
+                {/* Opção: publicar imediatamente */}
+                <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, cursor: "pointer", fontFamily: FONTS.body, fontSize: 12, color: COLORS.dark }}>
+                  <input
+                    type="checkbox"
+                    checked={criarOpts.published}
+                    onChange={e => setCriarOpts(o => ({ ...o, published: e.target.checked }))}
+                  />
+                  Publicar imediatamente no calendário público
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, cursor: "pointer", fontFamily: FONTS.body, fontSize: 12, color: COLORS.dark }}>
+                  <input
+                    type="checkbox"
+                    checked={criarOpts.featured}
+                    onChange={e => setCriarOpts(o => ({ ...o, featured: e.target.checked }))}
+                  />
+                  Marcar como destaque no calendário
+                </label>
+              </div>
+
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  onClick={handleCriar}
+                  disabled={vinculoSaving}
+                  style={{ ...btnBase, background: vinculoSaving ? COLORS.gray : "#4338ca", color: "#fff" }}>
+                  {vinculoSaving ? "Criando..." : "✅ Confirmar criação"}
+                </button>
+                <button onClick={() => setVinculoMode(null)}
+                  style={{ ...btnBase, background: "transparent", color: COLORS.gray, border: `1px solid ${COLORS.grayLight}` }}>
+                  ← Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── COMPONENTE: Visualização de Campos Técnicos (aba Dados) ───────────────────
+/**
+ * CamposTecnicosView — Renderiza os camposTecnicos de uma solicitação.
+ * Suporta: permit (view completa), chancela (view completa), legado (migra automaticamente).
+ */
+function CamposTecnicosView({ sol, card, lbl, val, fmt }) {
+  const ct = normalizarCamposTecnicos(sol);
+  if (!ct || !ct._tipo) return null;
+
+  const Row = ({ label, children }) => (
+    <>
+      <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase",
+        letterSpacing: 1.5, color: COLORS.gray, marginBottom: 4, marginTop: 2 }}>{label}</div>
+      <div style={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.dark, marginBottom: 14, lineHeight: 1.5 }}>
+        {children || "—"}
+      </div>
+    </>
+  );
+
+  const SecHead = ({ children }) => (
+    <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase",
+      letterSpacing: 1.5, color: "#4338ca", marginBottom: 12, paddingBottom: 4,
+      borderBottom: "1px solid #e0e7ff" }}>
+      {children}
+    </div>
+  );
+
+  const DocBadge = ({ doc, label }) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 8,
+      background: doc?.temArquivo ? "#f0fdf4" : "#fff5f5",
+      border: `1px solid ${doc?.temArquivo ? "#86efac" : "#fca5a5"}` }}>
+      <span>{doc?.temArquivo ? "✅" : "❌"}</span>
+      <div>
+        <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, color: doc?.temArquivo ? "#15803d" : "#dc2626" }}>
+          {label}
+        </div>
+        {doc?.nomeArquivo && <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>{doc.nomeArquivo}</div>}
+      </div>
+    </div>
+  );
+
+  const ModalidadesTable = () => {
+    const total = totalEstimativaInscritos(ct);
+    if (!ct.modalidades?.length) return <Row label="Modalidades">—</Row>;
+    return (
+      <div style={{ marginBottom: 20 }}>
+        <SecHead>🏃 Modalidades / Distâncias</SecHead>
+        <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 8 }}>
+          <thead>
+            <tr style={{ borderBottom: `1.5px solid ${COLORS.grayLight}` }}>
+              <th style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, padding: "6px 12px", textAlign: "left" }}>Distância / Categoria</th>
+              <th style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, padding: "6px 12px", textAlign: "right" }}>Estimativa</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ct.modalidades.filter(m => m.distancia).map(m => (
+              <tr key={m.id} style={{ borderBottom: `1px solid ${COLORS.grayLight}` }}>
+                <td style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark, padding: "8px 12px" }}>{m.distancia}</td>
+                <td style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.dark, padding: "8px 12px", textAlign: "right" }}>
+                  {m.estimativaInscritos ? Number(m.estimativaInscritos).toLocaleString("pt-BR") : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {total > 0 && (
+          <div style={{ textAlign: "right", fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>
+            Total estimado: <strong style={{ color: COLORS.dark }}>{total.toLocaleString("pt-BR")} inscritos</strong>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ── VIEW PERMIT ─────────────────────────────────────────────────────────────
+  if (ct._tipo === "permit") {
+    const docKeys = ["regulamento", "mapaPercurso"];
+    const missingDocs = docKeys.filter(k => !ct[k]?.temArquivo);
+    return (
+      <div style={card}>
+        <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 20px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
+          🏃 Formulário Técnico – Permit
+        </h3>
+        <div style={{ marginBottom: 20 }}>
+          <SecHead>⏰ Datas e Horários</SecHead>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
+            <Row label="Encerramento das inscrições">{ct.dataEncerramentoInscricoes ? fmt(ct.dataEncerramentoInscricoes) : "—"}</Row>
+            <Row label="Horário da largada">{ct.horarioLargada || "—"}</Row>
+          </div>
+        </div>
+        <ModalidadesTable />
+        <div style={{ marginBottom: 20 }}>
+          <SecHead>💰 Financeiro</SecHead>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
+            <Row label="Valor da inscrição">{ct.valorInscricao}</Row>
+            <Row label="Premiação em dinheiro">{ct.premiacaoDinheiro ? <span style={{ color: "#15803d", fontWeight: 600 }}>✅ Sim — {ct.valorPremiacaoTotal || "valor não informado"}</span> : <span style={{ color: COLORS.gray }}>Não</span>}</Row>
+          </div>
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <SecHead>⚙️ Aspectos Técnicos</SecHead>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
+            <Row label="Sistema de apuração">{ct.sistemaApuracao}</Row>
+            <Row label="Empresa de cronometragem">{ct.empresaCronometragem}</Row>
+            <Row label="Aferição do percurso">{ct.formaMedicaoPercurso}</Row>
+          </div>
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <SecHead>🏥 Infraestrutura e Seguro</SecHead>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
+            <Row label="Posto médico">{ct.postoMedico ? <span style={{ color: "#15803d", fontWeight: 600 }}>✅ Sim — {ct.quantidadeAmbulancias ? `${ct.quantidadeAmbulancias} ambulância(s)` : "qtd. não informada"}</span> : <span style={{ color: COLORS.gray }}>Não informado</span>}</Row>
+            <Row label="Nº da apólice de seguro">{ct.apoliceSeguros}</Row>
+            <Row label="Lei de Incentivo">{ct.leiIncentivo ? <span style={{ color: "#15803d", fontWeight: 600 }}>✅ Sim</span> : <span style={{ color: COLORS.gray }}>Não</span>}</Row>
+          </div>
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <SecHead>📋 Objetivo, Patrocinadores e Serviços</SecHead>
+          <Row label="Objetivo do evento">{ct.objetivoEvento}</Row>
+          <Row label="Patrocinadores">{ct.patrocinadores}</Row>
+          <Row label="Kit do atleta">{ct.kitAtleta}</Row>
+          <Row label="Empresas e serviços">{ct.empresasServicos}</Row>
+        </div>
+        <div>
+          <SecHead>📁 Documentos Obrigatórios</SecHead>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <DocBadge doc={ct.regulamento} label="Regulamento do Evento" />
+            <DocBadge doc={ct.mapaPercurso} label="Mapa do Percurso" />
+          </div>
+          {missingDocs.length > 0 && (
+            <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 6, background: "#fff5f5", border: "1px solid #fca5a5", fontFamily: FONTS.body, fontSize: 12, color: "#dc2626" }}>
+              ⚠️ Documentos pendentes: {missingDocs.map(k => k === "regulamento" ? "Regulamento" : "Mapa do Percurso").join(", ")}
+            </div>
+          )}
+        </div>
+        <FieldsCustomRows ct={ct} tipoBuiltinKeys={["_tipo","_versao","dataEncerramentoInscricoes","horarioLargada","modalidades","valorInscricao","premiacaoDinheiro","valorPremiacaoTotal","sistemaApuracao","empresaCronometragem","formaMedicaoPercurso","postoMedico","quantidadeAmbulancias","apoliceSeguros","leiIncentivo","objetivoEvento","patrocinadores","kitAtleta","empresasServicos","regulamento","mapaPercurso"]} Row={Row} />
+      </div>
+    );
+  }
+
+  // ── VIEW CHANCELA ────────────────────────────────────────────────────────────
+  if (ct._tipo === "chancela") {
+    const docKeys = ["regulamento","mapaPercurso","arquivoGPX","planoSegurancaResgate","planoMedico","comprovanteSeguros","declaracaoCaracterizacaoPercurso","regulamentoTecnico"];
+    const docLabels = {
+      regulamento: "Regulamento", mapaPercurso: "Mapa do Percurso",
+      arquivoGPX: "Arquivo GPX/KML", planoSegurancaResgate: "Plano de Segurança e Resgate",
+      planoMedico: "Plano Médico", comprovanteSeguros: "Comprovante de Seguro",
+      autorizacaoAmbiental: "Autorização Ambiental",
+      declaracaoCaracterizacaoPercurso: "Declaração de Caracterização do Percurso",
+      regulamentoTecnico: "Regulamento Técnico",
+    };
+    const allDocKeys = [...docKeys, "autorizacaoAmbiental"];
+    const missingRequired = docKeys.filter(k => !ct[k]?.temArquivo);
+    return (
+      <div style={card}>
+        <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 20px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
+          🏅 Formulário Técnico – Chancela
+        </h3>
+        <div style={{ marginBottom: 20 }}>
+          <SecHead>🔗 Identificação</SecHead>
+          <Row label="Link de divulgação">
+            {ct.linkDivulgacao
+              ? <a href={ct.linkDivulgacao} target="_blank" rel="noopener noreferrer" style={{ color: "#0066cc", wordBreak: "break-all" }}>{ct.linkDivulgacao}</a>
+              : "—"}
+          </Row>
+          <Row label="Objetivo do evento">{ct.objetivoEvento}</Row>
+        </div>
+        <ModalidadesTable />
+        <div style={{ marginBottom: 20 }}>
+          <SecHead>💰 Financeiro</SecHead>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
+            <Row label="Valor da inscrição">{ct.valorInscricao}</Row>
+            <Row label="Premiação em dinheiro">{ct.premiacaoDinheiro ? <span style={{ color: "#15803d", fontWeight: 600 }}>✅ Sim — {ct.valorPremiacaoTotal || "valor não informado"}</span> : <span style={{ color: COLORS.gray }}>Não</span>}</Row>
+          </div>
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <SecHead>⚙️ Aspectos Técnicos</SecHead>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
+            <Row label="Sistema de apuração">{ct.sistemaApuracao}</Row>
+            <Row label="Empresa de cronometragem">{ct.empresaCronometragem}</Row>
+            <Row label="Aferição do percurso">{ct.formaMedicaoPercurso}</Row>
+          </div>
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <SecHead>🏥 Equipe Médica</SecHead>
+          <Row label="Médico responsável (Nome e CRM)">{ct.medicoResponsavel}</Row>
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <SecHead>🧾 Dados Fiscais</SecHead>
+          <Row label="Dados para emissão do recibo">{ct.dadosEmissaoRecibo}</Row>
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <SecHead>🛡️ Seguro</SecHead>
+          <Row label="Nº da apólice de seguro">{ct.apoliceSeguros}</Row>
+        </div>
+        <div>
+          <SecHead>📁 Documentos</SecHead>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {allDocKeys.map(k => <DocBadge key={k} doc={ct[k]} label={docLabels[k] || k} />)}
+          </div>
+          {missingRequired.length > 0 && (
+            <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 6, background: "#fff5f5", border: "1px solid #fca5a5", fontFamily: FONTS.body, fontSize: 12, color: "#dc2626" }}>
+              ⚠️ Documentos obrigatórios pendentes: {missingRequired.map(k => docLabels[k]).join(", ")}
+            </div>
+          )}
+        </div>
+        <FieldsCustomRows ct={ct} tipoBuiltinKeys={["_tipo","_versao","linkDivulgacao","objetivoEvento","modalidades","valorInscricao","premiacaoDinheiro","valorPremiacaoTotal","sistemaApuracao","empresaCronometragem","formaMedicaoPercurso","medicoResponsavel","dadosEmissaoRecibo","apoliceSeguros","regulamento","mapaPercurso","arquivoGPX","planoSegurancaResgate","planoMedico","comprovanteSeguros","autorizacaoAmbiental","declaracaoCaracterizacaoPercurso","regulamentoTecnico"]} Row={Row} />
+      </div>
+    );
+  }
+
+  // Tipo desconhecido
+  return (
+    <div style={card}>
+      <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray }}>
+        Campos técnicos não disponíveis para este tipo de solicitação.
+      </div>
+    </div>
+  );
+}
+
+/** Exibe campos customizados (adicionados pelo admin, não built-in) se existirem em ct. */
+function FieldsCustomRows({ ct, tipoBuiltinKeys, Row }) {
+  const customKeys = Object.keys(ct).filter(k => !tipoBuiltinKeys.includes(k) && k.startsWith("custom_"));
+  if (customKeys.length === 0) return null;
+  return (
+    <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px dashed #e2e8f0" }}>
+      <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: "#7c3aed", marginBottom: 12 }}>
+        🔧 Campos Adicionais
+      </div>
+      {customKeys.map(k => {
+        const v = ct[k];
+        let display;
+        if (typeof v === "object" && v !== null && "temArquivo" in v) {
+          display = v.temArquivo ? `✅ ${v.nomeArquivo || "Arquivo enviado"}` : "❌ Arquivo não enviado";
+        } else if (typeof v === "boolean") {
+          display = v ? "Sim" : "Não";
+        } else {
+          display = String(v || "—");
+        }
+        return <Row key={k} label={k.replace(/^custom_[a-z]+_\d+$/, k)}>{display}</Row>;
+      })}
+    </div>
+  );
+}

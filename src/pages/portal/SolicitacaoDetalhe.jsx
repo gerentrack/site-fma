@@ -1,0 +1,467 @@
+/**
+ * SolicitacaoDetalhe.jsx
+ * Rota: /portal/solicitacoes/:id
+ *
+ * Correções:
+ *   [P1] Botão "Editar rascunho" + drawer lateral com formulário completo
+ *   [P2] Banner com link para evento público quando eventoCalendarioId preenchido
+ */
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { useOrganizer } from "../../context/OrganizerContext";
+import { SolicitacoesService, ArquivosService, MovimentacoesService } from "../../services/index";
+import { COLORS, FONTS } from "../../styles/colors";
+import { SOLICITACAO_STATUS, SOLICITACAO_TIPOS, MOVIMENTACAO_TIPOS, ARQUIVO_CATEGORIAS } from "../../config/navigation";
+import { getFieldsBySection, initFormConfig } from "../../utils/formSchema";
+import { defaultCamposTecnicosPermit, defaultCamposTecnicosChancela, novaModalidadeId } from "../../utils/permitDefaults";
+
+const statusMap     = Object.fromEntries(SOLICITACAO_STATUS.map(s => [s.value, s]));
+const tipoMap       = Object.fromEntries(SOLICITACAO_TIPOS.map(t => [t.value, t]));
+const movMap        = MOVIMENTACAO_TIPOS;
+const arquivoCatMap = Object.fromEntries(ARQUIVO_CATEGORIAS.map(c => [c.value, c]));
+
+function fmt(d)   { if (!d) return "—"; return new Date(d).toLocaleDateString("pt-BR", { day:"2-digit", month:"long", year:"numeric" }); }
+function fmtDT(d) { if (!d) return "—"; return new Date(d).toLocaleString("pt-BR", { day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" }); }
+function fmtSize(b) { if (!b) return "—"; if (b<1024) return b+" B"; if (b<1048576) return (b/1024).toFixed(1)+" KB"; return (b/1048576).toFixed(1)+" MB"; }
+
+const baseInp = (err=false) => ({ width:"100%", padding:"10px 13px", borderRadius:8, border:`1.5px solid ${err?"#fca5a5":COLORS.grayLight}`, fontFamily:FONTS.body, fontSize:14, outline:"none", boxSizing:"border-box", background:"#fff" });
+const cardSty = { background:"#fff", borderRadius:12, padding:"20px 24px", boxShadow:"0 2px 12px rgba(0,0,0,0.06)", marginBottom:14 };
+
+function Lbl({ children, req }) {
+  return <label style={{ fontFamily:FONTS.heading, fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:1, color:COLORS.grayDark, display:"block", marginBottom:5 }}>{children}{req&&<span style={{color:COLORS.primary}}> *</span>}</label>;
+}
+function Err({ msg }) { return <div style={{ fontFamily:FONTS.body, fontSize:11, color:"#dc2626", marginTop:3 }}>{msg}</div>; }
+function SecTitle({ children }) {
+  return <h3 style={{ fontFamily:FONTS.heading, fontSize:12, fontWeight:800, textTransform:"uppercase", letterSpacing:2, color:COLORS.dark, margin:"0 0 16px", paddingBottom:10, borderBottom:`2px solid ${COLORS.grayLight}` }}>{children}</h3>;
+}
+
+// ─── StatusBadge ──────────────────────────────────────────────────────────────
+function StatusBadge({ status, size="md" }) {
+  const s = statusMap[status] || { label:status, color:COLORS.gray, bg:"#f3f4f6", icon:"📋" };
+  return <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:size==="lg"?"6px 16px":"3px 10px", borderRadius:20, fontSize:size==="lg"?13:11, fontFamily:FONTS.heading, fontWeight:700, background:s.bg, color:s.color, border:`1px solid ${s.color}30` }}>{s.icon} {s.label}</span>;
+}
+
+// ─── TimelineItem ─────────────────────────────────────────────────────────────
+function TimelineItem({ mov, isLast }) {
+  const mt = movMap[mov.tipoEvento] || { icon:"📋" };
+  const isOrg = mov.autor === "organizador";
+  return (
+    <div style={{ display:"flex", gap:14, position:"relative" }}>
+      {!isLast && <div style={{ position:"absolute", left:19, top:38, bottom:-12, width:2, background:COLORS.grayLight }} />}
+      <div style={{ width:40, height:40, borderRadius:"50%", flexShrink:0, zIndex:1, background:isOrg?"#eff6ff":"#fff5f5", border:`2px solid ${isOrg?"#93c5fd":"#fca5a5"}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>{mt.icon}</div>
+      <div style={{ flex:1, paddingBottom:isLast?0:24 }}>
+        <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap", marginBottom:4 }}>
+          <span style={{ fontFamily:FONTS.heading, fontSize:13, fontWeight:700, color:COLORS.dark }}>{mov.descricao}</span>
+          {mov.statusNovo && mov.statusAnterior && mov.statusNovo !== mov.statusAnterior && (
+            <div style={{ display:"flex", gap:5, alignItems:"center" }}>
+              <StatusBadge status={mov.statusAnterior} /><span style={{ fontSize:11, color:COLORS.gray }}>→</span><StatusBadge status={mov.statusNovo} />
+            </div>
+          )}
+        </div>
+        <div style={{ fontFamily:FONTS.body, fontSize:11, color:COLORS.gray }}>{fmtDT(mov.criadoEm)} · {isOrg?"👤":"🏛️"} {mov.autorNome}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ArquivoUploader ─────────────────────────────────────────────────────────
+function ArquivoUploader({ solicitacaoId, organizerId, organizerName, onUploaded }) {
+  const inputRef = useRef();
+  const [uploading,setUploading]=useState(false);
+  const [descricao,setDescricao]=useState("");
+  const [categoria,setCategoria]=useState("complementar");
+  const [file,setFile]=useState(null);
+  const [error,setError]=useState("");
+  const MAX=1.5*1024*1024;
+
+  const handleUpload = async () => {
+    if (!file) { setError("Selecione um arquivo."); return; }
+    setUploading(true);
+    const dataUrl = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
+    const r = await ArquivosService.upload({ solicitacaoId, nome:file.name, tamanho:file.size, tipo:file.type, descricao:descricao||file.name, categoria, enviadoPor:"organizador", enviadoById:organizerId, enviadoPorNome:organizerName, dataUrl });
+    if (r.error) { setError(r.error); setUploading(false); return; }
+    await MovimentacoesService.registrar({ solicitacaoId, tipoEvento:"arquivo_enviado", statusAnterior:"", statusNovo:"", descricao:`Arquivo enviado: ${file.name}`, autor:"organizador", autorNome:organizerName, autorId:organizerId, visivel:true });
+    setFile(null); setDescricao(""); setCategoria("complementar");
+    if (inputRef.current) inputRef.current.value="";
+    setUploading(false); onUploaded();
+  };
+
+  return (
+    <div style={{ background:"#f8fafc", border:`2px dashed ${COLORS.grayLight}`, borderRadius:10, padding:20 }}>
+      <div style={{ fontFamily:FONTS.heading, fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:1.5, color:COLORS.dark, marginBottom:14 }}>📎 Enviar arquivo</div>
+      {error && <div style={{ background:"#fff5f5", border:"1px solid #fca5a5", borderRadius:8, padding:"8px 12px", marginBottom:12, fontFamily:FONTS.body, fontSize:12, color:"#dc2626" }}>⚠️ {error}</div>}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
+        <div>
+          <label style={{ fontFamily:FONTS.heading, fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:1, color:COLORS.gray, display:"block", marginBottom:4 }}>Arquivo</label>
+          <input ref={inputRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx" onChange={e=>{ const f=e.target.files[0]; if(!f)return; if(f.size>MAX){setError(`Máx. ${fmtSize(MAX)}`);return;} setError("");setFile(f); }} style={{ fontFamily:FONTS.body, fontSize:13, width:"100%" }} />
+          {file && <div style={{ fontFamily:FONTS.body, fontSize:11, color:COLORS.gray, marginTop:3 }}>{file.name} — {fmtSize(file.size)}</div>}
+        </div>
+        <div>
+          <label style={{ fontFamily:FONTS.heading, fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:1, color:COLORS.gray, display:"block", marginBottom:4 }}>Categoria</label>
+          <select value={categoria} onChange={e=>setCategoria(e.target.value)} style={{ width:"100%", padding:"8px 10px", borderRadius:7, border:`1px solid ${COLORS.grayLight}`, fontFamily:FONTS.body, fontSize:13, outline:"none" }}>
+            {ARQUIVO_CATEGORIAS.filter(c=>c.value!=="resposta_fma").map(c=><option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
+          </select>
+        </div>
+        <div style={{ gridColumn:"1/-1" }}>
+          <label style={{ fontFamily:FONTS.heading, fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:1, color:COLORS.gray, display:"block", marginBottom:4 }}>Descrição</label>
+          <input value={descricao} onChange={e=>setDescricao(e.target.value)} placeholder="Ex: Alvará de autorização" style={{ width:"100%", padding:"8px 10px", borderRadius:7, border:`1px solid ${COLORS.grayLight}`, fontFamily:FONTS.body, fontSize:13, outline:"none", boxSizing:"border-box" }} />
+        </div>
+      </div>
+      <button onClick={handleUpload} disabled={uploading||!file} style={{ padding:"9px 20px", borderRadius:8, border:"none", background:!file?COLORS.gray:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:(!file||uploading)?"not-allowed":"pointer" }}>{uploading?"Enviando...":"⬆️ Enviar arquivo"}</button>
+      <div style={{ fontFamily:FONTS.body, fontSize:10, color:COLORS.gray, marginTop:8 }}>PDF, DOC, JPG, PNG, XLS. Máx. 1.5 MB (demo).</div>
+    </div>
+  );
+}
+
+// ─── Campo dinâmico para o drawer de edição ───────────────────────────────────
+function DynField({ field:f, value, ctValue, error, onChange }) {
+  const L = () => <label style={{ fontFamily:FONTS.heading, fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:1, color:COLORS.grayDark, display:"block", marginBottom:5 }}>{f.label}{f.required&&<span style={{color:COLORS.primary}}> *</span>}</label>;
+  if (f.conditional && !ctValue[f.conditional]) return null;
+  if (f.type==="upload") return null;
+  if (f.type==="checkbox") return <label style={{ display:"flex", alignItems:"center", gap:10, cursor:"pointer", fontFamily:FONTS.body, fontSize:14, color:COLORS.dark }}><input type="checkbox" checked={!!value} onChange={e=>onChange(e.target.checked)} style={{width:16,height:16}}/>{f.label}</label>;
+  if (f.type==="select") return <div><L/><select value={value||""} onChange={e=>onChange(e.target.value)} style={{...baseInp(!!error),cursor:"pointer"}}><option value="">Selecione...</option>{(f.options||[]).map(o=><option key={o} value={o}>{o}</option>)}</select>{error&&<Err msg={error}/>}</div>;
+  if (f.type==="textarea") return <div><L/><textarea value={value||""} onChange={e=>onChange(e.target.value)} rows={3} style={{...baseInp(!!error),resize:"vertical"}}/>{error&&<Err msg={error}/>}</div>;
+  return <div><L/><input type={f.type==="date"?"date":f.type==="time"?"time":f.type==="number"?"number":"text"} value={value||""} onChange={e=>onChange(e.target.value)} placeholder={f.hint||""} style={baseInp(!!error)}/>{error&&<Err msg={error}/>}</div>;
+}
+
+// ─── Drawer de edição — PENDÊNCIA 1 ──────────────────────────────────────────
+function EditDrawer({ sol, organizerId, organizerName, onClose, onSaved }) {
+  useEffect(() => { initFormConfig(); }, []);
+
+  const [form,setForm] = useState({ nomeEvento:sol.nomeEvento||"", dataEvento:sol.dataEvento||"", cidadeEvento:sol.cidadeEvento||"", localEvento:sol.localEvento||"", descricaoEvento:sol.descricaoEvento||"" });
+  const [ct,setCt]     = useState(() => {
+    const ex = sol.camposTecnicos||{};
+    if (Object.keys(ex).length>0) return {...ex};
+    return sol.tipo==="permit" ? defaultCamposTecnicosPermit() : defaultCamposTecnicosChancela();
+  });
+  const [errors,setErrors]     = useState({});
+  const [ctErrors,setCtErrors] = useState({});
+  const [saving,setSaving]     = useState(false);
+  const [globalErr,setGlobalErr]=useState("");
+
+  const setF = (k,v) => { setForm(f=>({...f,[k]:v})); setErrors(e=>({...e,[k]:""})); };
+  const setC = (k,v) => { setCt(c=>({...c,[k]:v})); setCtErrors(e=>({...e,[k]:""})); };
+  const addMod = () => setCt(c=>({...c,modalidades:[...(c.modalidades||[]),{id:novaModalidadeId(),distancia:"",estimativaInscritos:""}]}));
+  const remMod = (id) => setCt(c=>({...c,modalidades:(c.modalidades||[]).filter(m=>m.id!==id)}));
+  const setMod = (id,k,v) => setCt(c=>({...c,modalidades:(c.modalidades||[]).map(m=>m.id===id?{...m,[k]:v}:m)}));
+
+  const validate = () => {
+    const e={};
+    if (!form.nomeEvento.trim())   e.nomeEvento="Obrigatório.";
+    if (!form.dataEvento)          e.dataEvento="Obrigatório.";
+    if (!form.cidadeEvento.trim()) e.cidadeEvento="Obrigatório.";
+    if (!form.localEvento.trim())  e.localEvento="Obrigatório.";
+    return e;
+  };
+
+  const handleSave = async () => {
+    const e = validate(); if (Object.keys(e).length>0){ setErrors(e); return; }
+    setSaving(true); setGlobalErr("");
+    const r = await SolicitacoesService.update(sol.id,{...form, camposTecnicos:ct});
+    if (r.error){ setGlobalErr(r.error); setSaving(false); return; }
+    await MovimentacoesService.registrar({ solicitacaoId:sol.id, tipoEvento:"dados_alterados", statusAnterior:sol.status, statusNovo:sol.status, descricao:"Rascunho editado pelo organizador.", autor:"organizador", autorNome:organizerName, autorId:organizerId, visivel:true });
+    setSaving(false); onSaved();
+  };
+
+  useEffect(() => {
+    const h = (e) => { if (e.key==="Escape") onClose(); };
+    window.addEventListener("keydown",h);
+    document.body.style.overflow="hidden";
+    return () => { window.removeEventListener("keydown",h); document.body.style.overflow=""; };
+  },[onClose]);
+
+  const sections = getFieldsBySection(sol.tipo);
+  const mods     = ct.modalidades||[];
+
+  return (
+    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:1000, background:"rgba(0,0,0,0.5)", display:"flex", justifyContent:"flex-end" }}>
+      <div onClick={e=>e.stopPropagation()} style={{ width:"min(640px,100vw)", height:"100%", background:COLORS.offWhite, overflowY:"auto", display:"flex", flexDirection:"column", boxShadow:"-4px 0 32px rgba(0,0,0,0.18)" }}>
+
+        {/* Header drawer */}
+        <div style={{ background:"#0066cc", padding:"20px 24px", display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+          <div>
+            <div style={{ fontFamily:FONTS.heading, fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:1.5, color:"rgba(255,255,255,0.65)", marginBottom:4 }}>Editar rascunho</div>
+            <div style={{ fontFamily:FONTS.heading, fontSize:16, fontWeight:900, color:"#fff", textTransform:"uppercase" }}>{tipoMap[sol.tipo]?.icon} {tipoMap[sol.tipo]?.label}</div>
+          </div>
+          <button onClick={onClose} style={{ width:36, height:36, borderRadius:"50%", background:"rgba(255,255,255,0.2)", border:"none", color:"#fff", fontSize:18, cursor:"pointer" }}>✕</button>
+        </div>
+
+        {/* Corpo */}
+        <div style={{ padding:"20px 24px", flex:1 }}>
+          {globalErr && <div style={{ background:"#fff5f5", border:"1px solid #fca5a5", borderRadius:8, padding:"10px 14px", marginBottom:16, fontFamily:FONTS.body, fontSize:13, color:"#dc2626" }}>⚠️ {globalErr}</div>}
+
+          {/* Dados base */}
+          <div style={cardSty}>
+            <SecTitle>📋 Dados do evento</SecTitle>
+            <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+              <div><Lbl req>Nome do evento</Lbl><input value={form.nomeEvento} onChange={e=>setF("nomeEvento",e.target.value)} style={baseInp(!!errors.nomeEvento)}/>{errors.nomeEvento&&<Err msg={errors.nomeEvento}/>}</div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                <div><Lbl req>Data de realização</Lbl><input type="date" value={form.dataEvento} onChange={e=>setF("dataEvento",e.target.value)} style={baseInp(!!errors.dataEvento)}/>{errors.dataEvento&&<Err msg={errors.dataEvento}/>}</div>
+                <div><Lbl req>Município</Lbl><input value={form.cidadeEvento} onChange={e=>setF("cidadeEvento",e.target.value)} style={baseInp(!!errors.cidadeEvento)}/>{errors.cidadeEvento&&<Err msg={errors.cidadeEvento}/>}</div>
+              </div>
+              <div><Lbl req>Local de realização</Lbl><input value={form.localEvento} onChange={e=>setF("localEvento",e.target.value)} style={baseInp(!!errors.localEvento)}/>{errors.localEvento&&<Err msg={errors.localEvento}/>}</div>
+              <div><Lbl>Descrição</Lbl><textarea value={form.descricaoEvento} onChange={e=>setF("descricaoEvento",e.target.value)} rows={3} style={{...baseInp(),resize:"vertical"}}/></div>
+            </div>
+          </div>
+
+          {/* Modalidades */}
+          <div style={cardSty}>
+            <SecTitle>🏃 Modalidades / Distâncias</SecTitle>
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              {mods.map((m,i)=>(
+                <div key={m.id} style={{ display:"grid", gridTemplateColumns:"1fr 150px 36px", gap:10, alignItems:"flex-end" }}>
+                  <div>{i===0&&<Lbl req>Distância / Categoria</Lbl>}<input value={m.distancia} onChange={e=>setMod(m.id,"distancia",e.target.value)} placeholder="Ex: 10km, Sub-18" style={baseInp()}/></div>
+                  <div>{i===0&&<Lbl req>Estimativa</Lbl>}<input type="number" min="1" value={m.estimativaInscritos} onChange={e=>setMod(m.id,"estimativaInscritos",e.target.value)} placeholder="Qtd." style={baseInp()}/></div>
+                  <div style={{ paddingTop:i===0?22:0 }}>{mods.length>1&&<button onClick={()=>remMod(m.id)} style={{ width:36,height:36,borderRadius:8,border:"1px solid #fca5a5",background:"#fff5f5",color:"#dc2626",cursor:"pointer",fontSize:16 }}>×</button>}</div>
+                </div>
+              ))}
+            </div>
+            <button onClick={addMod} style={{ marginTop:12, padding:"7px 16px", borderRadius:8, border:"1.5px dashed #94a3b8", background:"#f8fafc", color:"#475569", cursor:"pointer", fontFamily:FONTS.heading, fontSize:12, fontWeight:700 }}>+ Adicionar modalidade</button>
+          </div>
+
+          {/* Campos técnicos dinâmicos */}
+          {sections.map(({sectionId,sectionTitle,fields})=>{
+            if (sectionId==="modalidades") return null;
+            const vis = fields.filter(f=>f.type!=="upload");
+            if (vis.length===0) return null;
+            return (
+              <div key={sectionId} style={cardSty}>
+                <SecTitle>{sectionTitle}</SecTitle>
+                <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                  {vis.map(f=><DynField key={f.id} field={f} value={ct[f.id]} ctValue={ct} error={ctErrors[f.id]} onChange={v=>setC(f.id,v)}/>)}
+                </div>
+              </div>
+            );
+          })}
+          <div style={{height:24}}/>
+        </div>
+
+        {/* Rodapé fixo */}
+        <div style={{ padding:"16px 24px", background:"#fff", borderTop:`1px solid ${COLORS.grayLight}`, display:"flex", gap:10, justifyContent:"flex-end", flexShrink:0 }}>
+          <button onClick={onClose} style={{ padding:"10px 18px", borderRadius:8, border:`1px solid ${COLORS.grayLight}`, background:"#fff", color:COLORS.grayDark, fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:"pointer" }}>Cancelar</button>
+          <button onClick={handleSave} disabled={saving} style={{ padding:"10px 22px", borderRadius:8, border:"none", background:saving?COLORS.gray:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:saving?"not-allowed":"pointer" }}>{saving?"Salvando...":"💾 Salvar alterações"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Banner evento público — PENDÊNCIA 2 ──────────────────────────────────────
+function EventoBanner({ eventoId }) {
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:14, background:"linear-gradient(90deg,#f0fdf4,#dcfce7)", border:"1.5px solid #86efac", borderRadius:12, padding:"14px 18px", marginBottom:20 }}>
+      <span style={{fontSize:32}}>🏟️</span>
+      <div style={{flex:1}}>
+        <div style={{ fontFamily:FONTS.heading, fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:1.5, color:"#15803d", marginBottom:2 }}>Evento publicado no calendário FMA</div>
+        <div style={{ fontFamily:FONTS.body, fontSize:13, color:"#166534" }}>Sua solicitação foi aprovada. O evento está disponível publicamente no site da FMA.</div>
+      </div>
+      <Link to={`/eventos/${eventoId}`} target="_blank" rel="noreferrer" style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"9px 18px", borderRadius:8, background:"#15803d", color:"#fff", fontFamily:FONTS.heading, fontSize:12, fontWeight:700, textDecoration:"none", textTransform:"uppercase", letterSpacing:0.5, flexShrink:0 }}>
+        Ver evento →
+      </Link>
+    </div>
+  );
+}
+
+// ─── Página principal ─────────────────────────────────────────────────────────
+export default function SolicitacaoDetalhe() {
+  const { id }                         = useParams();
+  const navigate                       = useNavigate();
+  const { organizerId, organizerName } = useOrganizer();
+
+  const [sol,           setSol]           = useState(null);
+  const [arquivos,      setArquivos]      = useState([]);
+  const [movimentacoes, setMovimentacoes] = useState([]);
+  const [pageStatus,    setPageStatus]    = useState("loading");
+  const [activeTab,     setActiveTab]     = useState("geral");
+  const [sendingStatus, setSendingStatus] = useState(false);
+  const [deleting,      setDeleting]      = useState(false);
+  const [editOpen,      setEditOpen]      = useState(false);
+
+  const load = useCallback(async () => {
+    const [sr,ar,mr] = await Promise.all([
+      SolicitacoesService.get(id),
+      ArquivosService.listBySolicitacao(id),
+      MovimentacoesService.listBySolicitacao(id),
+    ]);
+    if (sr.error || !sr.data || sr.data.organizerId !== organizerId) { setPageStatus("notfound"); return; }
+    setSol(sr.data); setArquivos(ar.data||[]); setMovimentacoes(mr.data||[]); setPageStatus("ok");
+  },[id,organizerId]);
+
+  useEffect(()=>{ load(); },[load]);
+
+  const handleEnviar = async () => {
+    if (!confirm("Confirmar envio para análise da FMA?")) return;
+    setSendingStatus(true);
+    await SolicitacoesService.enviar(id,organizerId,organizerName);
+    setSendingStatus(false); load();
+  };
+  const handleDelete = async () => {
+    if (!confirm("Excluir este rascunho? Ação irreversível.")) return;
+    setDeleting(true);
+    await SolicitacoesService.delete(id);
+    navigate("/portal/solicitacoes");
+  };
+
+  if (pageStatus==="loading") return <div style={{ padding:60, textAlign:"center", fontFamily:FONTS.body, color:COLORS.gray }}>⏳ Carregando...</div>;
+  if (pageStatus==="notfound") return <div style={{ padding:60, textAlign:"center" }}><div style={{fontSize:44,marginBottom:12}}>🔍</div><h2 style={{ fontFamily:FONTS.heading, fontSize:22, color:COLORS.primary, textTransform:"uppercase" }}>Solicitação não encontrada</h2><Link to="/portal/solicitacoes" style={{color:"#0066cc"}}>← Voltar</Link></div>;
+
+  const st        = statusMap[sol.status]||{ label:sol.status, color:COLORS.gray, bg:"#f3f4f6", icon:"📋" };
+  const tp        = tipoMap[sol.tipo]||{ label:sol.tipo, icon:"📋" };
+  const canUpload = !["concluida","indeferida"].includes(sol.status);
+  const canSend   = sol.status==="rascunho";
+  const canDelete = sol.status==="rascunho";
+  const canEdit   = sol.status==="rascunho";
+
+  const tabs = [
+    { id:"geral",     label:"Visão geral",                      icon:"📋" },
+    { id:"arquivos",  label:`Arquivos (${arquivos.length})`,     icon:"📎" },
+    { id:"historico", label:`Histórico (${movimentacoes.length})`,icon:"🕐" },
+  ];
+
+  return (
+    <>
+      {editOpen && <EditDrawer sol={sol} organizerId={organizerId} organizerName={organizerName} onClose={()=>setEditOpen(false)} onSaved={()=>{ setEditOpen(false); load(); }}/>}
+
+      <div style={{ padding:"36px 40px 60px", maxWidth:900 }}>
+        {/* Breadcrumb */}
+        <div style={{ fontFamily:FONTS.body, fontSize:12, color:COLORS.gray, marginBottom:16 }}>
+          <Link to="/portal" style={{color:COLORS.gray,textDecoration:"none"}}>Portal</Link>
+          {" / "}<Link to="/portal/solicitacoes" style={{color:COLORS.gray,textDecoration:"none"}}>Solicitações</Link>
+          {" / "}<span style={{color:COLORS.dark}}>{sol.nomeEvento?.slice(0,40)}…</span>
+        </div>
+
+        {/* Banner evento público — P2 */}
+        {sol.eventoCalendarioId && <EventoBanner eventoId={sol.eventoCalendarioId}/>}
+
+        {/* Header card */}
+        <div style={{ background:"#fff", borderRadius:14, padding:"24px 28px", boxShadow:"0 2px 12px rgba(0,0,0,0.07)", marginBottom:20, borderLeft:`5px solid ${st.color}` }}>
+          <div style={{ display:"flex", gap:10, marginBottom:12, flexWrap:"wrap" }}>
+            <StatusBadge status={sol.status} size="lg"/>
+            <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"6px 14px", borderRadius:20, fontSize:12, fontFamily:FONTS.heading, fontWeight:700, background:COLORS.grayLight, color:COLORS.grayDark }}>{tp.icon} {tp.label}</span>
+            {sol.protocoloFMA ? (
+              <span style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:20, fontSize:13, fontFamily:FONTS.heading, fontWeight:800, background:"#f0fdf4", color:"#15803d", border:"1.5px solid #86efac" }}>🔖 {sol.protocoloFMA}</span>
+            ) : (
+              ["em_analise","pendencia","aprovada","indeferida","concluida"].includes(sol.status)?null:(
+                <span style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:20, fontSize:11, fontFamily:FONTS.body, color:"#92400e", background:"#fffbeb", border:"1px dashed #fcd34d" }}>⏳ Protocolo pendente</span>
+              )
+            )}
+          </div>
+          <h1 style={{ fontFamily:FONTS.heading, fontSize:"clamp(1.3rem,3vw,1.9rem)", fontWeight:900, color:COLORS.dark, margin:"0 0 8px", textTransform:"uppercase", lineHeight:1.2 }}>{sol.nomeEvento}</h1>
+          <div style={{ fontFamily:FONTS.body, fontSize:13, color:COLORS.gray, marginBottom:sol.parecerFMA?16:0 }}>
+            📍 {sol.cidadeEvento} · 📅 {sol.dataEvento?new Date(sol.dataEvento+"T12:00:00").toLocaleDateString("pt-BR"):"—"} · Criado em {fmt(sol.criadoEm)}
+          </div>
+          {sol.parecerFMA && (
+            <div style={{ background:`${st.color}08`, borderLeft:`3px solid ${st.color}`, borderRadius:"0 8px 8px 0", padding:"12px 16px" }}>
+              <div style={{ fontFamily:FONTS.heading, fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:1, color:st.color, marginBottom:4 }}>🏛️ Manifestação da FMA</div>
+              <div style={{ fontFamily:FONTS.body, fontSize:13, color:COLORS.dark, lineHeight:1.6 }}>{sol.parecerFMA}</div>
+            </div>
+          )}
+          {/* Ações */}
+          <div style={{ display:"flex", gap:10, marginTop:16, flexWrap:"wrap" }}>
+            {canSend && <button onClick={handleEnviar} disabled={sendingStatus} style={{ padding:"10px 20px", borderRadius:8, border:"none", background:sendingStatus?COLORS.gray:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:sendingStatus?"not-allowed":"pointer" }}>{sendingStatus?"Enviando...":"📤 Enviar para análise"}</button>}
+            {/* P1 — botão editar rascunho */}
+            {canEdit && <button onClick={()=>setEditOpen(true)} style={{ padding:"10px 18px", borderRadius:8, border:"1.5px solid #bfdbfe", background:"#eff6ff", color:"#0066cc", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:"pointer" }}>✏️ Editar rascunho</button>}
+            {canDelete && <button onClick={handleDelete} disabled={deleting} style={{ padding:"10px 18px", borderRadius:8, border:"1px solid #fca5a5", background:"#fff", color:"#dc2626", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:deleting?"not-allowed":"pointer" }}>{deleting?"Excluindo...":"🗑️ Excluir rascunho"}</button>}
+          </div>
+        </div>
+
+        {/* Abas */}
+        <div style={{ display:"flex", background:"#fff", borderRadius:10, border:`1px solid ${COLORS.grayLight}`, overflow:"hidden", marginBottom:20 }}>
+          {tabs.map((tab,i)=>(
+            <button key={tab.id} onClick={()=>setActiveTab(tab.id)} style={{ flex:1, padding:"13px 16px", background:activeTab===tab.id?"#0f172a":"#fff", border:"none", borderRight:i<tabs.length-1?`1px solid ${COLORS.grayLight}`:"none", color:activeTab===tab.id?"#fff":COLORS.gray, fontFamily:FONTS.heading, fontSize:12, fontWeight:700, cursor:"pointer", textTransform:"uppercase", letterSpacing:0.5, transition:"all 0.15s" }}>
+              {tab.icon} {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Aba: Visão geral */}
+        {activeTab==="geral" && (
+          <div style={{ background:"#fff", borderRadius:12, padding:"24px 28px", boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}>
+            <h3 style={{ fontFamily:FONTS.heading, fontSize:12, fontWeight:800, textTransform:"uppercase", letterSpacing:2, color:COLORS.dark, margin:"0 0 20px", paddingBottom:10, borderBottom:`2px solid ${COLORS.grayLight}` }}>Dados do evento</h3>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:18 }}>
+              {[
+                { label:"Nome do evento",        value:sol.nomeEvento, full:true },
+                { label:"Tipo de solicitação",   value:`${tp.icon} ${tp.label}` },
+                { label:"Data do evento",         value:sol.dataEvento?new Date(sol.dataEvento+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long",year:"numeric"}):"—" },
+                { label:"Cidade",                 value:sol.cidadeEvento||"—" },
+                { label:"Local de realização",    value:sol.localEvento||"—", full:true },
+                { label:"Descrição",              value:sol.descricaoEvento||"—", full:true },
+              ].map((f,i)=>(
+                <div key={i} style={{ gridColumn:f.full?"1/-1":undefined }}>
+                  <div style={{ fontFamily:FONTS.heading, fontSize:10, fontWeight:800, textTransform:"uppercase", letterSpacing:1.5, color:COLORS.gray, marginBottom:5 }}>{f.label}</div>
+                  <div style={{ fontFamily:FONTS.body, fontSize:14, color:COLORS.dark }}>{f.value}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{marginTop:28}}>
+              <div style={{ fontFamily:FONTS.heading, fontSize:10, fontWeight:800, textTransform:"uppercase", letterSpacing:1.5, color:COLORS.gray, marginBottom:12 }}>Ciclo de vida</div>
+              <div style={{ display:"flex", gap:16, flexWrap:"wrap" }}>
+                {[{label:"Criada em",val:sol.criadoEm},{label:"Enviada em",val:sol.enviadoEm},{label:"Em análise desde",val:sol.analisadoEm},{label:"Encerrada em",val:sol.encerradoEm}].filter(d=>d.val).map(d=>(
+                  <div key={d.label} style={{ padding:"8px 14px", background:COLORS.offWhite, borderRadius:8, border:`1px solid ${COLORS.grayLight}` }}>
+                    <div style={{ fontFamily:FONTS.heading, fontSize:9, fontWeight:800, textTransform:"uppercase", letterSpacing:1, color:COLORS.gray }}>{d.label}</div>
+                    <div style={{ fontFamily:FONTS.body, fontSize:12, color:COLORS.dark, marginTop:2 }}>{fmtDT(d.val)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Aba: Arquivos */}
+        {activeTab==="arquivos" && (
+          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+            {canUpload && <ArquivoUploader solicitacaoId={id} organizerId={organizerId} organizerName={organizerName} onUploaded={load}/>}
+            {arquivos.length===0 ? (
+              <div style={{ background:"#fff", borderRadius:12, padding:"40px 24px", textAlign:"center", boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}>
+                <div style={{fontSize:40,marginBottom:10}}>📭</div>
+                <div style={{ fontFamily:FONTS.heading, fontSize:16, fontWeight:800, textTransform:"uppercase", color:COLORS.dark }}>Nenhum arquivo enviado</div>
+                <p style={{ fontFamily:FONTS.body, fontSize:13, color:COLORS.gray, marginTop:6 }}>{canUpload?"Use o formulário acima para enviar documentos.":"Não há arquivos nesta solicitação."}</p>
+              </div>
+            ) : (
+              <div style={{ background:"#fff", borderRadius:12, boxShadow:"0 2px 12px rgba(0,0,0,0.06)", overflow:"hidden" }}>
+                <div style={{ padding:"16px 20px", borderBottom:`1px solid ${COLORS.grayLight}`, fontFamily:FONTS.heading, fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:1.5, color:COLORS.dark }}>{arquivos.length} arquivo{arquivos.length>1?"s":""}</div>
+                {arquivos.map((arq,i)=>{
+                  const cat=arquivoCatMap[arq.categoria]||{label:arq.categoria,icon:"📎",color:COLORS.gray};
+                  const isFMA=arq.enviadoPor==="fma";
+                  return (
+                    <div key={arq.id} style={{ padding:"14px 20px", background:isFMA?"#eff6ff":"#fff", borderBottom:i<arquivos.length-1?`1px solid ${COLORS.grayLight}`:"none", display:"flex", justifyContent:"space-between", alignItems:"center", gap:16 }}>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:4 }}>
+                          <span style={{fontSize:20}}>{arq.tipo?.includes("pdf")?"📄":arq.tipo?.includes("image")?"🖼️":"📎"}</span>
+                          <span style={{ fontFamily:FONTS.heading, fontSize:14, fontWeight:700, color:COLORS.dark, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{arq.nome}</span>
+                          <span style={{ padding:"2px 8px", borderRadius:20, fontSize:10, fontFamily:FONTS.heading, fontWeight:700, background:`${cat.color}15`, color:cat.color }}>{cat.icon} {cat.label}</span>
+                          {isFMA&&<span style={{ padding:"2px 8px", borderRadius:20, fontSize:10, fontFamily:FONTS.heading, fontWeight:700, background:"#eff6ff", color:"#0066cc" }}>🏛️ FMA</span>}
+                        </div>
+                        <div style={{ fontFamily:FONTS.body, fontSize:12, color:COLORS.gray, paddingLeft:28 }}>{arq.descricao} · {fmtSize(arq.tamanho)} · {fmtDT(arq.uploadedAt)}</div>
+                      </div>
+                      <div style={{ display:"flex", gap:8, flexShrink:0 }}>
+                        {arq.dataUrl&&<a href={arq.dataUrl} download={arq.nome} style={{ padding:"6px 14px", borderRadius:7, background:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:11, fontWeight:700, textDecoration:"none" }}>⬇️ Baixar</a>}
+                        {!isFMA&&canUpload&&<button onClick={async()=>{ if(!confirm(`Remover "${arq.nome}"?`))return; await ArquivosService.delete(arq.id); load(); }} style={{ padding:"6px 10px", borderRadius:7, border:"1px solid #fca5a5", background:"#fff", color:"#dc2626", fontFamily:FONTS.heading, fontSize:11, fontWeight:700, cursor:"pointer" }}>✕</button>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Aba: Histórico */}
+        {activeTab==="historico" && (
+          <div style={{ background:"#fff", borderRadius:12, padding:"24px 28px", boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}>
+            {movimentacoes.length===0 ? (
+              <div style={{ textAlign:"center", padding:"30px 0" }}>
+                <div style={{fontSize:36,marginBottom:10}}>📜</div>
+                <div style={{ fontFamily:FONTS.heading, fontSize:14, fontWeight:800, textTransform:"uppercase", color:COLORS.dark }}>Nenhuma movimentação</div>
+              </div>
+            ) : (
+              <div style={{display:"flex",flexDirection:"column"}}>
+                {movimentacoes.map((mov,i)=><TimelineItem key={mov.id} mov={mov} isLast={i===movimentacoes.length-1}/>)}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
