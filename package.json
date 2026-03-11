@@ -1,3 +1,4 @@
+PS C:\FMA> cat package.json
 {
   "name": "fma",
   "private": true,
@@ -18,3 +19,4 @@
     "vite": "^5.4.21"
   }
 }
+PS C:\FMA>
