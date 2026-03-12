@@ -28,6 +28,7 @@ import {
   CalendarService,
 } from "../../services/index";
 import { normalizarCamposTecnicos, totalEstimativaInscritos, modalidadesLabel } from "../../utils/permitDefaults";
+import { notificarStatusSolicitacao } from "../../services/emailService";
 
 // ── Constantes e helpers ──────────────────────────────────────────────────────
 const statusMap = Object.fromEntries(SOLICITACAO_STATUS.map(s => [s.value, s]));
@@ -368,6 +369,17 @@ export function SolicitacaoEditor() {
         autorId: "admin",
         visivel: true,
       });
+      // Notificar organizador por email
+      if (sol.organizadorEmail || sol.organizerEmail) {
+        notificarStatusSolicitacao({
+          organizadorEmail: sol.organizadorEmail || sol.organizerEmail,
+          organizadorNome:  sol.organizadorNome  || sol.organizerName || "Organizador",
+          protocolo:        rStatus.data?.protocoloFMA || sol.protocoloFMA || sol.id,
+          evento:           sol.titulo || sol.title || "Evento",
+          status:           novoStatus,
+          observacao:       analise.parecerFMA || "",
+        }).catch(e => console.warn("Email solicitação:", e));
+      }
     }
 
     flash(`Análise salva com sucesso.${protocoloNovoMensagem}`, "ok");

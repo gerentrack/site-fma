@@ -239,7 +239,7 @@ export function IntranetRefereeEditor() {
               <input value={form.city} onChange={e => set("city", e.target.value)} placeholder="Belo Horizonte" style={inp()} />
             </div>
             <div>
-              {label("Categoria de arbitragem")}
+              {label("Categoria de Árbitro")}
               <select value={form.category} onChange={e => set("category", e.target.value)} style={sel()}>
                 {REFEREE_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>

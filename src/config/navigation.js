@@ -201,11 +201,10 @@ export const REFEREE_CONTENT_CATEGORIES = [
 ];
 
 export const REFEREE_CATEGORIES = [
-  { value: "corrida-rua",  label: "Corrida de Rua",  color: "#cc0000" },
-  { value: "pista-campo",  label: "Pista e Campo",   color: "#0066cc" },
-  { value: "trail",        label: "Trail Run",        color: "#007733" },
-  { value: "marcha",       label: "Marcha Atlética", color: "#884400" },
-  { value: "todos",        label: "Todas as Provas", color: "#6b7280" },
+  { value: "A",   label: "A",   color: "#cc0000" },
+  { value: "B",   label: "B",   color: "#0066cc" },
+  { value: "C",   label: "C",   color: "#007733" },
+  { value: "NAR", label: "NAR", color: "#884400" },
 ];
 
 export const REFEREE_ROLES = [

@@ -222,6 +222,11 @@ export const galleryAPI = {
     const items = await readCol("gallery");
     return ok([...new Set(items.filter(g=>g.published).map(g=>g.category).filter(Boolean))].sort());
   },
+  remove: async (id) => { await removeDoc("gallery", id); return ok(true); },
+  setActive: async (id, active) => {
+    const item = await patchDoc("gallery", id, { published: active });
+    return item ? ok(item) : err("Não encontrado.");
+  },
 };
 
 export const calendarAPI = {
@@ -246,6 +251,20 @@ export const calendarAPI = {
   getCities: async () => {
     const items=await readCol("calendar");
     return ok([...new Set(items.filter(e=>e.published).map(e=>e.city).filter(Boolean))].sort());
+  },
+  getCategories: async () => {
+    const items = await readCol("calendar");
+    const cats = [...new Set(items.map(e=>e.category).filter(Boolean))].sort();
+    return ok(cats);
+  },
+  setActive: async (id, active) => {
+    const item = await patchDoc("calendar", id, { published: active });
+    return item ? ok(item) : err("Não encontrado.");
+  },
+  remove: async (id) => { await removeDoc("calendar", id); return ok(true); },
+  upload: async (id, fileData) => {
+    const item = await patchDoc("calendar", id, { arquivo: fileData });
+    return item ? ok(item) : err("Não encontrado.");
   },
 };
 
@@ -479,6 +498,11 @@ export const refereesAPI = {
   },
   delete:         async (id)      => { await removeDoc("referees",id); return ok(true); },
   updatePassword: async (id,pass) => { await patchDoc("referees",id,{password:pass}); return ok(true); },
+  findByEmail:    async (email)   => {
+    const all = await readCol("referees");
+    const item = all.find(r => r.email === email);
+    return item ? ok(item) : err("Não encontrado.");
+  },
 };
 
 export const refereeEventsAPI = {
@@ -493,6 +517,38 @@ export const refereeEventsAPI = {
   create: async (data)    => { const item=await createDoc("refereeEvents",data); return ok(item); },
   update: async (id,data) => { const item=await patchDoc("refereeEvents",id,data); return item?ok(item):err("Não encontrado."); },
   delete: async (id)      => { await removeDoc("refereeEvents",id); return ok(true); },
+  importFromCalendar: async (calendarEventId) => {
+    const cal = await readDoc("calendar", calendarEventId);
+    if (!cal) return err("Evento do calendário não encontrado.");
+    // Check if already imported
+    const all = await readCol("refereeEvents");
+    const existing = all.find(e => e.calendarRef === calendarEventId);
+    if (existing) return ok(existing);
+    const item = await createDoc("refereeEvents", {
+      title: cal.title,
+      date: cal.date,
+      city: cal.city,
+      location: cal.location || "",
+      category: cal.category || "",
+      organizer: cal.organizer || "",
+      refereesNeeded: 3,
+      status: "aberto",
+      source: "calendar",
+      calendarRef: calendarEventId,
+      notes: cal.description || "",
+    });
+    return ok(item);
+  },
+  getAnos: async () => {
+    const items = await readCol("refereeEvents");
+    const anos = [...new Set(items.map(e => e.date?.slice(0,4)).filter(Boolean))].sort().reverse();
+    return ok(anos);
+  },
+  getCidades: async () => {
+    const items = await readCol("refereeEvents");
+    const cidades = [...new Set(items.map(e => e.city).filter(Boolean))].sort();
+    return ok(cidades);
+  },
 };
 
 export const refereeAvailabilityAPI = {
@@ -505,9 +561,42 @@ export const refereeAvailabilityAPI = {
   create: async (data)    => { const item=await createDoc("refereeAvailability",data); return ok(item); },
   update: async (id,data) => { const item=await patchDoc("refereeAvailability",id,data); return item?ok(item):err("Não encontrado."); },
   delete: async (id)      => { await removeDoc("refereeAvailability",id); return ok(true); },
+  setAvailability: async (data) => {
+    const all = await readCol("refereeAvailability");
+    const existing = all.find(a => a.refereeId === data.refereeId && a.eventId === data.eventId);
+    if (existing) {
+      const item = await patchDoc("refereeAvailability", existing.id, data);
+      return ok(item);
+    }
+    const item = await createDoc("refereeAvailability", data);
+    return ok(item);
+  },
+  getAvailableForEvent: async (eventId) => {
+    const all = await readCol("refereeAvailability");
+    const avail = all.filter(a => a.eventId === eventId && a.available !== false);
+    return ok(avail);
+  },
+  getForEvent: async (eventId) => {
+    const all = await readCol("refereeAvailability");
+    return ok(all.filter(a => a.eventId === eventId));
+  },
 };
 
 export const refereeAssignmentsAPI = {
+  getByEvent: async (eventId) => {
+    let items = await readCol("refereeAssignments");
+    items = items.filter(a => a.eventId === eventId);
+    return ok(items);
+  },
+  getByReferee: async (refereeId) => {
+    let items = await readCol("refereeAssignments");
+    items = items.filter(a => a.refereeId === refereeId);
+    return ok(items);
+  },
+  assign: async (data) => {
+    const item = await createDoc("refereeAssignments", data);
+    return ok(item);
+  },
   list: async ({ refereeId=null, eventId=null, status=null }={}) => {
     let items=await readCol("refereeAssignments");
     if (refereeId) items=items.filter(a=>a.refereeId===refereeId);
@@ -528,7 +617,8 @@ export const organizerAuthAPI = {
       const profile = await readDoc("users", cred.user.uid);
       if (!profile || profile.role !== "organizer") { await signOut(auth); return err("Acesso restrito ao portal de organizadores."); }
       const org = await readDoc("organizers", profile.refId);
-      if (!org || org.status !== "ativo") { await signOut(auth); return err("Conta inativa ou não encontrada."); }
+      const orgAtivo = org && (org.status === "ativo" || org.active === true);
+      if (!orgAtivo) { await signOut(auth); return err("Conta inativa ou não encontrada."); }
       const session = { organizerId: org.id, uid: cred.user.uid, email: org.email, name: org.name, loginAt: now() };
       const { password: _, ...safe } = org;
       return ok({ session, organizer: safe });
@@ -620,6 +710,10 @@ export const solicitacoesAPI = {
     const item=await patchDoc("solicitacoes",id,{status,...extra});
     return item?ok(item):err("Não encontrado.");
   },
+  changeStatus: async (id, status, extra={}) => {
+    const item=await patchDoc("solicitacoes",id,{status,...extra});
+    return item?ok(item):err("Não encontrado.");
+  },
   getStats: async () => {
     const items=await readCol("solicitacoes");
     return ok({
@@ -631,9 +725,35 @@ export const solicitacoesAPI = {
       rejeitado: items.filter(s=>s.status==="rejeitado").length,
     });
   },
+  countByStatus: async () => {
+    const items = await readCol("solicitacoes");
+    const counts = {};
+    items.forEach(s => { counts[s.status] = (counts[s.status] || 0) + 1; });
+    return ok(counts);
+  },
+  vincularEvento: async (id, eventoId, eventoTitulo, status) => {
+    const item = await patchDoc("solicitacoes", id, { eventoId, eventoTitulo, eventoVinculado: { id: eventoId, title: eventoTitulo } });
+    return item ? ok(item) : err("Não encontrado.");
+  },
+  desvincularEvento: async (id) => {
+    const item = await patchDoc("solicitacoes", id, { eventoId: null, eventoTitulo: null, eventoVinculado: null });
+    return item ? ok(item) : err("Não encontrado.");
+  },
+  importFromCalendar: async (solId, calendarEventId) => {
+    const cal = await readDoc("calendar", calendarEventId);
+    if (!cal) return err("Evento não encontrado.");
+    const item = await patchDoc("solicitacoes", solId, { eventoId: calendarEventId, eventoTitulo: cal.title, eventoVinculado: cal });
+    return item ? ok(item) : err("Não encontrado.");
+  },
 };
 
 export const solicitacaoArquivosAPI = {
+  listBySolicitacao: async (id) => {
+    let items = await readCol("solicitacaoArquivos");
+    items = items.filter(a => a.solicitacaoId === id);
+    items.sort((a,b) => new Date(b.enviadoEm||b.createdAt) - new Date(a.enviadoEm||a.createdAt));
+    return { data: items, error: null };
+  },
   list: async ({ solicitacaoId }={}) => {
     let items=await readCol("solicitacaoArquivos");
     if (solicitacaoId) items=items.filter(a=>a.solicitacaoId===solicitacaoId);
@@ -645,6 +765,17 @@ export const solicitacaoArquivosAPI = {
 };
 
 export const movimentacoesAPI = {
+  listBySolicitacao: async (id, opts={}) => {
+    let items = await readCol("movimentacoes");
+    items = items.filter(m => m.solicitacaoId === id);
+    if (opts.visivel !== undefined && opts.visivel !== null) items = items.filter(m => m.visivel === opts.visivel);
+    items.sort((a,b) => new Date(a.criadoEm||a.createdAt) - new Date(b.criadoEm||b.createdAt));
+    return { data: items, error: null };
+  },
+  registrar: async (data) => {
+    const item = await createDoc("movimentacoes", { ...data, criadoEm: now() });
+    return { data: item, error: null };
+  },
   list: async ({ solicitacaoId, visivel=null }={}) => {
     let items=await readCol("movimentacoes");
     if (solicitacaoId)   items=items.filter(m=>m.solicitacaoId===solicitacaoId);

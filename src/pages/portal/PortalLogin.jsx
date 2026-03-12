@@ -24,10 +24,8 @@ export default function PortalLogin() {
   const [showPass, setShowPass] = useState(false);
 
   useEffect(() => {
-    useEffect(() => {
     if (isAuthenticated) navigate(from, { replace: true });
   }, [isAuthenticated, navigate, from]);
-  }, [isAuthenticated, from, navigate]);
 
   const inp = (extra = {}) => ({
     width: "100%", padding: "12px 14px", borderRadius: 8,
@@ -138,8 +136,8 @@ export default function PortalLogin() {
             🔐 Credenciais de demonstração
           </div>
           <div style={{ color: "rgba(255,255,255,0.7)" }}>
-            <div>joao@correiasports.com.br / joao123</div>
-            <div>contato@atleticamineira.com.br / atletica123</div>
+            <div>joao@correiasports.com.br / FMA16681</div>
+            <div>contato@atleticamineira.com.br / FMA16681</div>
           </div>
         </div>
 

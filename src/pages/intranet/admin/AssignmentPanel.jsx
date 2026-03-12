@@ -13,6 +13,7 @@ import {
   RefereesService,
 } from "../../../services/index";
 import { COLORS, FONTS } from "../../../styles/colors";
+import { notificarEscalacaoArbitro } from "../../../services/emailService";
 import { CALENDAR_CATEGORIES, REFEREE_FUNCTIONS } from "../../../config/navigation";
 
 const catMap = Object.fromEntries((CALENDAR_CATEGORIES || []).filter(c => c.value).map(c => [c.value, c]));
@@ -164,6 +165,22 @@ export function AssignmentEditor() {
   const assign = async (refereeId, refFn) => {
     setSaving(refereeId);
     await RefereeAssignmentsService.assign({ eventId, refereeId, refereeFunction: refFn, status: "confirmado" });
+    // Notificar árbitro por email
+    const referee = [...available, ...allRefs].find(r => r.id === refereeId);
+    if (referee?.email && event) {
+      const dataFormatada = event.date
+        ? new Date(event.date + "T12:00:00").toLocaleDateString("pt-BR")
+        : "A confirmar";
+      notificarEscalacaoArbitro({
+        arbitroEmail: referee.email,
+        arbitroNome:  referee.name,
+        evento:       event.title,
+        data:         dataFormatada,
+        local:        event.city || event.location || "A confirmar",
+        funcao:       refFn,
+        observacao:   event.description || "",
+      }).catch(e => console.warn("Email escalação:", e));
+    }
     await load();
     setSaving(null);
   };
