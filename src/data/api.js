@@ -9,7 +9,13 @@ import {
   updateDoc, deleteDoc, writeBatch,
 } from "firebase/firestore";
 
-import { db } from "../firebase";
+import {
+  signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword,
+  updatePassword as fbUpdatePassword,
+  EmailAuthProvider, reauthenticateWithCredential, onAuthStateChanged,
+} from "firebase/auth";
+
+import { db, auth } from "../firebase";
 import { garantirProtocolo } from "../utils/protocolo";
 
 import {
@@ -24,12 +30,6 @@ import {
   SEED_SOLICITACAO_ARQUIVOS, SEED_MOVIMENTACOES,
   SEED_RESULTADOS, SEED_EQUIPES,
 } from "./mockData";
-
-const SESSION_KEYS = {
-  authToken:        "fma_auth_token",
-  intranetSession:  "fma_intranet_session",
-  organizerSession: "fma_organizer_session",
-};
 
 function ok(data)  { return { data, error: null }; }
 function err(msg)  { return { data: null, error: msg }; }
@@ -82,6 +82,18 @@ async function seedSingleDoc(colName, docId, data) {
   if (!snap.exists()) await setDoc(ref, data);
 }
 
+async function seedAuthUser(email, password, firestoreData) {
+  const usersSnap = await getDocs(collection(db, "users"));
+  if (usersSnap.docs.some(d => d.data().email === email)) return;
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    await setDoc(doc(db, "users", cred.user.uid), { uid: cred.user.uid, email, ...firestoreData, createdAt: now() });
+    await signOut(auth);
+  } catch (e) {
+    if (e.code !== "auth/email-already-in-use") console.warn("seedAuthUser:", e.message);
+  }
+}
+
 export async function initializeData() {
   await Promise.all([
     seedCollection("news",                   SEED_NEWS),
@@ -108,28 +120,42 @@ export async function initializeData() {
     seedSingleDoc("config", "athleteContent", Array.isArray(SEED_ATHLETE_CONTENT) ? { items: SEED_ATHLETE_CONTENT } : SEED_ATHLETE_CONTENT),
     seedSingleDoc("config", "refereeContent", Array.isArray(SEED_REFEREE_CONTENT) ? { items: SEED_REFEREE_CONTENT } : SEED_REFEREE_CONTENT),
   ]);
+  await seedAuthUser(SEED_ADMIN_USER.email, SEED_ADMIN_USER.password, { role: "admin", name: SEED_ADMIN_USER.name, refId: SEED_ADMIN_USER.id });
+  for (const r of SEED_REFEREES) await seedAuthUser(r.email, r.password, { role: "referee", name: r.name, refId: r.id });
+  for (const o of SEED_ORGANIZERS) await seedAuthUser(o.email, o.password, { role: "organizer", name: o.name, refId: o.id });
 }
 
 export const authAPI = {
   login: async ({ email, password }) => {
-    const user = await readDoc("config", "adminUser");
-    if (!user) return err("Usuário admin não encontrado.");
-    if (user.email === email && user.password === password) {
-      const token = btoa(`${email}:${Date.now()}`);
-      localStorage.setItem(SESSION_KEYS.authToken, token);
-      return ok({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+    try {
+      const cred    = await signInWithEmailAndPassword(auth, email, password);
+      const profile = await readDoc("users", cred.user.uid);
+      if (!profile) return err("Perfil não encontrado.");
+      if (profile.role !== "admin") { await signOut(auth); return err("Acesso restrito ao painel admin."); }
+      return ok({ user: { id: profile.refId, uid: cred.user.uid, name: profile.name, email: profile.email, role: profile.role } });
+    } catch (e) {
+      if (["auth/invalid-credential","auth/wrong-password","auth/user-not-found"].includes(e.code)) return err("Credenciais inválidas.");
+      return err(e.message);
     }
-    return err("Credenciais inválidas.");
   },
-  logout:   async () => { localStorage.removeItem(SESSION_KEYS.authToken); return ok(true); },
-  check:    ()       => !!localStorage.getItem(SESSION_KEYS.authToken),
-  getUser:  async () => {
-    const u = await readDoc("config", "adminUser");
-    return u ? { id: u.id, name: u.name, email: u.email, role: u.role } : null;
+  logout:  async () => { await signOut(auth); return ok(true); },
+  check:   ()       => !!auth.currentUser,
+  getUser: async () => {
+    const u = auth.currentUser;
+    if (!u) return null;
+    const profile = await readDoc("users", u.uid);
+    return profile ? { id: profile.refId, uid: u.uid, name: profile.name, email: profile.email, role: profile.role } : null;
   },
-  updatePassword: async (newPassword) => {
-    await patchDoc("config", "adminUser", { password: newPassword });
-    return ok(true);
+  onAuthStateChange: (callback) => onAuthStateChanged(auth, callback),
+  updatePassword: async (currentPassword, newPassword) => {
+    const u = auth.currentUser;
+    if (!u) return err("Não autenticado.");
+    try {
+      const cred = EmailAuthProvider.credential(u.email, currentPassword);
+      await reauthenticateWithCredential(u, cred);
+      await fbUpdatePassword(u, newPassword);
+      return ok(true);
+    } catch (e) { return err(e.message); }
   },
 };
 
@@ -395,17 +421,32 @@ export const refereeContentAPI = {
 
 export const intranetAuthAPI = {
   login: async ({ email, password }) => {
-    const referees=await readCol("referees");
-    const referee=referees.find(r=>r.email===email&&r.password===password&&r.status==="ativo");
-    if (!referee) return err("Credenciais inválidas ou árbitro inativo.");
-    const session={refereeId:referee.id,email:referee.email,name:referee.name,role:referee.role,loginAt:now()};
-    localStorage.setItem(SESSION_KEYS.intranetSession,JSON.stringify(session));
-    const {password:_,...safe}=referee;
-    return ok({session,referee:safe});
+    try {
+      const cred    = await signInWithEmailAndPassword(auth, email, password);
+      const profile = await readDoc("users", cred.user.uid);
+      if (!profile || profile.role !== "referee") { await signOut(auth); return err("Acesso restrito à intranet de árbitros."); }
+      const referee = await readDoc("referees", profile.refId);
+      if (!referee || referee.status !== "ativo") { await signOut(auth); return err("Árbitro inativo ou não encontrado."); }
+      const session = { refereeId: referee.id, uid: cred.user.uid, email: referee.email, name: referee.name, role: referee.role, loginAt: now() };
+      const { password: _, ...safe } = referee;
+      return ok({ session, referee: safe });
+    } catch (e) {
+      if (["auth/invalid-credential","auth/wrong-password","auth/user-not-found"].includes(e.code)) return err("Credenciais inválidas.");
+      return err(e.message);
+    }
   },
-  logout:     async () => { localStorage.removeItem(SESSION_KEYS.intranetSession); return ok(true); },
-  check:      ()       => { try{const s=JSON.parse(localStorage.getItem(SESSION_KEYS.intranetSession));return s?.refereeId?s:null;}catch{return null;} },
-  getSession: ()       => { try{return JSON.parse(localStorage.getItem(SESSION_KEYS.intranetSession));}catch{return null;} },
+  logout:            async () => { await signOut(auth); return ok(true); },
+  check:             ()       => auth.currentUser ? { uid: auth.currentUser.uid } : null,
+  getSession:        async () => {
+    const u = auth.currentUser;
+    if (!u) return null;
+    const profile = await readDoc("users", u.uid);
+    if (!profile || profile.role !== "referee") return null;
+    const referee = await readDoc("referees", profile.refId);
+    if (!referee) return null;
+    return { refereeId: referee.id, uid: u.uid, email: referee.email, name: referee.name, role: referee.role };
+  },
+  onAuthStateChange: (callback) => onAuthStateChanged(auth, callback),
 };
 
 export const refereesAPI = {
@@ -482,23 +523,47 @@ export const refereeAssignmentsAPI = {
 
 export const organizerAuthAPI = {
   login: async ({ email, password }) => {
-    const organizers=await readCol("organizers");
-    const org=organizers.find(o=>o.email===email&&o.password===password&&o.status==="ativo");
-    if (!org) return err("Credenciais inválidas ou conta inativa.");
-    const session={organizerId:org.id,email:org.email,name:org.name,loginAt:now()};
-    localStorage.setItem(SESSION_KEYS.organizerSession,JSON.stringify(session));
-    const {password:_,...safe}=org;
-    return ok({session,organizer:safe});
+    try {
+      const cred    = await signInWithEmailAndPassword(auth, email, password);
+      const profile = await readDoc("users", cred.user.uid);
+      if (!profile || profile.role !== "organizer") { await signOut(auth); return err("Acesso restrito ao portal de organizadores."); }
+      const org = await readDoc("organizers", profile.refId);
+      if (!org || org.status !== "ativo") { await signOut(auth); return err("Conta inativa ou não encontrada."); }
+      const session = { organizerId: org.id, uid: cred.user.uid, email: org.email, name: org.name, loginAt: now() };
+      const { password: _, ...safe } = org;
+      return ok({ session, organizer: safe });
+    } catch (e) {
+      if (["auth/invalid-credential","auth/wrong-password","auth/user-not-found"].includes(e.code)) return err("Credenciais inválidas.");
+      return err(e.message);
+    }
   },
-  logout:     async () => { localStorage.removeItem(SESSION_KEYS.organizerSession); return ok(true); },
-  check:      ()       => { try{const s=JSON.parse(localStorage.getItem(SESSION_KEYS.organizerSession));return s?.organizerId?s:null;}catch{return null;} },
-  getSession: ()       => { try{return JSON.parse(localStorage.getItem(SESSION_KEYS.organizerSession));}catch{return null;} },
+  logout:            async () => { await signOut(auth); return ok(true); },
+  check:             ()       => auth.currentUser ? { uid: auth.currentUser.uid } : null,
+  getSession:        async () => {
+    const u = auth.currentUser;
+    if (!u) return null;
+    const profile = await readDoc("users", u.uid);
+    if (!profile || profile.role !== "organizer") return null;
+    const org = await readDoc("organizers", profile.refId);
+    if (!org) return null;
+    return { organizerId: org.id, uid: u.uid, email: org.email, name: org.name };
+  },
+  onAuthStateChange: (callback) => onAuthStateChanged(auth, callback),
   register: async (data) => {
-    const all=await readCol("organizers");
-    if (all.find(o=>o.email===data.email)) return err("E-mail já cadastrado.");
-    const item=await createDoc("organizers",{...data,status:"pendente"});
-    const {password:_,...safe}=item;
-    return ok(safe);
+    const all = await readCol("organizers");
+    if (all.find(o => o.email === data.email)) return err("E-mail já cadastrado.");
+    // Cria conta no Firebase Auth
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      const item = await createDoc("organizers", { ...data, status: "pendente" });
+      await setDoc(doc(db, "users", cred.user.uid), {
+        uid: cred.user.uid, email: data.email,
+        role: "organizer", name: data.name, refId: item.id, createdAt: now(),
+      });
+      await signOut(auth);
+      const { password: _, ...safe } = item;
+      return ok(safe);
+    } catch (e) { return err(e.message); }
   },
 };
 

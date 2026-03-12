@@ -1,13 +1,11 @@
 /**
  * OrganizerContext.jsx
- * Contexto de autenticação do portal de organizadores.
- * Completamente separado do AdminContext e IntranetContext.
- *
- * Provê: session, loading, login, logout, register,
- *        isAuthenticated, organizerId, organizerName
+ * Autenticação do portal de organizadores via Firebase Auth.
  */
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { OrganizerAuthService, OrganizersService } from "../services/index";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../firebase";
+import { organizerAuthAPI, organizersAPI } from "../data/api";
 
 const OrganizerContext = createContext(null);
 
@@ -16,30 +14,34 @@ export function OrganizerProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const s = OrganizerAuthService.getSession();
-    setSession(s || null);
-    setLoading(false);
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const s = await organizerAuthAPI.getSession();
+        setSession(s);
+      } else {
+        setSession(null);
+      }
+      setLoading(false);
+    });
+    return unsub;
   }, []);
 
   const login = useCallback(async (credentials) => {
-    const result = await OrganizerAuthService.login(credentials);
+    const result = await organizerAuthAPI.login(credentials);
     if (result.data) setSession(result.data.session);
     return result;
   }, []);
 
   const logout = useCallback(async () => {
-    await OrganizerAuthService.logout();
+    await organizerAuthAPI.logout();
     setSession(null);
   }, []);
 
   const register = useCallback(async (data) => {
-    const result = await OrganizersService.register(data);
+    const result = await organizerAuthAPI.register(data);
     if (result.data) {
       // Auto-login após cadastro
-      const loginResult = await OrganizerAuthService.login({
-        email: data.email,
-        password: data.password,
-      });
+      const loginResult = await organizerAuthAPI.login({ email: data.email, password: data.password });
       if (loginResult.data) setSession(loginResult.data.session);
     }
     return result;
@@ -55,10 +57,9 @@ export function OrganizerProvider({ children }) {
       logout,
       register,
       isAuthenticated,
-      organizerId: session?.organizerId || null,
-      organizerName: session?.name || "",
-      organizerEmail: session?.email || "",
-      organizerOrg: session?.organization || "",
+      organizerId:    session?.organizerId || null,
+      organizerName:  session?.name        || "",
+      organizerEmail: session?.email       || "",
     }}>
       {children}
     </OrganizerContext.Provider>

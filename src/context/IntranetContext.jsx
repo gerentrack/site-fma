@@ -1,10 +1,11 @@
 /**
  * IntranetContext.jsx
- * Contexto de autenticação da intranet de árbitros.
- * Completamente separado do AdminContext (FMA admin).
+ * Autenticação da intranet de árbitros via Firebase Auth.
  */
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { IntranetAuthService } from "../services/index";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../firebase";
+import { intranetAuthAPI } from "../data/api";
 
 const IntranetContext = createContext(null);
 
@@ -13,34 +14,41 @@ export function IntranetProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const s = IntranetAuthService.getSession();
-    setSession(s);
-    setLoading(false);
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const s = await intranetAuthAPI.getSession();
+        setSession(s);
+      } else {
+        setSession(null);
+      }
+      setLoading(false);
+    });
+    return unsub;
   }, []);
 
   const login = useCallback(async (credentials) => {
-    const result = await IntranetAuthService.login(credentials);
+    const result = await intranetAuthAPI.login(credentials);
     if (result.data) setSession(result.data.session);
     return result;
   }, []);
 
   const logout = useCallback(async () => {
-    await IntranetAuthService.logout();
+    await intranetAuthAPI.logout();
     setSession(null);
   }, []);
 
-  const isAuthenticated = !!session?.refereeId;
-  const isAdmin = session?.role === "admin";
-  const isCoordinator = session?.role === "coordenador";
-  const canManage = isAdmin || isCoordinator;
+  const isAuthenticated  = !!session?.refereeId;
+  const isAdmin          = session?.role === "admin";
+  const isCoordinator    = session?.role === "coordenador";
+  const canManage        = isAdmin || isCoordinator;
 
   return (
     <IntranetContext.Provider value={{
       session, loading, login, logout,
       isAuthenticated, isAdmin, isCoordinator, canManage,
       refereeId: session?.refereeId || null,
-      role: session?.role || null,
-      name: session?.name || "",
+      role:      session?.role      || null,
+      name:      session?.name      || "",
     }}>
       {children}
     </IntranetContext.Provider>

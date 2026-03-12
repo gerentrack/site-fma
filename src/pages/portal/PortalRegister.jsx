@@ -38,7 +38,9 @@ export default function PortalRegister() {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
+    useEffect(() => {
     if (isAuthenticated) navigate("/portal", { replace: true });
+  }, [isAuthenticated, navigate]);
   }, [isAuthenticated, navigate]);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));

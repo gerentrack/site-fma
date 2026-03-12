@@ -1,11 +1,7 @@
-/**
- * firebase.js — Configuração e inicialização do Firebase.
- * Exporta: db (Firestore), storage (Storage)
- */
-
 import { initializeApp } from "firebase/app";
-import { getFirestore }   from "firebase/firestore";
-import { getStorage }     from "firebase/storage";
+import { getFirestore }  from "firebase/firestore";
+import { getStorage }    from "firebase/storage";
+import { getAuth }       from "firebase/auth";
 
 const firebaseConfig = {
   apiKey:            "AIzaSyCQ7UrzSxnL5YGxjF1-yOWvS66xG7585Nk",
@@ -20,3 +16,4 @@ const app = initializeApp(firebaseConfig);
 
 export const db      = getFirestore(app);
 export const storage = getStorage(app);
+export const auth    = getAuth(app);

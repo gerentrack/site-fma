@@ -24,7 +24,9 @@ export default function PortalLogin() {
   const [showPass, setShowPass] = useState(false);
 
   useEffect(() => {
+    useEffect(() => {
     if (isAuthenticated) navigate(from, { replace: true });
+  }, [isAuthenticated, navigate, from]);
   }, [isAuthenticated, from, navigate]);
 
   const inp = (extra = {}) => ({
