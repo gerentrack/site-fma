@@ -27,7 +27,7 @@ export default function PortalRegister() {
   const { register, isAuthenticated } = useOrganizer();
   const navigate = useNavigate();
 
-  const [tipoPessoa, setTipoPessoa] = useState("pf");
+  const [tipoPessoa, setTipoPessoa] = useState("pj");
   const [form, setForm] = useState({
     name: "", email: "", password: "", confirmPassword: "",
     cpfCnpj: "", phone: "", organization: "",
@@ -67,8 +67,7 @@ export default function PortalRegister() {
     if (form.password.length < 6) e.password = "Mínimo 6 caracteres";
     if (form.password !== form.confirmPassword) e.confirmPassword = "Senhas não coincidem";
     const cpfCnpjRaw = form.cpfCnpj.replace(/\D/g, "");
-    if (tipoPessoa === "pf" && cpfCnpjRaw.length !== 11) e.cpfCnpj = "CPF inválido";
-    if (tipoPessoa === "pj" && cpfCnpjRaw.length !== 14) e.cpfCnpj = "CNPJ inválido";
+    if (cpfCnpjRaw.length !== 14) e.cpfCnpj = "CNPJ inválido";
     if (!form.city.trim()) e.city = "Cidade obrigatória";
     return e;
   };
@@ -130,7 +129,7 @@ export default function PortalRegister() {
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {/* Tipo de pessoa */}
             <div style={{ display: "flex", gap: 0, border: `1px solid ${COLORS.grayLight}`, borderRadius: 8, overflow: "hidden" }}>
-              {[{ v: "pf", l: "Pessoa Física" }, { v: "pj", l: "Pessoa Jurídica" }].map(opt => (
+              {[{ v: "pj", l: "Pessoa Jurídica" }].map(opt => (
                 <button key={opt.v} type="button" onClick={() => setTipoPessoa(opt.v)}
                   style={{ flex: 1, padding: "10px", border: "none", cursor: "pointer",
                     background: tipoPessoa === opt.v ? "#0066cc" : "#fff",
@@ -143,16 +142,16 @@ export default function PortalRegister() {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <div style={{ gridColumn: "1/-1" }}>
-                <Field label={tipoPessoa === "pf" ? "Nome completo" : "Razão social"} required>
+                <Field label="Razão social" required>
                   <input value={form.name} onChange={e => set("name", e.target.value)}
                     placeholder="Nome completo" style={inp()} />
                   {errors.name && <div style={errStyle}>{errors.name}</div>}
                 </Field>
               </div>
-              <Field label={tipoPessoa === "pf" ? "CPF" : "CNPJ"} required>
-                <input value={mask(form.cpfCnpj, tipoPessoa)}
+              <Field label="CNPJ" required>
+                <input value={mask(form.cpfCnpj, "pj")}
                   onChange={e => set("cpfCnpj", e.target.value.replace(/\D/g, ""))}
-                  placeholder={tipoPessoa === "pf" ? "000.000.000-00" : "00.000.000/0000-00"}
+                  placeholder="00.000.000/0000-00"
                   style={inp()} />
                 {errors.cpfCnpj && <div style={errStyle}>{errors.cpfCnpj}</div>}
               </Field>
@@ -162,7 +161,7 @@ export default function PortalRegister() {
                   placeholder="(31) 99999-9999" style={inp()} />
               </Field>
               <div style={{ gridColumn: "1/-1" }}>
-                <Field label={tipoPessoa === "pf" ? "Nome do evento / organização" : "Nome fantasia"}>
+                <Field label="Nome fantasia">
                   <input value={form.organization} onChange={e => set("organization", e.target.value)}
                     placeholder="Ex: Correia Sports Eventos" style={inp()} />
                 </Field>
