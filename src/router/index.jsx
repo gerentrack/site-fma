@@ -68,6 +68,8 @@ import { EquipesList, EquipesEditor }     from "../pages/admin/EquipesAdmin";
 import EleicoesFMA    from "../pages/public/EleicoesFMA";
 import OuvidoriaPage  from "../pages/public/OuvidoriaPage";
 import AntidopagemPage from "../pages/public/AntidopagemPage";
+import MapaPage from "../pages/public/MapaPage";
+import { PistasList, PistasEditor } from "../pages/admin/PistasAdmin";
 
 // ── Layout público ────────────────────────────────────────────────────────────
 function PublicLayout({ children }) {
@@ -165,6 +167,7 @@ export default function AppRouter() {
 
       {/* ── Contato ── */}
       <Route path="/contato" element={<PublicLayout><ContatoPage /></PublicLayout>} />
+      <Route path="/mapa"    element={<PublicLayout><MapaPage /></PublicLayout>} />
 
       {/* ── Redirecionamentos legados ── */}
       <Route path="/sobre"  element={<Navigate to="/institucional/sobre"          replace />} />
@@ -205,6 +208,9 @@ export default function AppRouter() {
       <Route path="/admin/galeria/novo"  element={<GaleriaEditor />} />
       <Route path="/admin/galeria/:id"   element={<GaleriaEditor />} />
 
+      <Route path="/admin/pistas"        element={<PistasList />} />
+      <Route path="/admin/pistas/novo"  element={<PistasEditor />} />
+      <Route path="/admin/pistas/:id"   element={<PistasEditor />} />
       <Route path="/admin/equipes"       element={<EquipesList />} />
       <Route path="/admin/equipes/novo"  element={<EquipesEditor />} />
       <Route path="/admin/equipes/:id"   element={<EquipesEditor />} />

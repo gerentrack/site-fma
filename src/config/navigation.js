@@ -64,6 +64,8 @@ export const PUBLIC_NAV = [
 
   { label: "Calendário", link: "/calendario" },
 
+  { label: "Mapa", link: "/mapa" },
+
   {
     label: "Resultados",
     sub: [
@@ -123,6 +125,7 @@ export const ADMIN_NAV = [
   { label: "Galeria",               icon: "📷", path: "/admin/galeria" },
   { label: "Resultados",            icon: "🏆", path: "/admin/resultados" },
   { label: "Calendário",            icon: "🗓️", path: "/admin/calendario" },
+  { label: "Pistas Homologadas",     icon: "🔵", path: "/admin/pistas" },
   { label: "Conteúdo de Árbitros",   icon: "⚖️", path: "/admin/arbitros-conteudo" },
   { label: "Conteúdo de Atletas",   icon: "👟", path: "/admin/atletas" },
   { label: "Documentos",            icon: "📄", path: "/admin/documentos" },
@@ -138,6 +141,7 @@ export const ADMIN_NAV = [
 export const QUICK_ACCESS = [
   { icon: "📰", label: "Notícias",         to: "/noticias" },
   { icon: "🗓️", label: "Calendário",       to: "/calendario" },
+  { icon: "🗺️", label: "Mapa FMA",          to: "/mapa" },
   { icon: "🏆", label: "Resultados",        to: "/resultados/corridas" },
   { icon: "📊", label: "Rankings",          to: "/ranking" },
   { icon: "👥", label: "Atletas Federados", to: "/atletas" },

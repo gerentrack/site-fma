@@ -28,7 +28,7 @@ import {
   SEED_REFEREE_AVAILABILITY, SEED_REFEREE_ASSIGNMENTS,
   SEED_ORGANIZERS, SEED_SOLICITACOES,
   SEED_SOLICITACAO_ARQUIVOS, SEED_MOVIMENTACOES,
-  SEED_RESULTADOS, SEED_EQUIPES,
+  SEED_RESULTADOS, SEED_EQUIPES, SEED_PISTAS_HOMOLOGADAS,
 } from "./mockData";
 
 function ok(data)  { return { data, error: null }; }
@@ -94,6 +94,20 @@ async function seedAuthUser(email, password, firestoreData) {
   }
 }
 
+
+export const pistasHomologadasAPI = {
+  list: async ({ published=null }={}) => {
+    let items = await readCol("pistasHomologadas");
+    if (published !== null) items = items.filter(p => p.published === published);
+    items.sort((a,b) => (a.nome||"").localeCompare(b.nome||""));
+    return ok(items);
+  },
+  get:    async (id)      => { const item=await readDoc("pistasHomologadas",id); return item?ok(item):err("Não encontrado."); },
+  create: async (data)    => { const item=await createDoc("pistasHomologadas",data); return ok(item); },
+  update: async (id,data) => { const item=await patchDoc("pistasHomologadas",id,data); return item?ok(item):err("Não encontrado."); },
+  delete: async (id)      => { await removeDoc("pistasHomologadas",id); return ok(true); },
+};
+
 export async function initializeData() {
   await Promise.all([
     seedCollection("news",                   SEED_NEWS),
@@ -115,6 +129,7 @@ export async function initializeData() {
     seedCollection("movimentacoes",          SEED_MOVIMENTACOES),
     seedCollection("resultados",             SEED_RESULTADOS),
     seedCollection("equipes",                SEED_EQUIPES),
+    seedCollection("pistasHomologadas",       SEED_PISTAS_HOMOLOGADAS),
     seedSingleDoc("config", "adminUser",      SEED_ADMIN_USER),
     seedSingleDoc("config", "footerConfig",   SEED_FOOTER_CONFIG),
     seedSingleDoc("config", "athleteContent", Array.isArray(SEED_ATHLETE_CONTENT) ? { items: SEED_ATHLETE_CONTENT } : SEED_ATHLETE_CONTENT),
