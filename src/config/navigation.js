@@ -126,6 +126,7 @@ export const ADMIN_NAV = [
   { label: "Resultados",            icon: "🏆", path: "/admin/resultados" },
   { label: "Calendário",            icon: "🗓️", path: "/admin/calendario" },
   { label: "Pistas Homologadas",     icon: "🔵", path: "/admin/pistas" },
+  { label: "Importar Calendário",    icon: "📥", path: "/admin/importar" },
   { label: "Conteúdo de Árbitros",   icon: "⚖️", path: "/admin/arbitros-conteudo" },
   { label: "Conteúdo de Atletas",   icon: "👟", path: "/admin/atletas" },
   { label: "Documentos",            icon: "📄", path: "/admin/documentos" },

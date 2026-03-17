@@ -70,6 +70,7 @@ import OuvidoriaPage  from "../pages/public/OuvidoriaPage";
 import AntidopagemPage from "../pages/public/AntidopagemPage";
 import MapaPage from "../pages/public/MapaPage";
 import { PistasList, PistasEditor } from "../pages/admin/PistasAdmin";
+import ImportarAdmin from "../pages/admin/ImportarAdmin";
 
 // ── Layout público ────────────────────────────────────────────────────────────
 function PublicLayout({ children }) {
@@ -208,6 +209,7 @@ export default function AppRouter() {
       <Route path="/admin/galeria/novo"  element={<GaleriaEditor />} />
       <Route path="/admin/galeria/:id"   element={<GaleriaEditor />} />
 
+      <Route path="/admin/importar"      element={<ImportarAdmin />} />
       <Route path="/admin/pistas"        element={<PistasList />} />
       <Route path="/admin/pistas/novo"  element={<PistasEditor />} />
       <Route path="/admin/pistas/:id"   element={<PistasEditor />} />

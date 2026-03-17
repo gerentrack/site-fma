@@ -1066,8 +1066,9 @@ function EventoVinculadoSection({
                     </React.Fragment>
                   ))}
                 </div>
-                <div style={{ marginTop: 12, padding: "8px 12px", borderRadius: 6, background: "#fffbeb", border: "1px solid #fde68a", fontFamily: FONTS.body, fontSize: 11, color: "#92400e" }}>
-                  ℹ️ O evento será criado como <strong>não publicado</strong>. Você poderá editar e publicar no calendário quando estiver pronto.
+                <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 6, background: "#eff6ff", border: "1px solid #93c5fd", fontFamily: FONTS.body, fontSize: 11, color: "#1e40af" }}>
+                  <div style={{ marginBottom: 4 }}>📋 <strong>Status inicial:</strong> o evento será criado como <strong>Previsto</strong> e não publicado.</div>
+                  <div>✅ <strong>Aprovação automática:</strong> quando esta solicitação for aprovada, o evento mudará automaticamente para <strong>Confirmado</strong>.</div>
                 </div>
 
                 {/* Opção: publicar imediatamente */}

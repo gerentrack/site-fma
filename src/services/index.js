@@ -378,6 +378,26 @@ export const SolicitacoesService = {
     const r = await solicitacoesAPI.changeStatus(id, status, extra);
     if (r.error) return r;
 
+    // Quando aprovado → atualiza evento vinculado para "confirmado"
+    if (status === "aprovado") {
+      const sol = await solicitacoesAPI.get(id);
+      const eventoId = sol.data?.eventoId || sol.data?.eventoVinculado?.id;
+      if (eventoId) {
+        await calendarAPI.update(eventoId, { status: "confirmado" });
+        await movimentacoesAPI.registrar({
+          solicitacaoId: id,
+          tipoEvento: "status_alterado",
+          statusAnterior: "previsto",
+          statusNovo: "confirmado",
+          descricao: "Evento no calendário atualizado automaticamente para Confirmado após aprovação do permit.",
+          autor: "fma",
+          autorNome: "Sistema FMA",
+          autorId: "admin",
+          visivel: true,
+        });
+      }
+    }
+
     // Registrar movimentação de protocolo gerado automaticamente
     if (status === "em_analise" && r.data._protocoloGerado) {
       await movimentacoesAPI.registrar({
@@ -430,7 +450,8 @@ export const SolicitacoesService = {
   criarEVincularEvento: async (solicitacao, organizerName = "", overrides = {}) => {
     // 1. Converter
     const eventoBase = solicitacaoParaEvento(solicitacao, { organizerName });
-    const eventoData = { ...eventoBase, ...overrides };
+    // Evento criado a partir de solicitação começa sempre como "previsto"
+    const eventoData = { ...eventoBase, status: "previsto", published: false, ...overrides };
 
     // 2. Criar evento no calendário
     const rEvento = await calendarAPI.create(eventoData);
