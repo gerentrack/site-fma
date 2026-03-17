@@ -151,31 +151,13 @@ async function geocodeCep(cep, numero = "", complemento = "") {
   } catch { return null; }
 }
 
-// Converte link do Drive para link de download direto
-function driveDirectUrl(url) {
-  if (!url) return null;
-  const m = url.match(/\/d\/([^/]+)/);
-  if (m) return `https://drive.google.com/uc?export=download&id=${m[1]}`;
-  return url;
-}
+
 
 async function migrateFile(driveUrl, folder) {
+  // Salva o link do Drive diretamente.
+  // Eventos novos inseridos pelo admin usarão o Firebase Storage automaticamente.
   if (!driveUrl || !driveUrl.startsWith("http")) return null;
-  try {
-    const directUrl = driveDirectUrl(driveUrl);
-    const res = await fetch(directUrl);
-    if (!res.ok) throw new Error("Download falhou");
-    const blob = await res.blob();
-    const filename = driveUrl.split("/d/")[1]?.split("/")[0] || "arquivo";
-    const ext = blob.type.includes("pdf") ? "pdf" : blob.type.split("/")[1] || "bin";
-    const file = new File([blob], `${filename}.${ext}`, { type: blob.type });
-    const { url, error } = await uploadFile(file, folder);
-    if (error) throw new Error(error);
-    return url;
-  } catch (e) {
-    console.warn("migrateFile:", e.message);
-    return driveUrl; // fallback: mantém link original
-  }
+  return driveUrl;
 }
 
 const STATUS_ICON = { ok: "✅", erro: "❌", aviso: "⚠️", processando: "⏳", pendente: "○" };
