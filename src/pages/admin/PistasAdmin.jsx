@@ -4,6 +4,8 @@
  * Rotas: /admin/pistas · /admin/pistas/novo · /admin/pistas/:id
  */
 import { useState, useEffect, useCallback } from "react";
+import { useCep } from "../../hooks/useCep";
+import CepField from "../../components/common/CepField";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import AdminLayout from "../../components/admin/AdminLayout";
 import { COLORS, FONTS } from "../../styles/colors";
@@ -138,6 +140,19 @@ export function PistasEditor() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving]   = useState(false);
   const [msg, setMsg]         = useState({ text: "", type: "" });
+  const [numero, setNumero]   = useState("");
+  const [complemento, setComplemento] = useState("");
+
+  const { cep, setCep, setNumero: cepSetNumero, loading: cepLoading, error: cepError, endereco } = useCep((found) => {
+    setForm(f => ({
+      ...f,
+      endereco: `${found.logradouro}${numero ? ", " + numero : ""}${complemento ? ", " + complemento : ""}, ${found.bairro}`,
+      cidade:   found.cidade,
+      estado:   found.estado,
+      lat:      found.lat  ?? f.lat,
+      lng:      found.lng  ?? f.lng,
+    }));
+  });
 
   useEffect(() => {
     if (isNew) return;
@@ -198,13 +213,10 @@ export function PistasEditor() {
         )}
 
         <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", padding: 28 }}>
+          {/* Nome */}
           {field(<>{lbl("Nome da pista/percurso", true)}<input style={s()} value={form.nome} onChange={e => set("nome", e.target.value)} placeholder="Ex: Pista de Atletismo do Mineirão" /></>)}
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 18 }}>
-            <div>{lbl("Cidade", true)}<input style={s()} value={form.cidade} onChange={e => set("cidade", e.target.value)} placeholder="Belo Horizonte" /></div>
-            <div>{lbl("Estado")}<input style={s()} value={form.estado} onChange={e => set("estado", e.target.value)} placeholder="MG" /></div>
-          </div>
-
+          {/* Tipo e Superfície */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 18 }}>
             <div>
               {lbl("Tipo")}
@@ -220,18 +232,43 @@ export function PistasEditor() {
             </div>
           </div>
 
+          {/* Comprimento */}
           {field(<>{lbl("Comprimento (metros)")} <input style={s()} type="number" value={form.comprimento} onChange={e => set("comprimento", e.target.value)} placeholder="400" /></>)}
-          {field(<>{lbl("Endereço")}<input style={s()} value={form.endereco} onChange={e => set("endereco", e.target.value)} placeholder="Av. Antônio Abrahão Caram, Pampulha" /></>)}
 
-          <div style={{ background: "#fef3c7", borderRadius: 8, padding: "12px 16px", marginBottom: 18, fontSize: 13, color: "#92400e" }}>
-            <strong>📍 Coordenadas necessárias para o mapa.</strong> Para obter as coordenadas, acesse{" "}
-            <a href="https://maps.google.com" target="_blank" rel="noreferrer" style={{ color: "#cc0000" }}>Google Maps</a>{" "}
-            → clique com botão direito no local → copie as coordenadas.
+          {/* CEP — preenche endereço, cidade, estado e coordenadas */}
+          <div style={{ marginBottom: 18 }}>
+            {lbl("CEP do local", true)}
+            <CepField
+              cep={cep}
+              onChange={setCep}
+              numero={numero}
+              onNumero={(v) => {
+                setNumero(v);
+                if (endereco) set("endereco", `${endereco.logradouro}, ${v}, ${endereco.bairro}`);
+              }}
+              loading={cepLoading}
+              error={cepError}
+              endereco={endereco}
+              complemento={complemento}
+              onComplemento={setComplemento}
+              setNumero={cepSetNumero}
+              required
+            />
           </div>
 
+          {/* Cidade e Estado — preenchidos automaticamente */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 18 }}>
-            <div>{lbl("Latitude", true)}<input style={s()} type="number" step="any" value={form.lat} onChange={e => set("lat", e.target.value)} placeholder="-19.9167" /></div>
-            <div>{lbl("Longitude", true)}<input style={s()} type="number" step="any" value={form.lng} onChange={e => set("lng", e.target.value)} placeholder="-43.9345" /></div>
+            <div>{lbl("Cidade", true)}<input style={s()} value={form.cidade} onChange={e => set("cidade", e.target.value)} placeholder="Preenchida via CEP" /></div>
+            <div>{lbl("Estado")}<input style={s()} value={form.estado} onChange={e => set("estado", e.target.value)} placeholder="MG" /></div>
+          </div>
+
+          {/* Endereço completo */}
+          {field(<>{lbl("Endereço completo")}<input style={s()} value={form.endereco} onChange={e => set("endereco", e.target.value)} placeholder="Preenchido via CEP" /></>)}
+
+          {/* Lat/Lng — preenchidos automaticamente, editáveis como fallback */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 18 }}>
+            <div>{lbl("Latitude")}<input style={s()} type="number" step="any" value={form.lat ?? ""} onChange={e => set("lat", e.target.value)} placeholder="Preenchida via CEP" /></div>
+            <div>{lbl("Longitude")}<input style={s()} type="number" step="any" value={form.lng ?? ""} onChange={e => set("lng", e.target.value)} placeholder="Preenchida via CEP" /></div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 18 }}>

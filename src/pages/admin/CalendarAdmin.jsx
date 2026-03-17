@@ -13,6 +13,8 @@ import Button from "../../components/ui/Button";
 import FileUpload from "../../components/ui/FileUpload";
 import { FormField, TextInput, TextArea, SelectInput, CheckboxInput } from "../../components/ui/FormField";
 import { useForm, required } from "../../hooks/useForm";
+import { useCep } from "../../hooks/useCep";
+import CepField from "../../components/common/CepField";
 import { CalendarService } from "../../services/index";
 import { CALENDAR_CATEGORIES, EVENT_STATUS } from "../../config/navigation";
 import { COLORS, FONTS } from "../../styles/colors";
@@ -212,6 +214,7 @@ const emptyEvent = {
   externalLink: "", coverImage: "",
   permitFileUrl: "", chancelaFileUrl: "", resultsFileUrl: "",
   featured: false, published: false,
+  lat: null, lng: null,
 };
 
 // Editor de array de modalidades
@@ -259,6 +262,15 @@ export function CalendarEditor() {
     if (isNew) { setInitial({ ...emptyEvent }); return; }
     CalendarService.get(id).then(r => r.data ? setInitial(r.data) : navigate("/admin/calendario"));
   }, [id]);
+
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const { cep, setCep, setNumero: cepSetNumero, loading: cepLoading, error: cepError, endereco: cepEndereco } = useCep((found) => {
+    set("location", `${found.logradouro}${numero ? ", " + numero : ""}${complemento ? ", " + complemento : ""}, ${found.bairro}`);
+    set("city", found.cidade);
+    if (found.lat) set("lat", found.lat);
+    if (found.lng) set("lng", found.lng);
+  });
 
   const { values, errors, set, handleSubmit, submitting, serverError } = useForm(
     initial || emptyEvent,
@@ -321,12 +333,23 @@ export function CalendarEditor() {
               </FormField>
             </div>
 
+            <FormField label="CEP do local" required>
+              <CepField
+                cep={cep} onChange={setCep}
+                numero={numero} onNumero={(v) => {
+                  setNumero(v);
+                  if (cepEndereco) set("location", `${cepEndereco.logradouro}, ${v}, ${cepEndereco.bairro}`);
+                }}
+                loading={cepLoading} error={cepError} endereco={cepEndereco}
+                required
+              />
+            </FormField>
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14 }}>
               <FormField label="Local / Endereço">
-                <TextInput value={values.location} onChange={v => set("location", v)} placeholder="Ex: Praça da Liberdade, Av. Afonso Pena..." />
+                <TextInput value={values.location} onChange={v => set("location", v)} placeholder="Preenchido automaticamente pelo CEP" />
               </FormField>
               <FormField label="Cidade" required error={errors.city}>
-                <TextInput value={values.city} onChange={v => set("city", v)} error={errors.city} placeholder="Ex: Belo Horizonte" />
+                <TextInput value={values.city} onChange={v => set("city", v)} error={errors.city} placeholder="Preenchida automaticamente" />
               </FormField>
             </div>
 
@@ -383,6 +406,7 @@ export function CalendarEditor() {
           <div style={{ display: "grid", gap: 20 }}>
             <FileUpload
               label="Imagem de Capa"
+              folder="eventos"
               value={values.coverImage}
               onChange={v => set("coverImage", v)}
               hint="Recomendado: 800x440px. URL ou upload."

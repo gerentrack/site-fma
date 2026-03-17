@@ -36,7 +36,17 @@ export default function Footer() {
 
         {/* Coluna 1 — Identidade e contato */}
         <div>
-          <div style={{ fontFamily: FONTS.heading, fontSize: 22, fontWeight: 800, color: COLORS.primary, letterSpacing: 2, marginBottom: 14, textTransform: "uppercase" }}>FMA</div>
+          {c.logoUrl ? (
+            <img
+              src={c.logoUrl}
+              alt={c.logoAlt || "FMA"}
+              style={{ height: 52, maxWidth: 180, objectFit: "contain", marginBottom: 14 }}
+            />
+          ) : (
+            <div style={{ fontFamily: FONTS.heading, fontSize: 22, fontWeight: 800, color: COLORS.primary, letterSpacing: 2, marginBottom: 14, textTransform: "uppercase" }}>
+              {c.siteName || "FMA"}
+            </div>
+          )}
           {c.institutionalText && (
             <p style={{ fontFamily: FONTS.body, fontSize: 13.5, color: "rgba(255,255,255,0.65)", lineHeight: 1.7, margin: "0 0 16px" }}>
               {c.institutionalText}

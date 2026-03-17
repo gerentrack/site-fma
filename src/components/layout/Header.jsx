@@ -3,13 +3,15 @@ import { Link } from "react-router-dom";
 import { COLORS, FONTS } from "../../styles/colors";
 import NavItem from "../ui/NavItem";
 import { PUBLIC_NAV } from "../../config/navigation";
-import { InstitutionalPagesService } from "../../services/index";
+import { InstitutionalPagesService, FooterConfigService } from "../../services/index";
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [institutionalPages, setInstitutionalPages] = useState([]);
+  const [siteConfig, setSiteConfig] = useState({});
 
   useEffect(() => {
+    FooterConfigService.get().then(r => r.data && setSiteConfig(r.data));
     InstitutionalPagesService.list({ publishedOnly: true }).then(r => {
       if (r.data) setInstitutionalPages(r.data.filter(p => p.showInNav));
     });
@@ -48,16 +50,30 @@ export default function Header() {
       }}>
         {/* Logo — compacto */}
         <Link to="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: "50%",
-            background: COLORS.white, display: "flex", alignItems: "center",
-            justifyContent: "center", fontSize: 18, color: COLORS.primaryDark,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-          }}>🏃</div>
-          <div>
-            <div style={{ fontFamily: FONTS.heading, fontWeight: 800, fontSize: 17, color: COLORS.white, lineHeight: 1.1, letterSpacing: 1 }}>FMA</div>
-            <div style={{ fontFamily: FONTS.body, fontSize: 8.5, color: "rgba(255,255,255,0.7)", letterSpacing: 0.4 }}>FED. MINEIRA DE ATLETISMO</div>
-          </div>
+          {siteConfig.logoUrl ? (
+            <img
+              src={siteConfig.logoUrl}
+              alt={siteConfig.logoAlt || "FMA"}
+              style={{ height: 44, maxWidth: 160, objectFit: "contain", filter: "brightness(0) invert(1)" }}
+            />
+          ) : (
+            <>
+              <div style={{
+                width: 36, height: 36, borderRadius: "50%",
+                background: COLORS.white, display: "flex", alignItems: "center",
+                justifyContent: "center", fontSize: 18, color: COLORS.primaryDark,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+              }}>🏃</div>
+              <div>
+                <div style={{ fontFamily: FONTS.heading, fontWeight: 800, fontSize: 17, color: COLORS.white, lineHeight: 1.1, letterSpacing: 1 }}>
+                  {siteConfig.siteName || "FMA"}
+                </div>
+                <div style={{ fontFamily: FONTS.body, fontSize: 8.5, color: "rgba(255,255,255,0.7)", letterSpacing: 0.4 }}>
+                  {siteConfig.siteSubtitle || "FED. MINEIRA DE ATLETISMO"}
+                </div>
+              </div>
+            </>
+          )}
         </Link>
 
         {/* Desktop Nav — sem wrap, ocupa o espaço disponível */}

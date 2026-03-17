@@ -1,0 +1,36 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Logos e assets públicos — leitura pública, escrita apenas autenticados
+    match /logos/{file} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Banners, eventos, notícias, galeria, institucional — leitura pública
+    match /banners/{file}        { allow read: if true; allow write: if request.auth != null; }
+    match /eventos/{file}        { allow read: if true; allow write: if request.auth != null; }
+    match /noticias/{file}       { allow read: if true; allow write: if request.auth != null; }
+    match /galeria/{file}        { allow read: if true; allow write: if request.auth != null; }
+    match /institucional/{file}  { allow read: if true; allow write: if request.auth != null; }
+    match /documentos/{file}     { allow read: if true; allow write: if request.auth != null; }
+    match /resultados/{file}     { allow read: if true; allow write: if request.auth != null; }
+    match /parceiros/{file}      { allow read: if true; allow write: if request.auth != null; }
+    match /equipes/{file}        { allow read: if true; allow write: if request.auth != null; }
+    match /pistas/{file}         { allow read: if true; allow write: if request.auth != null; }
+    match /atletas/{file}        { allow read: if true; allow write: if request.auth != null; }
+    match /arbitros/{file}       { allow read: if true; allow write: if request.auth != null; }
+
+    // Solicitações — leitura e escrita apenas para usuários autenticados
+    match /solicitacoes/{solId}/{file} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // Bloquear qualquer outra pasta por padrão
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

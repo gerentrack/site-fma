@@ -3,6 +3,7 @@ import AdminLayout from "../../components/admin/AdminLayout";
 import PageHeader from "../../components/ui/PageHeader";
 import Button from "../../components/ui/Button";
 import { FormField, TextInput, TextArea, CheckboxInput } from "../../components/ui/FormField";
+import FileUpload from "../../components/ui/FileUpload";
 import { useApi } from "../../hooks/useApi";
 import { FooterConfigService } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
@@ -65,6 +66,57 @@ export default function FooterAdmin() {
           actions={[]}
           action={{ label: saving ? "Salvando..." : saved ? "✓ Salvo!" : "Salvar Alterações", onClick: handleSave }}
         />
+
+        {/* Logo & Identidade Visual */}
+        <div style={sectionStyle}>
+          {sectionTitle("🖼️ Logo & Identidade Visual")}
+
+          {/* Preview do logo atual */}
+          {values.logoUrl && (
+            <div style={{ marginBottom: 16, padding: 16, background: "#f9fafb", borderRadius: 8, border: "1.5px dashed #d1d5db", textAlign: "center" }}>
+              <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>Preview</div>
+              <div style={{ display: "flex", gap: 24, justifyContent: "center", alignItems: "center", flexWrap: "wrap" }}>
+                <div>
+                  <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 4 }}>Header (fundo vermelho)</div>
+                  <div style={{ background: "#cc0000", padding: "8px 16px", borderRadius: 6, display: "inline-block" }}>
+                    <img src={values.logoUrl} alt="logo" style={{ height: 36, objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 4 }}>Footer (fundo escuro)</div>
+                  <div style={{ background: "#1a1a2e", padding: "8px 16px", borderRadius: 6, display: "inline-block" }}>
+                    <img src={values.logoUrl} alt="logo" style={{ height: 36, objectFit: "contain" }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <FormField label="Logo do Site" hint="PNG ou SVG com fundo transparente. Recomendado: 400x120px.">
+            <FileUpload
+              value={values.logoUrl || ""}
+              onChange={(url) => set("logoUrl", url)}
+              folder="logos"
+              accept="image/*"
+              hint="PNG, SVG ou WebP com fundo transparente. Recomendado: 400x120px."
+              mode="both"
+              preview={false}
+            />
+          </FormField>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <FormField label="Nome do Site" hint="Exibido quando não há logo. Ex: FMA">
+              <TextInput value={values.siteName || ""} onChange={v => set("siteName", v)} placeholder="FMA" />
+            </FormField>
+            <FormField label="Subtítulo do Header" hint="Linha abaixo do nome. Ex: FED. MINEIRA DE ATLETISMO">
+              <TextInput value={values.siteSubtitle || ""} onChange={v => set("siteSubtitle", v)} placeholder="FED. MINEIRA DE ATLETISMO" />
+            </FormField>
+          </div>
+
+          <FormField label="Texto alternativo do logo (alt)" hint="Para acessibilidade e SEO.">
+            <TextInput value={values.logoAlt || ""} onChange={v => set("logoAlt", v)} placeholder="Federação Mineira de Atletismo" />
+          </FormField>
+        </div>
 
         {/* Identidade */}
         <div style={sectionStyle}>

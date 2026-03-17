@@ -15,8 +15,11 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOrganizer } from "../../context/OrganizerContext";
 import { SolicitacoesService, MovimentacoesService, ArquivosService } from "../../services/index";
+import { uploadFile } from "../../services/storageService";
 import { COLORS, FONTS } from "../../styles/colors";
 import { SOLICITACAO_TIPOS } from "../../config/navigation";
+import { useCep } from "../../hooks/useCep";
+import CepField from "../../components/common/CepField";
 import {
   defaultCamposTecnicosPermit, defaultCamposTecnicosChancela,
   novaModalidadeId, totalEstimativaInscritos,
@@ -58,8 +61,17 @@ export default function NovaSolicitacao() {
   const [tipo, setTipo]   = useState("");
   const [form, setForm]   = useState({
     nomeEvento: "", dataEvento: "", cidadeEvento: "",
-    localEvento: "", descricaoEvento: "",
+    localEvento: "", descricaoEvento: "", lat: "", lng: "",
   });
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const { cep, setCep, setNumero: cepSetNumero, loading: cepLoading, error: cepError, endereco: cepEndereco } = useCep((found) => {
+    setF("cidadeEvento", found.cidade);
+    setF("localEvento", `${found.logradouro}${numero ? ", " + numero : ""}${complemento ? ", " + complemento : ""}, ${found.bairro}`);
+    setF("lat", found.lat ?? "");
+    setF("lng", found.lng ?? "");
+  });
+
   const [ct, setCt]       = useState({});
   const [uploadRefs]      = useState({}); // { fieldId: React.RefObject }
   const [pendingFiles, setPendingFiles] = useState({});  // { fieldId: File }
@@ -122,17 +134,31 @@ export default function NovaSolicitacao() {
     const ctAtualizado = { ...ctAtual };
     for (const [fieldId, file] of Object.entries(pendingFiles)) {
       try {
-        const dataUrl = await fileToBase64(file);
+        // Upload para Firebase Storage na pasta da solicitação
+        const { url, path, error: uploadError } = await uploadFile(
+          file,
+          `solicitacoes/${solicitacaoId}`
+        );
+        if (uploadError) throw new Error(uploadError);
+
+        // Registra metadados no Firestore
         const r = await ArquivosService.upload({
           solicitacaoId, nome: file.name, tamanho: file.size,
           tipo: file.type || "application/octet-stream",
-          descricao: `Documento: ${fieldId}`, categoria: "obrigatorio", dataUrl,
+          descricao: `Documento: ${fieldId}`, categoria: "obrigatorio",
+          url, storagePath: path,
           enviadoPor: "organizador", enviadoPorId: organizerId,
         });
         if (r.data) {
-          ctAtualizado[fieldId] = { temArquivo: true, nomeArquivo: file.name, arquivoId: r.data.id };
+          ctAtualizado[fieldId] = {
+            temArquivo: true, nomeArquivo: file.name,
+            arquivoId: r.data.id, url,
+          };
         }
-      } catch { /* falha silenciosa — pode reenviar na tela de detalhe */ }
+      } catch (e) {
+        console.error("Upload arquivo:", e);
+        /* falha silenciosa — pode reenviar na tela de detalhe */
+      }
     }
     return ctAtualizado;
   };
@@ -247,22 +273,36 @@ export default function NovaSolicitacao() {
                   <input value={form.nomeEvento} onChange={e => setF("nomeEvento", e.target.value)} placeholder="Ex: Corrida de Rua BH 2026 – 1ª Etapa" style={inp(!!errors.nomeEvento)} />
                   {errors.nomeEvento && <ErrMsg msg={errors.nomeEvento} />}
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                  <div>
+                <div>
                     <LBL req>Data de Realização</LBL>
                     <input type="date" value={form.dataEvento} onChange={e => setF("dataEvento", e.target.value)} style={inp(!!errors.dataEvento)} />
                     {errors.dataEvento && <ErrMsg msg={errors.dataEvento} />}
                   </div>
+                <div>
+                  <LBL req>CEP do local de realização</LBL>
+                  <CepField
+                    cep={cep} onChange={setCep}
+                    numero={numero} onNumero={(v) => {
+                      setNumero(v);
+                      if (cepEndereco) setF("localEvento", `${cepEndereco.logradouro}, ${v}, ${cepEndereco.bairro}`);
+                    }}
+                    loading={cepLoading} error={cepError} endereco={cepEndereco}
+                    complemento={complemento}
+                    onComplemento={setComplemento}
+                    setNumero={cepSetNumero}
+                    required
+                  />
+                  {(errors.cidadeEvento || errors.localEvento) && <ErrMsg msg={errors.cidadeEvento || errors.localEvento} />}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                   <div>
                     <LBL req>Município</LBL>
-                    <input value={form.cidadeEvento} onChange={e => setF("cidadeEvento", e.target.value)} placeholder="Ex: Belo Horizonte" style={inp(!!errors.cidadeEvento)} />
-                    {errors.cidadeEvento && <ErrMsg msg={errors.cidadeEvento} />}
+                    <input value={form.cidadeEvento} onChange={e => setF("cidadeEvento", e.target.value)} placeholder="Preenchido automaticamente" style={inp(!!errors.cidadeEvento)} />
                   </div>
-                </div>
-                <div>
-                  <LBL req>Local de Realização</LBL>
-                  <input value={form.localEvento} onChange={e => setF("localEvento", e.target.value)} placeholder="Ex: Parque Municipal – Av. Afonso Pena, BH/MG" style={inp(!!errors.localEvento)} />
-                  {errors.localEvento && <ErrMsg msg={errors.localEvento} />}
+                  <div>
+                    <LBL req>Local de Realização</LBL>
+                    <input value={form.localEvento} onChange={e => setF("localEvento", e.target.value)} placeholder="Preenchido automaticamente" style={inp(!!errors.localEvento)} />
+                  </div>
                 </div>
                 <div>
                   <LBL>Descrição do Evento</LBL>

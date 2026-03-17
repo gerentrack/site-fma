@@ -613,6 +613,11 @@ export const SEED_SOCIAL_LINKS = [
 ];
 
 export const SEED_FOOTER_CONFIG = {
+  logoUrl: "",
+  logoAlt: "Federação Mineira de Atletismo",
+  faviconUrl: "",
+  siteName: "FMA",
+  siteSubtitle: "FED. MINEIRA DE ATLETISMO",
   institutionalText: "A Federação Mineira de Atletismo (FMA) é a entidade máxima do atletismo no estado de Minas Gerais. Filiada à CBAT e ao COB, promove, organiza e regulamenta a modalidade em todas as suas vertentes.",
   copyrightText: "Federação Mineira de Atletismo",
   developerCredit: "Desenvolvido por GERENTRACK",
