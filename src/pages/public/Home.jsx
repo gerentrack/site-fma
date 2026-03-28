@@ -69,23 +69,22 @@ function SocialBlock({ socialLinks }) {
               target="_blank"
               rel="noreferrer"
               style={{
-                display: "flex", flexDirection: "column", alignItems: "center",
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                 background: "#fff", borderRadius: 14,
-                padding: "20px 28px", textDecoration: "none",
+                width: 110, height: 90,
+                textDecoration: "none", overflow: "hidden",
                 color: COLORS.dark, fontFamily: FONTS.heading,
                 fontSize: 13, fontWeight: 600, gap: 8,
-                minWidth: 110,
                 boxShadow: "0 2px 12px rgba(0,0,0,0.07)",
                 border: `1px solid ${COLORS.grayLight}`,
                 transition: "background 0.2s, transform 0.2s, box-shadow 0.2s",
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = COLORS.primary; e.currentTarget.style.color = "#fff"; e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(204,0,0,0.2)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = COLORS.dark; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.07)"; }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(204,0,0,0.2)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.07)"; }}
             >
               {s.icon && (s.icon.startsWith("http") || s.icon.startsWith("data:"))
-                ? <img src={s.icon} alt="" style={{ width: 30, height: 30, objectFit: "contain" }} />
-                : <span style={{ fontSize: 30 }}>{s.icon}</span>}
-              {s.label}
+                ? <img src={s.icon} alt={s.label} title={s.label} style={{ maxWidth: "85%", maxHeight: "85%", objectFit: "contain" }} />
+                : <><span style={{ fontSize: 30 }}>{s.icon}</span>{s.label}</>}
             </a>
           ))}
         </div>

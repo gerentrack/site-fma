@@ -175,7 +175,7 @@ export function SocialLinksEditor() {
             onChange={(url) => set("icon", url)}
             folder="redes-sociais"
             accept="image/*"
-            hint="Recomendado: imagem quadrada (ex: 64x64px). PNG ou SVG com fundo transparente."
+            hint="Recomendado: 200x120px ou proporcional. PNG ou SVG com fundo transparente."
             maxMB={2}
           />
           {isImageUrl(values.icon) && <ImageDimensions src={values.icon} />}

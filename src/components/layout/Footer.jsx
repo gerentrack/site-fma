@@ -93,15 +93,14 @@ export default function Footer() {
               <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 28 }}>
                 {socialLinks.map(s => (
                   <a key={s.id} href={s.url} target="_blank" rel="noreferrer"
-                    style={{ display: "flex", flexDirection: "column", alignItems: "center", background: "rgba(255,255,255,0.07)", borderRadius: 10, padding: "12px 16px", textDecoration: "none", color: "#fff", fontFamily: FONTS.body, fontSize: 11, gap: 5, transition: "background 0.2s" }}
+                    style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.07)", borderRadius: 10, width: 80, height: 70, textDecoration: "none", color: "#fff", fontFamily: FONTS.body, fontSize: 11, gap: 5, transition: "background 0.2s" }}
                     title={s.label}
                     onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}
                     onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.07)"}
                   >
                     {s.icon && (s.icon.startsWith("http") || s.icon.startsWith("data:"))
-                      ? <img src={s.icon} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
-                      : <span style={{ fontSize: 20 }}>{s.icon}</span>}
-                    <span>{s.label}</span>
+                      ? <img src={s.icon} alt={s.label} style={{ maxWidth: "85%", maxHeight: "85%", objectFit: "contain" }} />
+                      : <><span style={{ fontSize: 20 }}>{s.icon}</span><span>{s.label}</span></>}
                   </a>
                 ))}
               </div>
