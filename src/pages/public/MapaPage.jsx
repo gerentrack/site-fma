@@ -27,6 +27,8 @@ const CIDADES_MG = {
   "Coronel Fabriciano":    { lat: -19.5208, lng: -42.6278 },
   "Itabira":               { lat: -19.6203, lng: -43.2267 },
   "Patos de Minas":        { lat: -18.5789, lng: -46.5178 },
+  "Ibituruna":             { lat: -21.1528, lng: -44.7497 },
+  "Ponte Nova":            { lat: -20.4153, lng: -42.9028 },
 };
 
 function coordsFromCidade(cidade) {
@@ -225,7 +227,7 @@ export default function MapaPage() {
             🗺️ Mapa FMA
           </h1>
           <p style={{ margin: "0 0 0", opacity: 0.85, fontSize: 15 }}>
-            Eventos, equipes filiadas e pistas homologadas em Minas Gerais
+            Eventos, equipes filiadas e pistas de atletismo em Minas Gerais
           </p>
 
           {/* Tabs */}

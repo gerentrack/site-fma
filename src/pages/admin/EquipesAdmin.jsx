@@ -147,7 +147,7 @@ export function EquipesList() {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: COLORS.dark }}>
-                  {["Equipe", "Cidade", "Fundação", "Status", "Ações"].map(h => (
+                  {["Equipe", "Cidade", "Status", "Ações"].map(h => (
                     <th key={h} style={{ padding: "12px 16px", textAlign: "left",
                       fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700,
                       textTransform: "uppercase", letterSpacing: 1, color: "#fff" }}>
@@ -187,9 +187,6 @@ export function EquipesList() {
                     </td>
                     <td style={{ padding: "14px 16px", fontFamily: FONTS.body, fontSize: 13, color: COLORS.dark }}>
                       {item.cidade || "—"}
-                    </td>
-                    <td style={{ padding: "14px 16px", fontFamily: FONTS.body, fontSize: 13, color: COLORS.dark }}>
-                      {item.fundacao || "—"}
                     </td>
                     <td style={{ padding: "14px 16px" }}>
                       <button onClick={() => handleToggle(item)}
@@ -232,14 +229,10 @@ export function EquipesList() {
 // ─── EDITOR ───────────────────────────────────────────────────────────────────
 
 const EMPTY = {
-  title: "", slug: "", excerpt: "", content: "",
-  coverImage: "", logo: "",
-  cidade: "", fundacao: "", contato: "",
-  redesSociais: [],
+  title: "", slug: "",
+  cidade: "", contato: "",
   order: 0, showInNav: false, published: false,
 };
-
-const REDES = ["instagram","facebook","youtube","whatsapp","twitter","tiktok","linkedin","site"];
 
 export function EquipesEditor() {
   const { id }  = useParams();
@@ -273,15 +266,6 @@ export function EquipesEditor() {
   const handleSlugChange = (val) => {
     set("slug", slugify(val));
     setSlugManual(true);
-  };
-
-  // Redes sociais
-  const addRede = () => set("redesSociais", [...(form.redesSociais || []), { rede: "instagram", url: "" }]);
-  const removeRede = (i) => set("redesSociais", form.redesSociais.filter((_, idx) => idx !== i));
-  const setRede = (i, field, value) => {
-    const arr = [...(form.redesSociais || [])];
-    arr[i] = { ...arr[i], [field]: value };
-    set("redesSociais", arr);
   };
 
   const handleSave = async () => {
@@ -366,101 +350,15 @@ export function EquipesEditor() {
             </div>
 
             <div>
-              <label style={lbl}>Ano de Fundação</label>
-              <input style={inp} value={form.fundacao}
-                onChange={e => set("fundacao", e.target.value)}
-                placeholder="2008" />
-            </div>
-
-            <div>
               <label style={lbl}>Contato (e-mail ou site)</label>
               <input style={inp} value={form.contato}
                 onChange={e => set("contato", e.target.value)}
                 placeholder="contato@exemplo.com.br" />
             </div>
 
-            <div style={{ gridColumn: "1/-1" }}>
-              <label style={lbl}>Resumo (aparece nos cards)</label>
-              <textarea style={{ ...inp, resize: "vertical" }} rows={3}
-                value={form.excerpt}
-                onChange={e => set("excerpt", e.target.value)}
-                placeholder="Breve descrição da equipe para exibição nos cards…" />
-            </div>
           </div>
         </div>
 
-        {/* Imagens */}
-        <div style={card}>
-          <SectionTitle>Imagens</SectionTitle>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <div>
-              <label style={lbl}>Logo (URL)</label>
-              <input style={inp} value={form.logo}
-                onChange={e => set("logo", e.target.value)}
-                placeholder="https://…/logo.png" />
-              {form.logo && (
-                <img src={form.logo} alt="logo preview"
-                  style={{ marginTop: 8, width: 60, height: 60,
-                    borderRadius: 8, objectFit: "cover",
-                    border: `1px solid ${COLORS.grayLight}` }} />
-              )}
-            </div>
-            <div>
-              <label style={lbl}>Imagem de Capa (URL)</label>
-              <input style={inp} value={form.coverImage}
-                onChange={e => set("coverImage", e.target.value)}
-                placeholder="https://…/capa.jpg" />
-              {form.coverImage && (
-                <img src={form.coverImage} alt="capa preview"
-                  style={{ marginTop: 8, width: "100%", height: 80,
-                    borderRadius: 8, objectFit: "cover",
-                    border: `1px solid ${COLORS.grayLight}` }} />
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Conteúdo */}
-        <div style={card}>
-          <SectionTitle>Conteúdo da Página</SectionTitle>
-          <label style={lbl}>Texto completo (HTML aceito)</label>
-          <textarea style={{ ...inp, resize: "vertical", minHeight: 180 }}
-            value={form.content}
-            onChange={e => set("content", e.target.value)}
-            placeholder="<p>Descrição detalhada da equipe…</p>" />
-          <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, marginTop: 4 }}>
-            HTML básico aceito: &lt;p&gt;, &lt;strong&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;a&gt;
-          </div>
-        </div>
-
-        {/* Redes sociais */}
-        <div style={card}>
-          <SectionTitle>Redes Sociais</SectionTitle>
-          {(form.redesSociais || []).map((rs, i) => (
-            <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10, alignItems: "center" }}>
-              <select value={rs.rede} onChange={e => setRede(i, "rede", e.target.value)}
-                style={{ ...inp, width: 160, flexShrink: 0 }}>
-                {REDES.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-              <input style={{ ...inp, flex: 1 }} value={rs.url}
-                onChange={e => setRede(i, "url", e.target.value)}
-                placeholder="https://…" />
-              <button onClick={() => removeRede(i)}
-                style={{ padding: "8px 12px", borderRadius: 7,
-                  border: "1px solid #fca5a5", background: "#fff",
-                  color: "#dc2626", cursor: "pointer",
-                  fontFamily: FONTS.heading, fontSize: 12 }}>
-                ✕
-              </button>
-            </div>
-          ))}
-          <button onClick={addRede}
-            style={{ padding: "8px 16px", borderRadius: 8, border: `1px dashed ${COLORS.grayLight}`,
-              background: "transparent", cursor: "pointer",
-              fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, color: COLORS.gray }}>
-            + Adicionar rede
-          </button>
-        </div>
 
         {/* Configurações */}
         <div style={card}>
