@@ -1,4 +1,5 @@
 import { BrowserRouter } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import { AdminProvider } from "./context/AdminContext";
 import { IntranetProvider } from "./context/IntranetContext";
 import { OrganizerProvider } from "./context/OrganizerContext";
@@ -19,6 +20,7 @@ export default function App() {
               rel="stylesheet"
             />
             <AppRouter />
+            <Analytics />
           </OrganizerProvider>
         </IntranetProvider>
       </AdminProvider>
