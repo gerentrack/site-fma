@@ -59,7 +59,6 @@ function SocialBlock({ socialLinks }) {
   return (
     <section style={{ background: COLORS.grayLight, padding: "48px 24px" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto", textAlign: "center" }}>
-        <div style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", color: COLORS.primary, marginBottom: 6 }}>Siga a FMA</div>
         <h2 style={{ fontFamily: FONTS.heading, fontSize: "clamp(1.6rem, 3vw, 2.2rem)", fontWeight: 800, color: COLORS.dark, margin: "0 0 28px", textTransform: "uppercase", letterSpacing: 1 }}>Redes Sociais</h2>
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 16 }}>
           {socialLinks.map(s => (
