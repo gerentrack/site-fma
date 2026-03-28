@@ -6,11 +6,43 @@ import PageHeader from "../../components/ui/PageHeader";
 import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 import { FormField, TextInput, SelectInput } from "../../components/ui/FormField";
+import FileUpload from "../../components/ui/FileUpload";
 import { useCrud } from "../../hooks/useApi";
 import { useForm, required } from "../../hooks/useForm";
 import { SocialLinksService } from "../../services/index";
 import { SOCIAL_NETWORKS } from "../../config/navigation";
-import { COLORS } from "../../styles/colors";
+import { COLORS, FONTS } from "../../styles/colors";
+
+/** Retorna true se o valor parece ser URL de imagem (não emoji) */
+function isImageUrl(v) {
+  return v && (v.startsWith("http") || v.startsWith("data:"));
+}
+
+/** Renderiza ícone social — imagem se URL, emoji caso contrário */
+function SocialIcon({ icon, size = 24 }) {
+  if (isImageUrl(icon)) {
+    return <img src={icon} alt="" style={{ width: size, height: size, objectFit: "contain", borderRadius: 4 }} />;
+  }
+  return <span style={{ fontSize: size }}>{icon}</span>;
+}
+
+/** Mostra dimensões da imagem após carregamento */
+function ImageDimensions({ src }) {
+  const [dims, setDims] = useState(null);
+  useEffect(() => {
+    if (!src) { setDims(null); return; }
+    const img = new Image();
+    img.onload = () => setDims({ w: img.naturalWidth, h: img.naturalHeight });
+    img.onerror = () => setDims(null);
+    img.src = src;
+  }, [src]);
+  if (!dims) return null;
+  return (
+    <span style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>
+      Dimensões: {dims.w} × {dims.h}px
+    </span>
+  );
+}
 
 // ─── Lista ────────────────────────────────────────────────────────────────────
 
@@ -22,7 +54,7 @@ export function SocialLinksList() {
     {
       key: "icon",
       label: "Ícone",
-      render: (v) => <span style={{ fontSize: 24 }}>{v}</span>,
+      render: (v) => <SocialIcon icon={v} size={24} />,
     },
     { key: "label", label: "Rede" },
     {
@@ -133,14 +165,27 @@ export function SocialLinksEditor() {
             />
           </FormField>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 80px", gap: 12 }}>
-            <FormField label="Label (nome de exibição)" required error={errors.label}>
-              <TextInput value={values.label} onChange={v => set("label", v)} error={errors.label} placeholder="Ex: Instagram" />
-            </FormField>
-            <FormField label="Ícone" hint="Emoji">
+          <FormField label="Label (nome de exibição)" required error={errors.label}>
+            <TextInput value={values.label} onChange={v => set("label", v)} error={errors.label} placeholder="Ex: Instagram" />
+          </FormField>
+
+          <FileUpload
+            label="Ícone / Imagem"
+            value={isImageUrl(values.icon) ? values.icon : ""}
+            onChange={(url) => set("icon", url)}
+            folder="redes-sociais"
+            accept="image/*"
+            hint="Recomendado: imagem quadrada (ex: 64x64px). PNG ou SVG com fundo transparente."
+            maxMB={2}
+          />
+          {isImageUrl(values.icon) && <ImageDimensions src={values.icon} />}
+
+          {/* Fallback: emoji caso não use imagem */}
+          {!isImageUrl(values.icon) && (
+            <FormField label="Ou usar Emoji como ícone" hint="Se não enviar imagem, o emoji será usado.">
               <TextInput value={values.icon} onChange={v => set("icon", v)} placeholder="📸" />
             </FormField>
-          </div>
+          )}
 
           <FormField label="URL" required error={errors.url} hint="URL completa incluindo https://">
             <TextInput value={values.url} onChange={v => set("url", v)} error={errors.url} placeholder="https://instagram.com/fmaatletismo" type="url" />
@@ -158,7 +203,7 @@ export function SocialLinksEditor() {
           {/* Preview */}
           {values.url && (
             <div style={{ background: COLORS.offWhite || "#f7f7f7", borderRadius: 8, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
-              <span style={{ fontSize: 24 }}>{values.icon}</span>
+              <SocialIcon icon={values.icon} size={24} />
               <div>
                 <div style={{ fontWeight: 700, fontSize: 13 }}>{values.label}</div>
                 <div style={{ fontSize: 11, color: COLORS.gray }}>{values.url}</div>

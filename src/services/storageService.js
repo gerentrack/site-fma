@@ -105,4 +105,5 @@ export const STORAGE_FOLDERS = {
   pista:        "pistas",
   arbitro:      "arbitros",
   solicitacao:  (id) => `solicitacoes/${id}`,
+  redeSocial:   "redes-sociais",
 };

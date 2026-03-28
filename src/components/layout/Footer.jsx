@@ -98,7 +98,9 @@ export default function Footer() {
                     onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.15)"}
                     onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.07)"}
                   >
-                    <span style={{ fontSize: 20 }}>{s.icon}</span>
+                    {s.icon && (s.icon.startsWith("http") || s.icon.startsWith("data:"))
+                      ? <img src={s.icon} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
+                      : <span style={{ fontSize: 20 }}>{s.icon}</span>}
                     <span>{s.label}</span>
                   </a>
                 ))}

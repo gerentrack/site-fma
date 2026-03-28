@@ -82,7 +82,9 @@ function SocialBlock({ socialLinks }) {
               onMouseEnter={e => { e.currentTarget.style.background = COLORS.primary; e.currentTarget.style.color = "#fff"; e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(204,0,0,0.2)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = COLORS.dark; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.07)"; }}
             >
-              <span style={{ fontSize: 30 }}>{s.icon}</span>
+              {s.icon && (s.icon.startsWith("http") || s.icon.startsWith("data:"))
+                ? <img src={s.icon} alt="" style={{ width: 30, height: 30, objectFit: "contain" }} />
+                : <span style={{ fontSize: 30 }}>{s.icon}</span>}
               {s.label}
             </a>
           ))}
