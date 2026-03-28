@@ -238,7 +238,7 @@ export function RefereeContentEditor() {
             <FormField label="🔗 Link Externo">
               <TextInput value={values.externalLink} onChange={v => set("externalLink", v)} placeholder="https://..." type="url" />
             </FormField>
-            <FileUpload label="🖼️ Imagem" value={values.image} onChange={v => set("image", v)} hint="Opcional. Recomendado: 600x340px." mode="both" />
+            <FileUpload label="🖼️ Imagem" value={values.image} onChange={v => set("image", v)} folder="arbitros" hint="Opcional. Recomendado: 600x340px." mode="both" />
           </div>
         </div>
 

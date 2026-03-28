@@ -553,6 +553,7 @@ export function SectionEditor() {
               label="Imagem da Seção"
               value={values.image}
               onChange={v => set("image", v)}
+              folder="institucional"
               hint="Recomendado: 700x420px. URL ou upload."
               mode="both"
             />

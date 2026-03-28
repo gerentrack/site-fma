@@ -117,6 +117,7 @@ export function PartnersEditor() {
             label="Logo"
             value={values.logo}
             onChange={v => set("logo", v)}
+            folder="parceiros"
             hint="Recomendado: 160x80px, fundo transparente (PNG) ou branco. URL ou upload."
             mode="both"
           />

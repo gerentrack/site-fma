@@ -109,7 +109,7 @@ function normalizeModalidade(val) {
     meia: "21km", "meia maratona": "21km", "meia-maratona": "21km",
     maratona: "42km", "42k": "42km", "ultra": "Ultra",
     "5k": "5km", "10k": "10km", "15k": "15km",
-    "21k": "21km", "42k": "42km",
+    "21k": "21km",
   };
   const lower = s.toLowerCase();
   if (apelidos[lower]) return apelidos[lower];

@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useOrganizer } from "../../context/OrganizerContext";
 import { SolicitacoesService, ArquivosService, MovimentacoesService } from "../../services/index";
+import { uploadFile } from "../../services/storageService";
 import { COLORS, FONTS } from "../../styles/colors";
 import { SOLICITACAO_STATUS, SOLICITACAO_TIPOS, MOVIMENTACAO_TIPOS, ARQUIVO_CATEGORIAS } from "../../config/navigation";
 import { getFieldsBySection, initFormConfig } from "../../utils/formSchema";
@@ -77,8 +78,9 @@ function ArquivoUploader({ solicitacaoId, organizerId, organizerName, onUploaded
   const handleUpload = async () => {
     if (!file) { setError("Selecione um arquivo."); return; }
     setUploading(true);
-    const dataUrl = await new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); });
-    const r = await ArquivosService.upload({ solicitacaoId, nome:file.name, tamanho:file.size, tipo:file.type, descricao:descricao||file.name, categoria, enviadoPor:"organizador", enviadoById:organizerId, enviadoPorNome:organizerName, dataUrl });
+    const { url, path, error: uploadError } = await uploadFile(file, `solicitacoes/${solicitacaoId}`);
+    if (uploadError) { setError(uploadError); setUploading(false); return; }
+    const r = await ArquivosService.create({ solicitacaoId, nome:file.name, tamanho:file.size, tipo:file.type, descricao:descricao||file.name, categoria, enviadoPor:"organizador", enviadoById:organizerId, enviadoPorNome:organizerName, url, storagePath:path });
     if (r.error) { setError(r.error); setUploading(false); return; }
     await MovimentacoesService.registrar({ solicitacaoId, tipoEvento:"arquivo_enviado", statusAnterior:"", statusNovo:"", descricao:`Arquivo enviado: ${file.name}`, autor:"organizador", autorNome:organizerName, autorId:organizerId, visivel:true });
     setFile(null); setDescricao(""); setCategoria("complementar");

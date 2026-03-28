@@ -27,6 +27,7 @@ import {
   SolicitacoesService, OrganizersService, ArquivosService, MovimentacoesService,
   CalendarService,
 } from "../../services/index";
+import { uploadFile } from "../../services/storageService";
 import { normalizarCamposTecnicos, totalEstimativaInscritos, modalidadesLabel } from "../../utils/permitDefaults";
 import { notificarStatusSolicitacao } from "../../services/emailService";
 
@@ -393,38 +394,36 @@ export function SolicitacaoEditor() {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { flash("Arquivo muito grande (máx. 5 MB).", "err"); return; }
     setUploading(true);
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const r = await ArquivosService.upload({
+    const { url, path, error: uploadError } = await uploadFile(file, `solicitacoes/${id}`);
+    if (uploadError) { flash("Erro ao enviar arquivo.", "err"); setUploading(false); e.target.value = ""; return; }
+    const r = await ArquivosService.create({
+      solicitacaoId: id,
+      nome: file.name,
+      tamanho: file.size,
+      tipo: file.type,
+      descricao: uploadDesc || `Documento enviado pela FMA`,
+      categoria: "resposta_fma",
+      enviadoPor: "fma",
+      enviadoById: "admin",
+      enviadoPorNome: analise.responsavelFMA || "Equipe FMA",
+      url, storagePath: path,
+    });
+    if (r.data) {
+      await MovimentacoesService.registrar({
         solicitacaoId: id,
-        nome: file.name,
-        tamanho: file.size,
-        tipo: file.type,
-        descricao: uploadDesc || `Documento enviado pela FMA`,
-        categoria: "resposta_fma",
-        enviadoPor: "fma",
-        enviadoById: "admin",
-        enviadoPorNome: analise.responsavelFMA || "Equipe FMA",
-        dataUrl: ev.target.result,
+        tipoEvento: "arquivo_enviado",
+        statusAnterior: sol.status, statusNovo: sol.status,
+        descricao: `Arquivo "${file.name}" enviado pela FMA.`,
+        autor: "fma", autorNome: analise.responsavelFMA || "Equipe FMA",
+        autorId: "admin", visivel: true,
       });
-      if (r.data) {
-        await MovimentacoesService.registrar({
-          solicitacaoId: id,
-          tipoEvento: "arquivo_enviado",
-          statusAnterior: sol.status, statusNovo: sol.status,
-          descricao: `Arquivo "${file.name}" enviado pela FMA.`,
-          autor: "fma", autorNome: analise.responsavelFMA || "Equipe FMA",
-          autorId: "admin", visivel: true,
-        });
-        setUploadDesc("");
-        load();
-        flash(`"${file.name}" enviado com sucesso.`, "ok");
-      } else {
-        flash("Erro ao enviar arquivo.", "err");
-      }
-      setUploading(false);
-    };
-    reader.readAsDataURL(file);
+      setUploadDesc("");
+      load();
+      flash(`"${file.name}" enviado com sucesso.`, "ok");
+    } else {
+      flash("Erro ao enviar arquivo.", "err");
+    }
+    setUploading(false);
     e.target.value = "";
   };
 

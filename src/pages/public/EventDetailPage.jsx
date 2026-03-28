@@ -75,7 +75,7 @@ export default function EventDetailPage() {
   const cat    = catMap[event.category] || {};
   const stat   = statusMap[event.status] || statusMap.confirmado;
   const dt     = event.date ? new Date(event.date + "T12:00:00") : null;
-  const hasFiles = event.permitFileUrl || event.chancelaFileUrl || event.resultsFileUrl || event.permitUrl;
+  const hasFiles = event.permitFileUrl || event.chancelaFileUrl || event.resultsFileUrl || event.permitUrl || event.modalidadesDetalhes?.some(m => m.permitFileUrl || m.regulamentoUrl || m.resultsFileUrl);
 
   return (
     <div>
@@ -163,15 +163,67 @@ export default function EventDetailPage() {
             </div>
           )}
 
-          {/* Downloads */}
-          {hasFiles && (
+          {/* Downloads — por modalidade ou geral */}
+          {(hasFiles || event.modalidadesDetalhes?.some(m => m.permitFileUrl || m.regulamentoUrl || m.resultsFileUrl)) && (
             <div style={{ background: "#f7f7f7", borderRadius: 12, padding: "24px 28px", marginBottom: 32 }}>
               <h2 style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, margin: "0 0 16px" }}>Downloads</h2>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-                <DownloadBtn href={event.permitFileUrl || event.permitUrl} label="Permit do Evento" icon="📋" />
-                <DownloadBtn href={event.chancelaFileUrl} label="Chancela FMA" icon="🏅" />
-                <DownloadBtn href={event.resultsFileUrl} label="Resultados" icon="📊" />
-              </div>
+
+              {/* Com modalidades detalhadas — agrupa por modalidade */}
+              {event.modalidadesDetalhes?.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+                  {/* Regulamento único para todas as modalidades */}
+                  {(() => {
+                    const reg = event.regulamentoUrl || event.modalidadesDetalhes.find(m => m.regulamentoUrl)?.regulamentoUrl;
+                    return reg ? (
+                      <div style={{ background: "#fff", borderRadius: 8, padding: "14px 16px", border: `1px solid ${COLORS.grayLight}` }}>
+                        <div style={{ fontFamily: FONTS.heading, fontWeight: 800, fontSize: 13, color: COLORS.dark, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                          📄 Regulamento
+                        </div>
+                        <DownloadBtn href={reg} label="Regulamento Geral" icon="📄" />
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* Permit por modalidade */}
+                  {event.modalidadesDetalhes.some(m => m.permitFileUrl || m.resultsFileUrl) && (
+                    <div style={{ background: "#fff", borderRadius: 8, padding: "14px 16px", border: `1px solid ${COLORS.grayLight}` }}>
+                      <div style={{ fontFamily: FONTS.heading, fontWeight: 800, fontSize: 13, color: COLORS.dark, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                        📋 Permits por Modalidade
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {event.modalidadesDetalhes.map((mod, i) => {
+                          if (!mod.permitFileUrl && !mod.resultsFileUrl) return null;
+                          return (
+                            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                              <span style={{ fontFamily: FONTS.heading, fontWeight: 700, fontSize: 12, color: COLORS.dark, minWidth: 60 }}>🏃 {mod.nome}</span>
+                              {mod.permitFileUrl  && <DownloadBtn href={mod.permitFileUrl}  label="Permit" icon="📋" />}
+                              {mod.resultsFileUrl && <DownloadBtn href={mod.resultsFileUrl} label="Resultados" icon="📊" />}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Chancela geral */}
+                  {(event.chancelaFileUrl || event.permitFileUrl || event.permitUrl) && (
+                    <div style={{ background: "#fff", borderRadius: 8, padding: "14px 16px", border: `1px solid ${COLORS.grayLight}` }}>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {(event.permitFileUrl || event.permitUrl) && <DownloadBtn href={event.permitFileUrl || event.permitUrl} label="Permit do Evento" icon="📋" />}
+                        {event.chancelaFileUrl && <DownloadBtn href={event.chancelaFileUrl} label="Chancela FMA" icon="🏅" />}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Sem modalidades — exibe arquivos gerais */
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+                  {(event.permitFileUrl || event.permitUrl) && <DownloadBtn href={event.permitFileUrl || event.permitUrl} label="Permit do Evento" icon="📋" />}
+                  {event.chancelaFileUrl && <DownloadBtn href={event.chancelaFileUrl} label="Chancela FMA" icon="🏅" />}
+                  {event.resultsFileUrl  && <DownloadBtn href={event.resultsFileUrl}  label="Resultados"   icon="📊" />}
+                </div>
+              )}
             </div>
           )}
 

@@ -3,11 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../components/admin/AdminLayout";
 import { bannersAPI } from "../../data/api";
 import { COLORS, FONTS } from "../../styles/colors";
+import FileUpload from "../../components/ui/FileUpload";
 
 const empty = {
   title: "", subtitle: "", cta: "", ctaLink: "#",
-  bg: "linear-gradient(135deg, #990000 0%, #cc0000 60%, #e63333 100%)",
-  icon: "🏃", order: 1, active: true,
+  bg: "#990000",
+  image: "", icon: "🏃", order: 1, active: true,
 };
 
 function BannerForm({ initial, onSave, onCancel }) {
@@ -27,11 +28,14 @@ function BannerForm({ initial, onSave, onCancel }) {
   return (
     <div style={{ display: "grid", gap: 20 }}>
       {/* Preview */}
-      <div style={{ background: form.bg, borderRadius: 10, padding: "28px 20px", textAlign: "center", marginBottom: 8 }}>
-        <div style={{ fontSize: 40, marginBottom: 8 }}>{form.icon}</div>
-        <div style={{ fontFamily: FONTS.heading, fontSize: 22, fontWeight: 800, color: "#fff", textTransform: "uppercase", letterSpacing: 1 }}>{form.title || "Título do Banner"}</div>
-        <div style={{ fontFamily: FONTS.body, fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 6 }}>{form.subtitle || "Subtítulo aqui"}</div>
-        <div style={{ marginTop: 14, display: "inline-block", background: "#fff", color: "#990000", padding: "8px 20px", borderRadius: 30, fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700 }}>{form.cta || "CTA"}</div>
+      <div style={{ background: form.bg, borderRadius: 10, padding: "28px 20px", textAlign: "center", marginBottom: 8, position: "relative", overflow: "hidden" }}>
+        {form.image && <img src={form.image} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <div style={{ fontSize: 40, marginBottom: 8 }}>{form.icon}</div>
+          <div style={{ fontFamily: FONTS.heading, fontSize: 22, fontWeight: 800, color: "#fff", textTransform: "uppercase", letterSpacing: 1, textShadow: form.image ? "0 2px 8px rgba(0,0,0,0.6)" : "none" }}>{form.title || "Título do Banner"}</div>
+          <div style={{ fontFamily: FONTS.body, fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 6, textShadow: form.image ? "0 1px 4px rgba(0,0,0,0.6)" : "none" }}>{form.subtitle || "Subtítulo aqui"}</div>
+          <div style={{ marginTop: 14, display: "inline-block", background: "#fff", color: "#990000", padding: "8px 20px", borderRadius: 30, fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700 }}>{form.cta || "CTA"}</div>
+        </div>
       </div>
 
       <div><label style={labelStyle}>Título *</label><input style={inputStyle} value={form.title} onChange={e => set("title", e.target.value)} /></div>
@@ -41,7 +45,18 @@ function BannerForm({ initial, onSave, onCancel }) {
         <div><label style={labelStyle}>Link do Botão</label><input style={inputStyle} value={form.ctaLink} onChange={e => set("ctaLink", e.target.value)} /></div>
       </div>
       <div><label style={labelStyle}>Ícone (Emoji)</label><input style={inputStyle} value={form.icon} onChange={e => set("icon", e.target.value)} /></div>
-      <div><label style={labelStyle}>Background (CSS gradient ou cor)</label><input style={inputStyle} value={form.bg} onChange={e => set("bg", e.target.value)} /></div>
+      <div>
+        <label style={labelStyle}>Cor de Fundo</label>
+        <input type="color" value={form.bg.startsWith("#") ? form.bg : "#990000"} onChange={e => set("bg", e.target.value)} style={{ width: 48, height: 40, border: `1px solid ${COLORS.grayLight}`, borderRadius: 8, cursor: "pointer", padding: 2 }} />
+      </div>
+      <FileUpload
+        label="Imagem de Fundo (opcional)"
+        value={form.image}
+        onChange={v => set("image", v)}
+        folder="banners"
+        hint="Recomendado: 1920x600px. JPG ou PNG. Substitui o gradient quando preenchido."
+        mode="both"
+      />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <div><label style={labelStyle}>Ordem</label><input type="number" style={inputStyle} value={form.order} onChange={e => set("order", parseInt(e.target.value))} /></div>
         <div style={{ paddingTop: 28 }}>
@@ -77,7 +92,10 @@ export function BannersList() {
           {items.length === 0 && <p style={{ padding: 32, textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray, background: COLORS.white, borderRadius: 12 }}>Nenhum banner cadastrado.</p>}
           {items.map(item => (
             <div key={item.id} style={{ background: COLORS.white, borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", display: "flex", gap: 0 }}>
-              <div style={{ background: item.bg, width: 120, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, flexShrink: 0 }}>{item.icon}</div>
+              <div style={{ background: item.bg, width: 120, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, flexShrink: 0, position: "relative", overflow: "hidden" }}>
+                {item.image && <img src={item.image} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />}
+                <span style={{ position: "relative", zIndex: 1 }}>{item.icon}</span>
+              </div>
               <div style={{ flex: 1, padding: "16px 20px" }}>
                 <div style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 700, color: COLORS.dark }}>{item.title}</div>
                 <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 4 }}>{item.subtitle}</div>

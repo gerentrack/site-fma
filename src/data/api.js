@@ -109,6 +109,11 @@ export const pistasHomologadasAPI = {
 };
 
 export async function initializeData() {
+  // Verifica se o seed já foi executado — evita re-popular coleções deletadas
+  const flagRef  = doc(db, "config", "_seeded");
+  const flagSnap = await getDoc(flagRef);
+  if (flagSnap.exists()) return; // já rodou, nunca mais roda
+
   await Promise.all([
     seedCollection("news",                   SEED_NEWS),
     seedCollection("gallery",                SEED_GALLERY),

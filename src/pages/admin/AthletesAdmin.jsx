@@ -417,6 +417,7 @@ export function AthleteContentEditor() {
               label="🖼️ Imagem"
               value={values.image}
               onChange={v => set("image", v)}
+              folder="atletas"
               hint="Opcional. Recomendado: 600x340px."
               mode="both"
             />

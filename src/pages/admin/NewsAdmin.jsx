@@ -174,6 +174,7 @@ export function NewsEditor() {
             label="Imagem de Capa"
             value={values.image}
             onChange={v => set("image", v)}
+            folder="noticias"
             hint="Recomendado: 800x440px. JPG ou PNG."
             mode="both"
           />

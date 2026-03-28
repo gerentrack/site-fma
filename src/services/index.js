@@ -571,7 +571,7 @@ export const ProtocoloService = {
 
 export const ArquivosService = {
   listBySolicitacao: (id) => solicitacaoArquivosAPI.listBySolicitacao(id),
-  upload: (data) => solicitacaoArquivosAPI.upload(data),
+  create: (data) => solicitacaoArquivosAPI.create(data),
   delete: (id) => solicitacaoArquivosAPI.delete(id),
 };
 

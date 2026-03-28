@@ -157,7 +157,7 @@ export const documentModel = {
 export const bannerModel = {
   id: "", title: "", subtitle: "", cta: "", ctaLink: "#",
   bg: "linear-gradient(135deg, #990000 0%, #cc0000 100%)",
-  icon: "🏃", order: 0, active: true,
+  image: "", icon: "🏃", order: 0, active: true,
 };
 
 // ─── 8. Parceiro ──────────────────────────────────────────────────────────────
