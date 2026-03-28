@@ -44,69 +44,6 @@ function ImageDimensions({ src }) {
   );
 }
 
-/**
- * Remove fundo branco/claro da imagem via Canvas.
- * Retorna data URL (PNG com transparência).
- */
-function removeBackground(src, threshold = 240) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0);
-      const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const px = data.data;
-      for (let i = 0; i < px.length; i += 4) {
-        if (px[i] >= threshold && px[i + 1] >= threshold && px[i + 2] >= threshold) {
-          px[i + 3] = 0; // torna transparente
-        }
-      }
-      ctx.putImageData(data, 0, 0);
-      canvas.toBlob((blob) => {
-        if (blob) resolve(blob);
-        else reject(new Error("Falha ao gerar imagem."));
-      }, "image/png");
-    };
-    img.onerror = () => reject(new Error("Falha ao carregar imagem."));
-    img.src = src;
-  });
-}
-
-/** Botão para remover fundo branco da imagem */
-function RemoveBackgroundBtn({ src, folder, onDone }) {
-  const [processing, setProcessing] = useState(false);
-
-  async function handle() {
-    setProcessing(true);
-    try {
-      const blob = await removeBackground(src);
-      const file = new File([blob], "icon_no_bg.png", { type: "image/png" });
-      const { uploadFile } = await import("../../services/storageService");
-      const result = await uploadFile(file, folder);
-      if (result.error) throw new Error(result.error);
-      onDone(result.url);
-    } catch (e) {
-      alert("Erro ao remover fundo: " + e.message);
-    }
-    setProcessing(false);
-  }
-
-  return (
-    <button type="button" onClick={handle} disabled={processing}
-      style={{
-        padding: "6px 14px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`,
-        background: processing ? COLORS.grayLight : "#fff", cursor: processing ? "default" : "pointer",
-        fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, color: COLORS.dark,
-      }}>
-      {processing ? "Processando…" : "🪄 Remover fundo branco"}
-    </button>
-  );
-}
-
 // ─── Lista ────────────────────────────────────────────────────────────────────
 
 export function SocialLinksList() {
@@ -241,12 +178,7 @@ export function SocialLinksEditor() {
             hint="Recomendado: 200x120px ou proporcional. PNG ou SVG com fundo transparente."
             maxMB={2}
           />
-          {isImageUrl(values.icon) && (
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-              <ImageDimensions src={values.icon} />
-              <RemoveBackgroundBtn src={values.icon} folder="redes-sociais" onDone={(url) => set("icon", url)} />
-            </div>
-          )}
+          {isImageUrl(values.icon) && <ImageDimensions src={values.icon} />}
 
           {/* Fallback: emoji caso não use imagem */}
           {!isImageUrl(values.icon) && (

@@ -163,12 +163,13 @@ export const NEWS_CATEGORIES = [
 
 export const CALENDAR_CATEGORIES = [
   { value: "",        label: "Todos os Tipos" },
-  { value: "corrida", label: "Corrida de Rua Homologada", color: "#cc0000", icon: "🏃" },
-  { value: "pista",   label: "Pista e Campo",              color: "#0066cc", icon: "🏟️" },
-  { value: "trail",   label: "Trail / Montanha",           color: "#007733", icon: "🏔️" },
-  { value: "marcha",  label: "Marcha Atlética",            color: "#884400", icon: "🚶" },
-  { value: "cross",   label: "Cross Country",              color: "#5a3e00", icon: "🌿" },
-  { value: "outros",  label: "Outros",                     color: "#6b7280", icon: "🎽" },
+  { value: "corrida", label: "Corrida de Rua Homologada", color: "#cc0000" },
+  { value: "pista",   label: "Pista e Campo",              color: "#0066cc" },
+  { value: "trail",   label: "Trail / Montanha",           color: "#007733" },
+  { value: "marcha",  label: "Marcha Atlética",            color: "#884400" },
+  { value: "cross",   label: "Cross Country",              color: "#5a3e00" },
+  { value: "treinao", label: "Treinão",                    color: "#e67e22" },
+  { value: "outros",  label: "Outros",                     color: "#6b7280" },
 ];
 
 export const EVENT_STATUS = [

@@ -413,32 +413,43 @@ export function CalendarEditor() {
               mode="both"
             />
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
-              <FormField
-                label="📋 Arquivo de Permit"
-                hint="URL do arquivo PDF do permit de evento"
-              >
-                <TextInput value={values.permitFileUrl} onChange={v => set("permitFileUrl", v)} placeholder="https://...permit.pdf" type="url" />
-              </FormField>
-
-              <FormField
-                label="🏅 Arquivo de Chancela"
-                hint="URL do arquivo PDF da chancela FMA"
-              >
-                <TextInput value={values.chancelaFileUrl} onChange={v => set("chancelaFileUrl", v)} placeholder="https://...chancela.pdf" type="url" />
-              </FormField>
-
-              <FormField
-                label="📊 Arquivo de Resultados"
-                hint="URL do PDF ou planilha de resultados"
-              >
-                <TextInput value={values.resultsFileUrl} onChange={v => set("resultsFileUrl", v)} placeholder="https://...resultados.pdf" type="url" />
-              </FormField>
-            </div>
-
-            <div style={{ background: "#fffbeb", border: "1px solid #f59e0b", borderRadius: 7, padding: "10px 14px", fontSize: 12, color: "#92400e", fontFamily: FONTS.body }}>
-              💡 <strong>Estrutura recomendada de arquivos:</strong> organize os uploads no servidor em pastas como <code>eventos/2026/permits/</code>, <code>eventos/2026/chancelas/</code> e <code>eventos/2026/resultados/</code>. Cole a URL completa nos campos acima.
-            </div>
+            {(() => {
+              const ano = values.date ? values.date.slice(0, 4) : new Date().getFullYear().toString();
+              return (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+                  <FileUpload
+                    label="📋 Arquivo de Permit"
+                    value={values.permitFileUrl}
+                    onChange={v => set("permitFileUrl", v)}
+                    folder={`eventos/permits/${ano}`}
+                    accept=".pdf,.doc,.docx"
+                    hint={`PDF do permit · Salvo em eventos/permits/${ano}/`}
+                    mode="both"
+                    maxMB={10}
+                  />
+                  <FileUpload
+                    label="🏅 Arquivo de Chancela"
+                    value={values.chancelaFileUrl}
+                    onChange={v => set("chancelaFileUrl", v)}
+                    folder={`eventos/chancelas/${ano}`}
+                    accept=".pdf,.doc,.docx"
+                    hint={`PDF da chancela · Salvo em eventos/chancelas/${ano}/`}
+                    mode="both"
+                    maxMB={10}
+                  />
+                  <FileUpload
+                    label="📊 Arquivo de Resultados"
+                    value={values.resultsFileUrl}
+                    onChange={v => set("resultsFileUrl", v)}
+                    folder={`eventos/resultados/${ano}`}
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.csv"
+                    hint={`PDF ou planilha · Salvo em eventos/resultados/${ano}/`}
+                    mode="both"
+                    maxMB={10}
+                  />
+                </div>
+              );
+            })()}
           </div>
         </div>
 
