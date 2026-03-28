@@ -208,11 +208,12 @@ export default function ImportarAdmin() {
           organizer:      String(r[10] || "").trim(),
           modalidade:     normalizeModalidade(r[11]),
           descricaoModalidade: String(r[12] || "").trim(),
-          _driveRegulamento: String(r[13] || "").trim(),
-          _drivePermit:   String(r[14] || "").trim(),
-          _driveResultado: String(r[15] || "").trim(),
-          featured:       parseBool(r[16]),
-          published:      parseBool(r[17]),
+          externalLink:   String(r[13] || "").trim(),
+          _driveRegulamento: String(r[14] || "").trim(),
+          _drivePermit:   String(r[15] || "").trim(),
+          _driveResultado: String(r[16] || "").trim(),
+          featured:       parseBool(r[17]),
+          published:      parseBool(r[18]),
         }))
         .filter(r => r.titulo); // ignora linhas sem título
 
@@ -329,6 +330,7 @@ export default function ImportarAdmin() {
           lat:              geoData.lat      ?? null,
           lng:              geoData.lng      ?? null,
           organizer:        primeiraLinha.organizer,
+          externalLink:     primeiraLinha.externalLink,
           modalities:       modalidades.map(m => m.nome),
           modalidadesDetalhes: modalidades,
           shortDescription: modalidades[0]?.descricao || "",
@@ -416,12 +418,30 @@ export default function ImportarAdmin() {
                   Baixe o modelo, preencha com os dados do calendário atual e faça upload aqui.
                 </div>
               </div>
-              <a
-                href="/FMA_Migracao_Calendario.xlsx"
-                download
-                style={{ padding: "8px 20px", background: "#1e40af", color: "#fff", borderRadius: 8, fontFamily: FONTS.heading, fontWeight: 700, fontSize: 13, textDecoration: "none", whiteSpace: "nowrap" }}>
+              <button
+                onClick={async () => {
+                  const XLSX = await import("https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs");
+                  const rows = [
+                    ["FMA – Federação Mineira de Atletismo"],
+                    ["Planilha de Migração do Calendário"],
+                    [""],
+                    ["Instruções:"],
+                    ["1. Preencha os dados a partir da linha 10 (não altere os cabeçalhos)."],
+                    ["2. Uma mesma prova pode ter múltiplas modalidades: repita o título/data e mude apenas Modalidade e Descrição."],
+                    ["3. Campos obrigatórios: Título, Data, Cidade e Modalidade."],
+                    [""],
+                    ["Título","Data","Horário","Categoria","Status","CEP","Número","Complemento","Local","Cidade","Organizador","Modalidade","Descrição Modalidade","Link Externo","Link Regulamento","Link Permit","Link Resultado","Destaque","Publicado"],
+                    ["Corrida Exemplo","15/03/2025","07:00","corrida","confirmado","30130-000","100","Praça da Liberdade","Praça da Liberdade","Belo Horizonte","FMA","10km","Corrida de rua 10km","https://exemplo.com/evento","","","","Sim","Sim"],
+                  ];
+                  const ws = XLSX.utils.aoa_to_sheet(rows);
+                  ws["!cols"] = [{wch:25},{wch:12},{wch:10},{wch:12},{wch:14},{wch:12},{wch:10},{wch:20},{wch:25},{wch:18},{wch:18},{wch:14},{wch:22},{wch:30},{wch:30},{wch:30},{wch:30},{wch:10},{wch:10}];
+                  const wb = XLSX.utils.book_new();
+                  XLSX.utils.book_append_sheet(wb, ws, "Calendário");
+                  XLSX.writeFile(wb, "FMA_Migracao_Calendario.xlsx");
+                }}
+                style={{ padding: "8px 20px", background: "#1e40af", color: "#fff", borderRadius: 8, fontFamily: FONTS.heading, fontWeight: 700, fontSize: 13, border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>
                 ⬇ Baixar Modelo
-              </a>
+              </button>
             </div>
 
             {parseError && (
