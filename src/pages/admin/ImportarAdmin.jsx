@@ -188,11 +188,19 @@ export default function ImportarAdmin() {
       const buf  = await file.arrayBuffer();
       const wb   = XLSX.read(buf, { type: "array", cellDates: true });
       const ws   = wb.Sheets[wb.SheetNames[0]];
-      // Lê a partir da linha 6 (índice 5, pula cabeçalhos e exemplo)
-      const data = XLSX.utils.sheet_to_json(ws, { header: 1, range: 8 });
+      // Pula cabeçalhos (linhas 1-9) e lê dados a partir da linha 10
+      const data = XLSX.utils.sheet_to_json(ws, { header: 1, range: 9 });
 
-      const parsed = data
-        .filter(r => r.some(c => c !== undefined && c !== ""))
+      // Detectar e pular linha de cabeçalho (ex: "Título", "Data", "Cidade"...)
+      const rows = data.filter(r => r.some(c => c !== undefined && c !== ""));
+      if (rows.length > 0) {
+        const first = String(rows[0][0] || "").trim().toLowerCase();
+        if (first === "título" || first === "titulo" || first === "title") {
+          rows.shift();
+        }
+      }
+
+      const parsed = rows
         .map((r, i) => ({
           _idx: i,
           titulo:         String(r[0] || "").trim(),
@@ -250,6 +258,7 @@ export default function ImportarAdmin() {
 
     const { calendarAPI } = await import("../../data/api");
     let ok = 0, erros = 0;
+    const eventosBatch = [];
 
     // Agrupar linhas por titulo + data
     const grupos = {};
@@ -317,8 +326,7 @@ export default function ImportarAdmin() {
           });
         }
 
-        // 3. Salvar evento único com array de modalidades
-        idxs.forEach(i => setStatus(i, "processando", "Salvando no Firestore..."));
+        // 3. Montar evento para gravação em lote
         const evento = {
           title:            primeiraLinha.titulo,
           date:             primeiraLinha.data,
@@ -340,14 +348,31 @@ export default function ImportarAdmin() {
           source:           "importacao",
         };
 
-        const r = await calendarAPI.create(evento);
-        if (r.error) throw new Error(r.error);
-
-        idxs.forEach(i => setStatus(i, "ok", `Modalidade ${rows[i].modalidade} importada`));
+        eventosBatch.push({ evento, idxs });
+        idxs.forEach(i => setStatus(i, "processando", "Aguardando gravação em lote..."));
         ok++;
       } catch (e) {
         idxs.forEach(i => setStatus(i, "erro", e.message || "Erro desconhecido"));
         erros++;
+      }
+    }
+
+    // 4. Gravar todos os eventos em lote
+    if (eventosBatch.length > 0) {
+      const allIdxs = eventosBatch.flatMap(b => b.idxs);
+      allIdxs.forEach(i => setStatus(i, "processando", "Gravando em lote no Firestore..."));
+      try {
+        const r = await calendarAPI.createBatch(eventosBatch.map(b => b.evento));
+        if (r.error) throw new Error(r.error);
+        eventosBatch.forEach(b => {
+          b.idxs.forEach(i => setStatus(i, "ok", `Modalidade ${rows[i].modalidade} importada`));
+        });
+      } catch (e) {
+        eventosBatch.forEach(b => {
+          b.idxs.forEach(i => setStatus(i, "erro", e.message || "Erro na gravação em lote"));
+        });
+        erros += eventosBatch.length;
+        ok -= eventosBatch.length;
       }
     }
 
@@ -372,17 +397,17 @@ export default function ImportarAdmin() {
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
           <Link to="/admin" style={{ color: COLORS.primary, fontFamily: FONTS.heading, fontWeight: 700, fontSize: 13, textDecoration: "none" }}>← Admin</Link>
           <h1 style={{ fontFamily: FONTS.heading, fontWeight: 800, fontSize: 26, textTransform: "uppercase", color: COLORS.dark, margin: 0 }}>
-            📥 Importar Calendário
+            Importar Calendário
           </h1>
         </div>
 
         {/* Steps */}
         <div style={{ display: "flex", gap: 0, marginBottom: 32, borderRadius: 10, overflow: "hidden", border: `1px solid ${COLORS.grayLight}` }}>
           {[
-            { id: "upload",    label: "1. Upload",  icon: "📁" },
-            { id: "preview",   label: "2. Preview", icon: "👁️" },
-            { id: "importando",label: "3. Importar",icon: "⬆️" },
-            { id: "concluido", label: "4. Concluído",icon: "✅" },
+            { id: "upload",    label: "1. Upload" },
+            { id: "preview",   label: "2. Preview" },
+            { id: "importando",label: "3. Importar" },
+            { id: "concluido", label: "4. Concluído" },
           ].map(step => {
             const ativo = fase === step.id;
             const passos = ["upload","preview","importando","concluido"];
@@ -393,7 +418,6 @@ export default function ImportarAdmin() {
                 background: ativo ? COLORS.primary : feito ? "#f0fdf4" : "#fafafa",
                 borderRight: `1px solid ${COLORS.grayLight}`,
               }}>
-                <div style={{ fontSize: 18 }}>{step.icon}</div>
                 <div style={{ fontFamily: FONTS.heading, fontWeight: 700, fontSize: 12,
                   color: ativo ? "#fff" : feito ? "#166534" : COLORS.gray,
                   textTransform: "uppercase", letterSpacing: 0.5 }}>
@@ -409,7 +433,7 @@ export default function ImportarAdmin() {
           <div>
             {/* Download da planilha modelo */}
             <div style={{ background: "#eff6ff", border: "1.5px solid #93c5fd", borderRadius: 10, padding: "18px 22px", marginBottom: 24, display: "flex", alignItems: "center", gap: 16 }}>
-              <span style={{ fontSize: 32 }}>📋</span>
+              <span style={{ fontSize: 32 }}></span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: FONTS.heading, fontWeight: 700, fontSize: 14, color: "#1e3a8a" }}>
                   Ainda não tem a planilha modelo?
@@ -462,7 +486,7 @@ export default function ImportarAdmin() {
                 cursor: "pointer", background: dragging ? "#fff0f0" : "#fafafa",
                 transition: "all 0.2s",
               }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>📊</div>
+              <div style={{ fontSize: 48, marginBottom: 12 }}></div>
               <div style={{ fontFamily: FONTS.heading, fontWeight: 800, fontSize: 18, color: COLORS.dark, marginBottom: 8 }}>
                 Arraste a planilha aqui ou clique para selecionar
               </div>

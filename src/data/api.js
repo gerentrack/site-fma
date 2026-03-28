@@ -262,6 +262,28 @@ export const calendarAPI = {
   },
   get:    async (id)      => { const item=await readDoc("calendar",id); return item?ok(item):err("Não encontrado."); },
   create: async (data)    => { const item=await createDoc("calendar",data); await garantirProtocolo(item); return ok(item); },
+  /** Grava array de eventos em lotes de 500 (limite do Firestore batch). Retorna array de itens criados. */
+  createBatch: async (dataArray) => {
+    const items = [];
+    for (let i = 0; i < dataArray.length; i += 500) {
+      const chunk = dataArray.slice(i, i + 500);
+      const batch = writeBatch(db);
+      const chunkItems = [];
+      for (const data of chunk) {
+        const id = data.id || generateId();
+        const item = { ...data, id, createdAt: data.createdAt || now() };
+        batch.set(doc(db, "calendar", id), item);
+        chunkItems.push(item);
+      }
+      await batch.commit();
+      // Gerar protocolo para cada item após commit
+      for (const item of chunkItems) {
+        await garantirProtocolo(item);
+      }
+      items.push(...chunkItems);
+    }
+    return ok(items);
+  },
   update: async (id,data) => { const item=await patchDoc("calendar",id,data); return item?ok(item):err("Não encontrado."); },
   delete: async (id)      => { await removeDoc("calendar",id); return ok(true); },
   getYears: async () => {
