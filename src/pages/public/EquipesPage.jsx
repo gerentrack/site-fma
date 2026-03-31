@@ -70,8 +70,8 @@ function EquipeCard({ equipe }) {
       }}>
         {/* Capa */}
         <div style={{ position: "relative", paddingBottom: "48%", overflow: "hidden", background: "#1a1a1a" }}>
-          {equipe.coverImage && !imgErr ? (
-            <img src={equipe.coverImage} alt={equipe.title} onError={() => setImgErr(true)}
+          {(equipe.coverImage || equipe.image) && !imgErr ? (
+            <img src={equipe.coverImage || equipe.image} alt={equipe.title} onError={() => setImgErr(true)}
               style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
                 transform: hov ? "scale(1.06)" : "scale(1)", transition: "transform 0.4s" }} />
           ) : (
@@ -306,8 +306,8 @@ export function EquipeDetalhe() {
         background: "#1a1a1a", minHeight: 300,
         display: "flex", alignItems: "flex-end",
       }}>
-        {equipe.coverImage && (
-          <img src={equipe.coverImage} alt={equipe.title} style={{
+        {(equipe.coverImage || equipe.image) && (
+          <img src={equipe.coverImage || equipe.image} alt={equipe.title} style={{
             position: "absolute", inset: 0,
             width: "100%", height: "100%", objectFit: "cover", opacity: 0.35,
           }} />

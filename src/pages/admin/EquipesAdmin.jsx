@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../components/admin/AdminLayout";
 import { EquipesService } from "../../services/index";
+import FileUpload from "../../components/ui/FileUpload";
 import { COLORS, FONTS } from "../../styles/colors";
 
 // ─── Helpers de estilo ────────────────────────────────────────────────────────
@@ -229,7 +230,7 @@ export function EquipesList() {
 // ─── EDITOR ───────────────────────────────────────────────────────────────────
 
 const EMPTY = {
-  title: "", slug: "",
+  title: "", slug: "", image: "",
   cidade: "", contato: "",
   order: 0, showInNav: false, published: false,
 };
@@ -359,6 +360,19 @@ export function EquipesEditor() {
           </div>
         </div>
 
+
+        {/* Imagem */}
+        <div style={card}>
+          <SectionTitle>Imagem da Equipe</SectionTitle>
+          <FileUpload
+            label="Imagem"
+            value={form.image}
+            onChange={v => set("image", v)}
+            folder="equipes"
+            hint="Recomendado: 800x400px. JPG ou PNG."
+            mode="both"
+          />
+        </div>
 
         {/* Configurações */}
         <div style={card}>
