@@ -14,7 +14,7 @@
  */
 import { useState, useRef } from "react";
 import { COLORS, FONTS } from "../../styles/colors";
-import { uploadFile } from "../../services/storageService";
+import { uploadFile, deleteFile } from "../../services/storageService";
 
 export default function FileUpload({
   value    = "",
@@ -174,7 +174,10 @@ export default function FileUpload({
               borderRadius: 8, border: `1px solid ${COLORS.grayLight}` }}
             onError={e => { e.currentTarget.style.display = "none"; }}
           />
-          <button type="button" onClick={() => onChange("")} style={{
+          <button type="button" onClick={() => {
+            if (value && value.includes("firebasestorage.googleapis.com")) deleteFile(value).catch(() => {});
+            onChange("");
+          }} style={{
             position: "absolute", top: 8, right: 8,
             background: "rgba(0,0,0,0.6)", color: "#fff", border: "none",
             borderRadius: 4, padding: "3px 8px", cursor: "pointer",
@@ -198,7 +201,10 @@ export default function FileUpload({
               Visualizar arquivo ↗
             </a>
           </div>
-          <button type="button" onClick={() => onChange("")} style={{
+          <button type="button" onClick={() => {
+            if (value && value.includes("firebasestorage.googleapis.com")) deleteFile(value).catch(() => {});
+            onChange("");
+          }} style={{
             background: "none", border: "none", color: "#cc0000",
             cursor: "pointer", fontSize: 18, lineHeight: 1,
           }}>✕</button>

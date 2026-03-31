@@ -11,6 +11,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../components/admin/AdminLayout";
 import { EquipesService } from "../../services/index";
 import FileUpload from "../../components/ui/FileUpload";
+import { deleteFile } from "../../services/storageService";
 import { COLORS, FONTS } from "../../styles/colors";
 
 // ─── Helpers de estilo ────────────────────────────────────────────────────────
@@ -79,6 +80,13 @@ export function EquipesList() {
 
   const handleDelete = async (id) => {
     if (!confirm("Excluir esta equipe permanentemente?")) return;
+    const item = items.find(i => i.id === id);
+    if (item?.image && item.image.includes("firebasestorage.googleapis.com")) {
+      deleteFile(item.image).catch(() => {});
+    }
+    if (item?.coverImage && item.coverImage.includes("firebasestorage.googleapis.com")) {
+      deleteFile(item.coverImage).catch(() => {});
+    }
     await EquipesService.delete(id);
     load();
   };
