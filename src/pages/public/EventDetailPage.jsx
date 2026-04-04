@@ -197,7 +197,7 @@ export default function EventDetailPage() {
                           return (
                             <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                               <span style={{ fontFamily: FONTS.heading, fontWeight: 700, fontSize: 12, color: COLORS.dark, minWidth: 60 }}>🏃 {mod.nome}</span>
-                              {mod.permitFileUrl  && <DownloadBtn href={mod.permitFileUrl}  label="Permit" icon="📋" />}
+                              {mod.permitFileUrl  && <DownloadBtn href={mod.permitFileUrl}  label={mod.permitNumero ? `Permit N\u00BA ${mod.permitNumero}` : "Permit"} icon="📋" />}
                               {mod.resultsFileUrl && <DownloadBtn href={mod.resultsFileUrl} label="Resultados" icon="📊" />}
                             </div>
                           );

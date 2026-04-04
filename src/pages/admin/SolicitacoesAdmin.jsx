@@ -27,9 +27,11 @@ import {
   SolicitacoesService, OrganizersService, ArquivosService, MovimentacoesService,
   CalendarService,
 } from "../../services/index";
-import { uploadFile } from "../../services/storageService";
+import { uploadFile, deleteFile } from "../../services/storageService";
 import { normalizarCamposTecnicos, totalEstimativaInscritos, modalidadesLabel } from "../../utils/permitDefaults";
 import { notificarStatusSolicitacao } from "../../services/emailService";
+import { getProximoNumero, reservarNumeros, setContador, formatarNumero } from "../../utils/permitCounter";
+import { gerarPermitPdf, gerarChancelaPdf, preloadAssets } from "../../services/permitPdfService";
 
 // ── Constantes e helpers ──────────────────────────────────────────────────────
 const statusMap = Object.fromEntries(SOLICITACAO_STATUS.map(s => [s.value, s]));
@@ -287,6 +289,10 @@ export function SolicitacaoEditor() {
   const [uploading, setUploading] = useState(false);
   const [uploadDesc, setUploadDesc] = useState("");
 
+  // Geração de permits
+  const [permitNumbers, setPermitNumbers] = useState([]);     // [{ modalidade, numero, editado }]
+  const [gerandoPermits, setGerandoPermits] = useState(false);
+
   // Vinculação de evento de calendário
   const [eventoVinculado, setEventoVinculado]     = useState(null);   // objeto EventoCalendario
   const [vinculoMode, setVinculoMode]             = useState(null);   // null | "buscar" | "criar"
@@ -338,6 +344,24 @@ export function SolicitacaoEditor() {
     setTimeout(() => setMsg({ text: "", type: "" }), 3500);
   };
 
+  // ── Pré-preencher números de permit quando admin seleciona "aprovada" ──────
+  useEffect(() => {
+    if (novoStatus !== "aprovada" || !sol) { setPermitNumbers([]); return; }
+    if (sol.permitsGerados) { setPermitNumbers([]); return; } // já gerados
+    const ct = normalizarCamposTecnicos(sol);
+    const mods = ct.modalidades || [];
+    if (mods.length === 0) { setPermitNumbers([]); return; }
+    const ano = new Date(sol.dataEvento || Date.now()).getFullYear();
+    getProximoNumero(ano).then(proximo => {
+      setPermitNumbers(mods.map((m, i) => ({
+        modalidade: m.distancia || m.nome || `Modalidade ${i + 1}`,
+        numero: proximo + i,
+        ano,
+        editado: false,
+      })));
+    });
+  }, [novoStatus, sol]);
+
   // ── Salvar análise ──────────────────────────────────────────────────────────
   const handleSalvarAnalise = async () => {
     setSaving(true);
@@ -388,6 +412,207 @@ export function SolicitacaoEditor() {
     load();
   };
 
+  // ── Gerar Permits/Chancelas e Aprovar ───────────────────────────────────────
+  const handleGerarPermitsEAprovar = async () => {
+    if (!sol || permitNumbers.length === 0) return;
+    setGerandoPermits(true);
+    setSaving(true);
+    try {
+      // 1. Salvar campos de análise
+      const rUpdate = await SolicitacoesService.update(id, analise);
+      if (rUpdate.error) { flash(rUpdate.error, "err"); return; }
+
+      // 2. Pré-carregar assets do PDF
+      await preloadAssets();
+
+      // 3. Dados comuns
+      const ano = permitNumbers[0].ano;
+      const orgName = organizer?.organization || organizer?.name || sol.organizadorNome || "";
+      const dataEmissao = new Date().toISOString().slice(0, 10);
+      const tipoDoc = sol.tipo; // "permit" ou "chancela"
+      const gerarFn = tipoDoc === "chancela" ? gerarChancelaPdf : gerarPermitPdf;
+
+      // 4. Gerar e fazer upload de cada PDF
+      const modalidadesDetalhes = [];
+      const numerosUsados = [];
+
+      for (const pn of permitNumbers) {
+        const numFormatado = formatarNumero(pn.numero, ano);
+        const pdfBlob = await gerarFn({
+          numero: numFormatado,
+          organizador: orgName,
+          nomeEvento: sol.nomeEvento || sol.titulo || sol.title || "",
+          modalidade: pn.modalidade,
+          dataEvento: sol.dataEvento || "",
+          cidadeEvento: sol.cidadeEvento || "",
+          dataEmissao,
+        });
+
+        const fileName = `${tipoDoc}_${String(pn.numero).padStart(3, "0")}_${ano}.pdf`;
+        const file = new File([pdfBlob], fileName, { type: "application/pdf" });
+        const { url, path, error: uploadErr } = await uploadFile(file, `eventos/permits/${ano}`);
+        if (uploadErr) { flash(`Erro ao enviar ${fileName}.`, "err"); return; }
+
+        // Registrar como arquivo da solicitação
+        await ArquivosService.create({
+          solicitacaoId: id,
+          nome: fileName,
+          tamanho: file.size,
+          tipo: "application/pdf",
+          descricao: `${tipoDoc === "chancela" ? "Chancela" : "Permit"} N\u00BA ${numFormatado} \u2014 ${pn.modalidade}`,
+          categoria: "resposta_fma",
+          enviadoPor: "fma",
+          enviadoById: "admin",
+          enviadoPorNome: analise.responsavelFMA || "Sistema FMA",
+          url,
+          storagePath: path,
+        });
+
+        modalidadesDetalhes.push({
+          nome: pn.modalidade,
+          permitFileUrl: url,
+          permitNumero: numFormatado,
+          resultsFileUrl: "",
+        });
+        numerosUsados.push(numFormatado);
+      }
+
+      // 5. Atualizar contador para o maior número usado
+      const maxNum = Math.max(...permitNumbers.map(p => p.numero));
+      await setContador(ano, maxNum);
+
+      // 6. Atualizar evento do calendário com modalidadesDetalhes
+      const eventoId = sol.eventoCalendarioId || sol.eventoId;
+      if (eventoId) {
+        await CalendarService.update(eventoId, {
+          modalidadesDetalhes,
+          status: "confirmado",
+        });
+      }
+
+      const jaEstaAprovada = sol.status === "aprovada";
+
+      // 7. Mudar status para aprovada (só se ainda não está)
+      if (!jaEstaAprovada) {
+        const rStatus = await SolicitacoesService.changeStatus(id, "aprovada");
+        if (rStatus.error) { flash(rStatus.error, "err"); return; }
+      }
+
+      // 8. Marcar permits como gerados na solicitação
+      await SolicitacoesService.update(id, {
+        permitsGerados: true,
+        permitsNumeros: numerosUsados,
+      });
+
+      // 9. Registrar movimentações
+      await MovimentacoesService.registrar({
+        solicitacaoId: id,
+        tipoEvento: "permit_gerado",
+        statusAnterior: sol.status,
+        statusNovo: "aprovada",
+        descricao: `${tipoDoc === "chancela" ? "Chancela(s)" : "Permit(s)"} ${jaEstaAprovada ? "regerado(s)" : "gerado(s)"}: ${numerosUsados.join(", ")}.`,
+        autor: "fma",
+        autorNome: analise.responsavelFMA || "Equipe FMA",
+        autorId: "admin",
+        visivel: true,
+      });
+
+      if (!jaEstaAprovada) {
+        await MovimentacoesService.registrar({
+          solicitacaoId: id,
+          tipoEvento: "status_alterado",
+          statusAnterior: sol.status,
+          statusNovo: "aprovada",
+          descricao: `Status alterado para "Aprovada" pelo analista da FMA.`,
+          autor: "fma",
+          autorNome: analise.responsavelFMA || "Equipe FMA",
+          autorId: "admin",
+          visivel: true,
+        });
+
+        // 10. Notificar organizador (só na primeira aprovação)
+        if (sol.organizadorEmail || sol.organizerEmail) {
+          notificarStatusSolicitacao({
+            organizadorEmail: sol.organizadorEmail || sol.organizerEmail,
+            organizadorNome:  sol.organizadorNome  || sol.organizerName || "Organizador",
+            protocolo:        sol.protocoloFMA || sol.id,
+            evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
+            status:           "aprovada",
+            observacao:       analise.parecerFMA || "",
+          }).catch(e => console.warn("Email solicitação:", e));
+        }
+      }
+
+      flash(`${permitNumbers.length} ${tipoDoc === "chancela" ? "chancela(s)" : "permit(s)"} gerado(s) e solicitação aprovada!`, "ok");
+      load();
+    } catch (err) {
+      console.error("Erro ao gerar permits:", err);
+      flash("Erro ao gerar permits. Verifique o console.", "err");
+    } finally {
+      setGerandoPermits(false);
+      setSaving(false);
+    }
+  };
+
+  // ── Aprovar/Rejeitar resultado enviado pelo organizador ────────────────────
+  const handleAprovarResultado = async () => {
+    setSaving(true);
+    try {
+      const eventoId = sol.eventoCalendarioId || sol.eventoId;
+      if (eventoId && sol.resultadoFileUrl) {
+        // Copiar URL para o evento do calendário
+        const updateData = { resultsFileUrl: sol.resultadoFileUrl };
+        // Se o evento tem modalidadesDetalhes, atualizar resultsFileUrl em cada uma
+        if (eventoVinculado?.modalidadesDetalhes?.length > 0) {
+          updateData.modalidadesDetalhes = eventoVinculado.modalidadesDetalhes.map(m => ({
+            ...m,
+            resultsFileUrl: sol.resultadoFileUrl,
+          }));
+        }
+        await CalendarService.update(eventoId, updateData);
+      }
+      await SolicitacoesService.update(id, {
+        resultadoStatus: "aprovado",
+        resultadoAprovadoEm: new Date().toISOString(),
+      });
+      await MovimentacoesService.registrar({
+        solicitacaoId: id,
+        tipoEvento: "resultado_aprovado",
+        statusAnterior: sol.status, statusNovo: sol.status,
+        descricao: "Resultado enviado pelo organizador foi aprovado e publicado no calendário.",
+        autor: "fma", autorNome: analise.responsavelFMA || "Equipe FMA",
+        autorId: "admin", visivel: true,
+      });
+      flash("Resultado aprovado e publicado no calendário!", "ok");
+      load();
+    } catch (err) {
+      flash("Erro ao aprovar resultado.", "err");
+    } finally { setSaving(false); }
+  };
+
+  const handleRejeitarResultado = async () => {
+    const motivo = prompt("Motivo da rejeição (será visível ao organizador):");
+    if (motivo === null) return;
+    setSaving(true);
+    try {
+      await SolicitacoesService.update(id, {
+        resultadoStatus: "rejeitado",
+      });
+      await MovimentacoesService.registrar({
+        solicitacaoId: id,
+        tipoEvento: "resultado_rejeitado",
+        statusAnterior: sol.status, statusNovo: sol.status,
+        descricao: `Resultado rejeitado. Motivo: ${motivo || "Não informado."}`,
+        autor: "fma", autorNome: analise.responsavelFMA || "Equipe FMA",
+        autorId: "admin", visivel: true,
+      });
+      flash("Resultado rejeitado. O organizador pode enviar novamente.", "ok");
+      load();
+    } catch (err) {
+      flash("Erro ao rejeitar resultado.", "err");
+    } finally { setSaving(false); }
+  };
+
   // ── Upload pela FMA ─────────────────────────────────────────────────────────
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
@@ -429,6 +654,12 @@ export function SolicitacaoEditor() {
 
   const handleDeleteArquivo = async (arq) => {
     if (!confirm(`Excluir "${arq.nome}"?`)) return;
+    // Excluir do Storage se houver URL
+    if (arq.storagePath) {
+      await deleteFile(arq.storagePath).catch(() => {});
+    } else if (arq.url && arq.url.includes("firebasestorage.googleapis.com")) {
+      await deleteFile(arq.url).catch(() => {});
+    }
     await ArquivosService.delete(arq.id);
     load();
   };
@@ -642,8 +873,8 @@ export function SolicitacaoEditor() {
                           </div>
                         </div>
                         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                          {arq.dataUrl && (
-                            <a href={arq.dataUrl} download={arq.nome}
+                          {(arq.dataUrl || arq.url) && (
+                            <a href={arq.dataUrl || arq.url} download={arq.nome} target="_blank" rel="noreferrer"
                               style={{ padding: "6px 12px", borderRadius: 6, background: "#0f172a", color: "#fff", textDecoration: "none", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
                               ⬇️ Baixar
                             </a>
@@ -774,11 +1005,160 @@ export function SolicitacaoEditor() {
               )}
             </div>
 
+            {/* ── SEÇÃO: GERAR PERMITS (aparece ao selecionar "aprovada") ── */}
+            {novoStatus === "aprovada" && !sol.permitsGerados && permitNumbers.length > 0 && (
+              <div style={{ padding: 20, background: "#f0fdf4", borderRadius: 10, marginBottom: 24, border: "1.5px solid #86efac" }}>
+                <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: "#15803d", display: "block", marginBottom: 12 }}>
+                  📋 {sol.tipo === "chancela" ? "Chancelas" : "Permits"} a gerar ({permitNumbers.length})
+                </label>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 100px", gap: 8, fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, padding: "0 4px" }}>
+                    <span>Modalidade</span><span>Número</span><span>Tipo</span>
+                  </div>
+                  {permitNumbers.map((pn, i) => (
+                    <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 140px 100px", gap: 8, alignItems: "center", background: "#fff", padding: "8px 12px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}` }}>
+                      <span style={{ fontFamily: FONTS.body, fontSize: 13, fontWeight: 600 }}>{pn.modalidade}</span>
+                      <input
+                        type="number"
+                        value={pn.numero}
+                        onChange={e => {
+                          const val = parseInt(e.target.value) || 0;
+                          setPermitNumbers(prev => prev.map((p, j) => j === i ? { ...p, numero: val, editado: true } : p));
+                        }}
+                        style={{ ...inp(), padding: "6px 10px", fontSize: 13, fontWeight: 700, textAlign: "center" }}
+                      />
+                      <TipoBadge tipo={sol.tipo} />
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <div style={{ fontFamily: FONTS.body, fontSize: 11, color: "#065f46", flex: 1 }}>
+                    Números editáveis. O contador será atualizado para o maior número usado.
+                  </div>
+                  <button onClick={async () => {
+                    try {
+                      await preloadAssets();
+                      const ano = permitNumbers[0].ano;
+                      const orgName = organizer?.organization || organizer?.name || sol.organizadorNome || "";
+                      const dataEmissao = new Date().toISOString().slice(0, 10);
+                      const gerarFn = sol.tipo === "chancela" ? gerarChancelaPdf : gerarPermitPdf;
+                      const pn = permitNumbers[0];
+                      const blob = await gerarFn({
+                        numero: formatarNumero(pn.numero, ano),
+                        organizador: orgName,
+                        nomeEvento: sol.nomeEvento || sol.titulo || sol.title || "",
+                        modalidade: pn.modalidade,
+                        dataEvento: sol.dataEvento || "",
+                        cidadeEvento: sol.cidadeEvento || "",
+                        dataEmissao,
+                      });
+                      const url = URL.createObjectURL(blob);
+                      window.open(url, "_blank");
+                    } catch (e) { console.error("Preview:", e); alert("Erro ao gerar preview."); }
+                  }}
+                    style={{ padding: "6px 14px", borderRadius: 7, border: "1px solid #86efac", background: "#fff", color: "#15803d", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                    👁️ Preview PDF
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── SEÇÃO: PERMITS JÁ GERADOS ── */}
+            {sol.permitsGerados && sol.permitsNumeros?.length > 0 && (
+              <div style={{ padding: "14px 20px", background: "#f0fdf4", borderRadius: 10, marginBottom: 24, border: "1px solid #86efac" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                  <span style={{ fontSize: 18 }}>✅</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 800, color: "#15803d" }}>
+                      {sol.tipo === "chancela" ? "Chancelas" : "Permits"} gerados
+                    </div>
+                    <div style={{ fontFamily: FONTS.body, fontSize: 12, color: "#065f46" }}>
+                      {sol.permitsNumeros.join(", ")}
+                    </div>
+                  </div>
+                  <button onClick={async () => {
+                    if (!confirm("Deseja regerar os permits? Os PDFs anteriores serão excluídos.")) return;
+                    // Excluir PDFs antigos de permits do Storage e do Firestore
+                    const permitsAntigos = arquivos.filter(a =>
+                      a.categoria === "resposta_fma" && a.nome?.startsWith("permit_") || a.nome?.startsWith("chancela_")
+                    );
+                    for (const arq of permitsAntigos) {
+                      if (arq.storagePath) await deleteFile(arq.storagePath).catch(() => {});
+                      else if (arq.url?.includes("firebasestorage.googleapis.com")) await deleteFile(arq.url).catch(() => {});
+                      await ArquivosService.delete(arq.id);
+                    }
+                    // Limpar modalidadesDetalhes do evento vinculado
+                    const eventoId = sol.eventoCalendarioId || sol.eventoId;
+                    if (eventoId) {
+                      await CalendarService.update(eventoId, { modalidadesDetalhes: [] });
+                    }
+                    await SolicitacoesService.update(id, { permitsGerados: false, permitsNumeros: [] });
+                    load();
+                  }}
+                    style={{ padding: "6px 14px", borderRadius: 7, border: "1px solid #fca5a5", background: "#fff", color: COLORS.primary, fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>
+                    🔄 Regerar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ── SEÇÃO: RESULTADO PENDENTE DE APROVAÇÃO ── */}
+            {sol.resultadoStatus === "pendente_aprovacao" && (
+              <div style={{ padding: 20, background: "#faf5ff", borderRadius: 10, marginBottom: 24, border: "1.5px solid #c4b5fd" }}>
+                <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: "#7c3aed", display: "block", marginBottom: 12 }}>
+                  📊 Resultado pendente de aprovação
+                </label>
+                <div style={{ background: "#fff", padding: 14, borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, marginBottom: 12 }}>
+                  <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.dark, marginBottom: 6 }}>
+                    <strong>Arquivo:</strong>{" "}
+                    <a href={sol.resultadoFileUrl} target="_blank" rel="noreferrer" style={{ color: COLORS.primary }}>
+                      {sol.resultadoTipo === "link" ? "Link externo" : "Baixar arquivo"}
+                    </a>
+                  </div>
+                  {sol.resultadoDescricao && (
+                    <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>
+                      <strong>Descrição:</strong> {sol.resultadoDescricao}
+                    </div>
+                  )}
+                  <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, marginTop: 4 }}>
+                    Enviado em {fmtDT(sol.resultadoEnviadoEm)}
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={handleAprovarResultado} disabled={saving}
+                    style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: "#15803d", color: "#fff", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
+                    ✅ Aprovar Resultado
+                  </button>
+                  <button onClick={handleRejeitarResultado} disabled={saving}
+                    style={{ padding: "8px 18px", borderRadius: 8, border: "1px solid #fca5a5", background: "#fff5f5", color: COLORS.primary, cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
+                    ❌ Rejeitar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Resultado aprovado/rejeitado */}
+            {sol.resultadoStatus === "aprovado" && (
+              <div style={{ padding: "14px 20px", background: "#f0fdf4", borderRadius: 10, marginBottom: 24, border: "1px solid #86efac", display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 18 }}>📊</span>
+                <div>
+                  <div style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 800, color: "#15803d" }}>Resultado aprovado e publicado</div>
+                  <a href={sol.resultadoFileUrl} target="_blank" rel="noreferrer" style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.primary }}>Ver resultado</a>
+                </div>
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
               <button onClick={load}
                 style={{ padding: "11px 20px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, cursor: "pointer", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700 }}>
                 Descartar alterações
               </button>
+              {novoStatus === "aprovada" && !sol.permitsGerados && permitNumbers.length > 0 && (
+                <button onClick={handleGerarPermitsEAprovar} disabled={saving || gerandoPermits}
+                  style={{ padding: "11px 28px", borderRadius: 8, border: "none", background: saving ? COLORS.gray : "#15803d", color: "#fff", cursor: saving ? "wait" : "pointer", fontFamily: FONTS.heading, fontSize: 14, fontWeight: 700 }}>
+                  {gerandoPermits ? "Gerando..." : `📋 Gerar ${sol.tipo === "chancela" ? "Chancelas" : "Permits"}`}
+                </button>
+              )}
               <button onClick={handleSalvarAnalise} disabled={saving}
                 style={{ padding: "11px 28px", borderRadius: 8, border: "none", background: saving ? COLORS.gray : COLORS.primary, color: "#fff", cursor: saving ? "wait" : "pointer", fontFamily: FONTS.heading, fontSize: 14, fontWeight: 700 }}>
                 {saving ? "Salvando..." : "💾 Salvar análise"}

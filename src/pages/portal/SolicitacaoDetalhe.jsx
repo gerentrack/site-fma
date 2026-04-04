@@ -264,6 +264,163 @@ function EventoBanner({ eventoId }) {
   );
 }
 
+// ─── ResultadosTab — upload de resultado pelo organizador ────────────────────
+function ResultadosTab({ sol, organizerId, organizerName, onUpdated }) {
+  const [tipo, setTipo] = useState("arquivo"); // "arquivo" | "link"
+  const [file, setFile] = useState(null);
+  const [link, setLink] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const inputRef = useRef();
+
+  const jaEnviou = !!sol.resultadoStatus;
+  const podeReenviar = sol.resultadoStatus === "rejeitado";
+
+  const handleEnviar = async () => {
+    setError("");
+    let fileUrl = "";
+    let tipoArquivo = tipo;
+
+    if (tipo === "arquivo") {
+      if (!file) { setError("Selecione um arquivo."); return; }
+      if (file.size > 10 * 1024 * 1024) { setError("Arquivo muito grande (máx. 10 MB)."); return; }
+      setUploading(true);
+      const ano = new Date(sol.dataEvento || Date.now()).getFullYear();
+      const { url, error: uploadErr } = await uploadFile(file, `eventos/resultados/${ano}`);
+      if (uploadErr) { setError("Erro ao enviar arquivo."); setUploading(false); return; }
+      fileUrl = url;
+      tipoArquivo = file.name.endsWith(".xlsx") || file.name.endsWith(".xls") ? "xlsx" : "pdf";
+    } else {
+      if (!link.trim()) { setError("Informe o link do resultado."); return; }
+      fileUrl = link.trim();
+      tipoArquivo = "link";
+      setUploading(true);
+    }
+
+    // Atualizar solicitação com dados do resultado
+    await SolicitacoesService.update(sol.id, {
+      resultadoStatus: "pendente_aprovacao",
+      resultadoFileUrl: fileUrl,
+      resultadoTipo: tipoArquivo,
+      resultadoDescricao: descricao,
+      resultadoEnviadoEm: new Date().toISOString(),
+    });
+
+    // Mudar status do evento para realizado
+    if (sol.eventoCalendarioId) {
+      const { CalendarService } = await import("../../services/index");
+      await CalendarService.update(sol.eventoCalendarioId, { status: "realizado" });
+    }
+
+    // Registrar movimentação
+    await MovimentacoesService.registrar({
+      solicitacaoId: sol.id,
+      tipoEvento: "resultado_enviado",
+      statusAnterior: sol.status,
+      statusNovo: sol.status,
+      descricao: `Resultado enviado pelo organizador.${descricao ? ` Descrição: ${descricao.slice(0, 80)}` : ""}`,
+      autor: "organizador",
+      autorNome: organizerName,
+      autorId: organizerId,
+      visivel: true,
+    });
+
+    setUploading(false);
+    setFile(null);
+    setLink("");
+    setDescricao("");
+    onUpdated();
+  };
+
+  return (
+    <div style={{ background:"#fff", borderRadius:12, padding:"24px 28px", boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}>
+      <SecTitle>📊 Resultados do Evento</SecTitle>
+
+      {/* Status do resultado já enviado */}
+      {jaEnviou && !podeReenviar && (
+        <div style={{ padding:16, borderRadius:10, marginBottom:20,
+          background: sol.resultadoStatus === "aprovado" ? "#f0fdf4" : sol.resultadoStatus === "pendente_aprovacao" ? "#fffbeb" : "#fff5f5",
+          border: `1.5px solid ${sol.resultadoStatus === "aprovado" ? "#86efac" : sol.resultadoStatus === "pendente_aprovacao" ? "#fde68a" : "#fca5a5"}`,
+        }}>
+          <div style={{ fontFamily:FONTS.heading, fontSize:12, fontWeight:800, textTransform:"uppercase", marginBottom:6,
+            color: sol.resultadoStatus === "aprovado" ? "#15803d" : sol.resultadoStatus === "pendente_aprovacao" ? "#92400e" : "#dc2626",
+          }}>
+            {sol.resultadoStatus === "aprovado" && "✅ Resultado aprovado e publicado"}
+            {sol.resultadoStatus === "pendente_aprovacao" && "⏳ Aguardando aprovação da FMA"}
+          </div>
+          <div style={{ fontFamily:FONTS.body, fontSize:13, color:COLORS.dark }}>
+            <a href={sol.resultadoFileUrl} target="_blank" rel="noreferrer" style={{ color:"#0066cc" }}>
+              {sol.resultadoTipo === "link" ? "🔗 Ver link externo" : "📄 Baixar arquivo"}
+            </a>
+            {sol.resultadoDescricao && <span style={{ color:COLORS.gray }}> — {sol.resultadoDescricao}</span>}
+          </div>
+          <div style={{ fontFamily:FONTS.body, fontSize:11, color:COLORS.gray, marginTop:4 }}>
+            Enviado em {fmtDT(sol.resultadoEnviadoEm)}
+            {sol.resultadoAprovadoEm && ` · Aprovado em ${fmtDT(sol.resultadoAprovadoEm)}`}
+          </div>
+        </div>
+      )}
+
+      {/* Formulário (visível se não enviou ou se foi rejeitado) */}
+      {(!jaEnviou || podeReenviar) && (
+        <div style={{ padding:20, background:"#f9fafb", borderRadius:10, border:`1px solid ${COLORS.grayLight}` }}>
+          {podeReenviar && (
+            <div style={{ padding:"10px 14px", borderRadius:8, background:"#fff5f5", border:"1px solid #fca5a5", marginBottom:16, fontFamily:FONTS.body, fontSize:12, color:"#dc2626" }}>
+              ❌ O resultado anterior foi rejeitado pela FMA. Você pode enviar um novo resultado.
+            </div>
+          )}
+
+          <Lbl>Tipo de resultado</Lbl>
+          <div style={{ display:"flex", gap:12, marginBottom:16 }}>
+            <label style={{ display:"flex", alignItems:"center", gap:6, fontFamily:FONTS.body, fontSize:13, cursor:"pointer" }}>
+              <input type="radio" name="resTipo" checked={tipo==="arquivo"} onChange={()=>setTipo("arquivo")} /> Arquivo (PDF/Excel)
+            </label>
+            <label style={{ display:"flex", alignItems:"center", gap:6, fontFamily:FONTS.body, fontSize:13, cursor:"pointer" }}>
+              <input type="radio" name="resTipo" checked={tipo==="link"} onChange={()=>setTipo("link")} /> Link externo
+            </label>
+          </div>
+
+          {tipo === "arquivo" ? (
+            <div style={{ marginBottom:16 }}>
+              <Lbl>Arquivo</Lbl>
+              <div
+                onClick={()=>inputRef.current?.click()}
+                style={{ padding:20, border:`2px dashed ${COLORS.grayLight}`, borderRadius:10, textAlign:"center", cursor:"pointer", background:"#fff" }}
+              >
+                {file ? (
+                  <span style={{ fontFamily:FONTS.body, fontSize:13, color:COLORS.dark }}>{file.name} ({(file.size/1024/1024).toFixed(1)} MB)</span>
+                ) : (
+                  <span style={{ fontFamily:FONTS.body, fontSize:13, color:COLORS.gray }}>Clique para selecionar PDF ou Excel (máx. 10 MB)</span>
+                )}
+              </div>
+              <input ref={inputRef} type="file" accept=".pdf,.xls,.xlsx,.csv" style={{display:"none"}} onChange={e=>setFile(e.target.files?.[0]||null)} />
+            </div>
+          ) : (
+            <div style={{ marginBottom:16 }}>
+              <Lbl>Link do resultado</Lbl>
+              <input value={link} onChange={e=>setLink(e.target.value)} placeholder="https://..." style={baseInp()} />
+            </div>
+          )}
+
+          <div style={{ marginBottom:16 }}>
+            <Lbl>Descrição (opcional)</Lbl>
+            <textarea value={descricao} onChange={e=>setDescricao(e.target.value)} rows={3} placeholder="Observações sobre o resultado..."
+              style={{ ...baseInp(), resize:"vertical", lineHeight:1.5 }} />
+          </div>
+
+          {error && <Err msg={error} />}
+
+          <button onClick={handleEnviar} disabled={uploading}
+            style={{ padding:"11px 24px", borderRadius:8, border:"none", background:uploading?COLORS.gray:"#0066cc", color:"#fff", cursor:uploading?"wait":"pointer", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, marginTop:8 }}>
+            {uploading ? "Enviando..." : "📊 Enviar Resultado"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Página principal ─────────────────────────────────────────────────────────
 export default function SolicitacaoDetalhe() {
   const { id }                         = useParams();
@@ -314,9 +471,11 @@ export default function SolicitacaoDetalhe() {
   const canDelete = sol.status==="rascunho";
   const canEdit   = sol.status==="rascunho";
 
+  const showResultados = ["aprovada", "concluida"].includes(sol.status);
   const tabs = [
     { id:"geral",     label:"Visão geral",                      icon:"📋" },
     { id:"arquivos",  label:`Arquivos (${arquivos.length})`,     icon:"📎" },
+    ...(showResultados ? [{ id:"resultados", label:"Resultados", icon:"📊" }] : []),
     { id:"historico", label:`Histórico (${movimentacoes.length})`,icon:"🕐" },
   ];
 
@@ -437,7 +596,7 @@ export default function SolicitacaoDetalhe() {
                         <div style={{ fontFamily:FONTS.body, fontSize:12, color:COLORS.gray, paddingLeft:28 }}>{arq.descricao} · {fmtSize(arq.tamanho)} · {fmtDT(arq.uploadedAt)}</div>
                       </div>
                       <div style={{ display:"flex", gap:8, flexShrink:0 }}>
-                        {arq.dataUrl&&<a href={arq.dataUrl} download={arq.nome} style={{ padding:"6px 14px", borderRadius:7, background:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:11, fontWeight:700, textDecoration:"none" }}>⬇️ Baixar</a>}
+                        {(arq.dataUrl||arq.url)&&<a href={arq.dataUrl||arq.url} download={arq.nome} target="_blank" rel="noreferrer" style={{ padding:"6px 14px", borderRadius:7, background:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:11, fontWeight:700, textDecoration:"none" }}>⬇️ Baixar</a>}
                         {!isFMA&&canUpload&&<button onClick={async()=>{ if(!confirm(`Remover "${arq.nome}"?`))return; await ArquivosService.delete(arq.id); load(); }} style={{ padding:"6px 10px", borderRadius:7, border:"1px solid #fca5a5", background:"#fff", color:"#dc2626", fontFamily:FONTS.heading, fontSize:11, fontWeight:700, cursor:"pointer" }}>✕</button>}
                       </div>
                     </div>
@@ -446,6 +605,11 @@ export default function SolicitacaoDetalhe() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Aba: Resultados */}
+        {activeTab==="resultados" && showResultados && (
+          <ResultadosTab sol={sol} organizerId={organizerId} organizerName={organizerName} onUpdated={load} />
         )}
 
         {/* Aba: Histórico */}

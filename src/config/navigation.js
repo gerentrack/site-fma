@@ -315,6 +315,10 @@ export const MOVIMENTACAO_TIPOS = {
   indeferida:          { label: "Solicitação indeferida",     icon: "❌", color: "#cc0000" },
   concluida:           { label: "Processo concluído",         icon: "🏁", color: "#0891b2" },
   anotacao_interna:    { label: "Anotação interna",           icon: "🔒", color: "#9ca3af" },
+  permit_gerado:       { label: "Permit/Chancela gerado",     icon: "📋", color: "#15803d" },
+  resultado_enviado:   { label: "Resultado enviado",          icon: "📊", color: "#7c3aed" },
+  resultado_aprovado:  { label: "Resultado aprovado",         icon: "✅", color: "#15803d" },
+  resultado_rejeitado: { label: "Resultado rejeitado",        icon: "❌", color: "#cc0000" },
 };
 
 export const PORTAL_NAV = [
@@ -328,4 +332,5 @@ export const ARQUIVO_CATEGORIAS = [
   { value: "obrigatorio",   label: "Documento Obrigatório", icon: "📌", color: "#cc0000" },
   { value: "complementar",  label: "Documento Complementar", icon: "📎", color: "#6b7280" },
   { value: "resposta_fma",  label: "Documento FMA",          icon: "🏛️", color: "#0066cc" },
+  { value: "resultado",    label: "Resultado",              icon: "📊", color: "#7c3aed" },
 ];

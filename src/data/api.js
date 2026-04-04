@@ -773,8 +773,8 @@ export const solicitacoesAPI = {
     items.forEach(s => { counts[s.status] = (counts[s.status] || 0) + 1; });
     return ok(counts);
   },
-  vincularEvento: async (id, eventoId, eventoTitulo, status) => {
-    const item = await patchDoc("solicitacoes", id, { eventoId, eventoTitulo, eventoVinculado: { id: eventoId, title: eventoTitulo } });
+  vincularEvento: async (id, eventoId, eventoTitulo = "", status) => {
+    const item = await patchDoc("solicitacoes", id, { eventoId, eventoTitulo: eventoTitulo || "", eventoVinculado: { id: eventoId, title: eventoTitulo || "" } });
     return item ? ok(item) : err("Não encontrado.");
   },
   desvincularEvento: async (id) => {

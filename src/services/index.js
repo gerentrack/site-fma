@@ -458,7 +458,7 @@ export const SolicitacoesService = {
     if (rEvento.error) return rEvento;
 
     // 3. Vincular (salva IDs nos dois registros)
-    const rVinculo = await solicitacoesAPI.vincularEvento(solicitacao.id, rEvento.data.id);
+    const rVinculo = await solicitacoesAPI.vincularEvento(solicitacao.id, rEvento.data.id, rEvento.data.title || "");
     if (rVinculo.error) return rVinculo;
 
     // 4. Movimentação
@@ -573,6 +573,7 @@ export const ArquivosService = {
   listBySolicitacao: (id) => solicitacaoArquivosAPI.listBySolicitacao(id),
   create: (data) => solicitacaoArquivosAPI.create(data),
   delete: (id) => solicitacaoArquivosAPI.delete(id),
+  upload: (data) => solicitacaoArquivosAPI.create(data),
 };
 
 export const MovimentacoesService = {
