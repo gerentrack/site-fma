@@ -16,6 +16,7 @@ import { useState, useEffect, useCallback } from "react";
 import { COLORS, FONTS } from "../../styles/colors";
 import { DocumentsService } from "../../services/index";
 import { DOCUMENT_CATEGORIES } from "../../config/navigation";
+import PdfModal, { usePdfModal } from "../../components/ui/PdfModal";
 
 // ─── Config de categorias com ícone e cor ────────────────────────────────────
 
@@ -79,7 +80,7 @@ function Skeleton() {
 
 // ─── Card de documento ────────────────────────────────────────────────────────
 
-function DocCard({ doc }) {
+function DocCard({ doc, onViewPdf }) {
   const catLabel = DOCUMENT_CATEGORIES.find(c => c.value === doc.category)?.label || "Outro";
   const meta     = CAT_META[doc.category] || CAT_META.outro;
   const [hov, setHov] = useState(false);
@@ -168,11 +169,8 @@ function DocCard({ doc }) {
         {/* Rodapé: botão de acesso */}
         <div style={{ marginTop: 4 }}>
           {hasLink ? (
-            <a
-              href={doc.fileUrl}
-              download
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => onViewPdf(doc.fileUrl, doc.title)}
               style={{
                 display: "inline-flex", alignItems: "center", gap: 7,
                 padding: "7px 16px", borderRadius: 8,
@@ -180,15 +178,15 @@ function DocCard({ doc }) {
                 border: `1.5px solid ${hov ? meta.border : COLORS.grayLight}`,
                 color: meta.color,
                 fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800,
-                textDecoration: "none", textTransform: "uppercase", letterSpacing: 0.5,
-                transition: "all 0.15s",
+                textTransform: "uppercase", letterSpacing: 0.5,
+                transition: "all 0.15s", cursor: "pointer",
               }}
               onMouseEnter={e => { e.currentTarget.style.opacity = "0.82"; }}
               onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
             >
-              <span style={{ fontSize: 13 }}>⬇️</span>
-              Baixar documento
-            </a>
+              <span style={{ fontSize: 13 }}>📄</span>
+              Visualizar documento
+            </button>
           ) : (
             <span style={{
               fontFamily: FONTS.body, fontSize: 12,
@@ -464,6 +462,7 @@ export default function DocumentosPage() {
   const [busca,      setBusca]      = useState("");
   const [ordenacao,  setOrdenacao]  = useState("data_desc");
   const [loading,    setLoading]    = useState(true);
+  const { pdfModal, openPdf, closePdf } = usePdfModal();
 
   // Contagens por categoria (para badges nas abas)
   const counts = {};
@@ -544,13 +543,14 @@ export default function DocumentosPage() {
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {filtrados.map(doc => (
-                  <DocCard key={doc.id} doc={doc} />
+                  <DocCard key={doc.id} doc={doc} onViewPdf={openPdf} />
                 ))}
               </div>
             )}
           </>
         )}
       </div>
+      <PdfModal url={pdfModal.url} title={pdfModal.title} onClose={closePdf} />
     </>
   );
 }

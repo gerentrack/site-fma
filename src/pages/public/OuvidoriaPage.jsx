@@ -16,8 +16,8 @@ const ITENS = [
     icon: "📧",
     titulo: "E-mail da Ouvidoria",
     descricao: "Para manifestações formais, sugestões ou denúncias.",
-    acao: "ouvidoria@fma.org.br",
-    href: "mailto:ouvidoria@fma.org.br",
+    acao: "mg@cbat.org.br",
+    href: "mailto:mg@cbat.org.br",
     tipo: "email",
   },
   {

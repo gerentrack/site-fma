@@ -15,6 +15,7 @@ import PageHeader from "../../components/ui/PageHeader";
 import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 import FileUpload from "../../components/ui/FileUpload";
+import { deleteFile } from "../../services/storageService";
 import {
   FormField, TextInput, TextArea, SelectInput, CheckboxInput,
 } from "../../components/ui/FormField";
@@ -90,6 +91,8 @@ export function AthleteContentList() {
 
   const handleDelete = async (item) => {
     if (!confirm(`Excluir "${item.title}"? Esta ação não pode ser desfeita.`)) return;
+    if (item.fileUrl) deleteFile(item.fileUrl).catch(() => {});
+    if (item.image) deleteFile(item.image).catch(() => {});
     await AthleteContentService.delete(item.id);
     load();
   };

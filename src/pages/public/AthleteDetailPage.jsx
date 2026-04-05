@@ -17,6 +17,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { COLORS, FONTS } from "../../styles/colors";
 import { AthleteContentService } from "../../services/index";
 import { ATHLETE_CONTENT_CATEGORIES } from "../../config/navigation";
+import PdfModal, { usePdfModal } from "../../components/ui/PdfModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -33,13 +34,11 @@ function fmtDate(d) {
 
 // ─── Botão de download ────────────────────────────────────────────────────────
 
-function DownloadButton({ href, label }) {
+function DownloadButton({ href, label, onView }) {
   if (!href) return null;
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
+    <button
+      onClick={() => onView(href, label || "Documento")}
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -48,7 +47,8 @@ function DownloadButton({ href, label }) {
         borderRadius: 8,
         background: COLORS.primary,
         color: "#fff",
-        textDecoration: "none",
+        border: "none",
+        cursor: "pointer",
         fontFamily: FONTS.heading,
         fontSize: 14,
         fontWeight: 700,
@@ -59,8 +59,8 @@ function DownloadButton({ href, label }) {
       onMouseLeave={e => (e.currentTarget.style.background = COLORS.primary)}
     >
       <span style={{ fontSize: 18 }}>📎</span>
-      {label || "Baixar Documento"}
-    </a>
+      {label || "Visualizar Documento"}
+    </button>
   );
 }
 
@@ -161,6 +161,7 @@ export default function AthleteDetailPage() {
   const [item, setItem]       = useState(null);
   const [related, setRelated] = useState([]);
   const [status, setStatus]   = useState("loading"); // loading | ok | notfound
+  const { pdfModal, openPdf, closePdf } = usePdfModal();
 
   useEffect(() => {
     setStatus("loading");
@@ -338,7 +339,7 @@ export default function AthleteDetailPage() {
               </h3>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
                 {item.fileUrl && (
-                  <DownloadButton href={item.fileUrl} label={item.fileLabel || "Baixar Documento"} />
+                  <DownloadButton href={item.fileUrl} label={item.fileLabel || "Visualizar Documento"} onView={openPdf} />
                 )}
                 {item.externalLink && (
                   <ExternalButton href={item.externalLink} />
@@ -433,14 +434,12 @@ export default function AthleteDetailPage() {
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {item.fileUrl && (
-                      <a
-                        href={item.fileUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 7, background: `${COLORS.primary}10`, color: COLORS.primary, textDecoration: "none", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}
+                      <button
+                        onClick={() => openPdf(item.fileUrl, item.fileLabel || "Documento")}
+                        style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 7, background: `${COLORS.primary}10`, color: COLORS.primary, border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, width: "100%" }}
                       >
-                        📎 {item.fileLabel || "Baixar Documento"}
-                      </a>
+                        📎 {item.fileLabel || "Visualizar Documento"}
+                      </button>
                     )}
                     {item.externalLink && (
                       <a
@@ -501,6 +500,7 @@ export default function AthleteDetailPage() {
           </Link>
         </div>
       </div>
+      <PdfModal url={pdfModal.url} title={pdfModal.title} onClose={closePdf} />
     </div>
   );
 }

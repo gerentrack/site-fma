@@ -61,6 +61,8 @@ import DocumentosPage from "../pages/public/DocumentosPage";
 import { GaleriaListagem, GaleriaAlbum } from "../pages/public/GaleriaPage";
 import { RankingPage, RecordesPage }     from "../pages/public/RankingPage";
 import ContatoPage from "../pages/public/ContatoPage";
+import PoliticaPrivacidade from "../pages/public/PoliticaPrivacidade";
+import TermosUso from "../pages/public/TermosUso";
 import { GaleriaList, GaleriaEditor } from "../pages/admin/GaleriaAdmin";
 import { ResultadosList, ResultadosEditor } from "../pages/admin/ResultadosAdmin";
 import { EquipesListagem, EquipeDetalhe } from "../pages/public/EquipesPage";
@@ -71,6 +73,7 @@ import AntidopagemPage from "../pages/public/AntidopagemPage";
 import MapaPage from "../pages/public/MapaPage";
 import { PistasList, PistasEditor } from "../pages/admin/PistasAdmin";
 import ImportarAdmin from "../pages/admin/ImportarAdmin";
+import StorageCleanup from "../pages/admin/StorageCleanup";
 
 // ── Layout público ────────────────────────────────────────────────────────────
 function PublicLayout({ children }) {
@@ -168,6 +171,8 @@ export default function AppRouter() {
 
       {/* ── Contato ── */}
       <Route path="/contato" element={<PublicLayout><ContatoPage /></PublicLayout>} />
+      <Route path="/privacidade" element={<PublicLayout><PoliticaPrivacidade /></PublicLayout>} />
+      <Route path="/termos" element={<PublicLayout><TermosUso /></PublicLayout>} />
       <Route path="/mapa"    element={<PublicLayout><MapaPage /></PublicLayout>} />
 
       {/* ── Redirecionamentos legados ── */}
@@ -209,7 +214,8 @@ export default function AppRouter() {
       <Route path="/admin/galeria/novo"  element={<GaleriaEditor />} />
       <Route path="/admin/galeria/:id"   element={<GaleriaEditor />} />
 
-      <Route path="/admin/importar"      element={<ImportarAdmin />} />
+      <Route path="/admin/importar"         element={<ImportarAdmin />} />
+      <Route path="/admin/storage-cleanup"  element={<StorageCleanup />} />
       <Route path="/admin/pistas"        element={<PistasList />} />
       <Route path="/admin/pistas/novo"  element={<PistasEditor />} />
       <Route path="/admin/pistas/:id"   element={<PistasEditor />} />

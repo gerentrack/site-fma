@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ──
+    function isAuth() { return request.auth != null; }
+
+    // ── Conteúdo público (leitura livre, escrita autenticada) ──
+    match /calendar/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /news/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /gallery/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /banners/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /partners/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /documents/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /socialLinks/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /institutionalPages/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /institutionalSections/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /pistasHomologadas/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /resultados/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /equipes/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /config/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+
+    // ── Árbitros (leitura pública, escrita autenticada) ──
+    match /referees/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /refereeEvents/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /refereeAvailability/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /refereeAssignments/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+
+    // ── Organizadores e solicitações (leitura livre para suportar login do portal, escrita autenticada) ──
+    match /organizers/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /solicitacoes/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /solicitacaoArquivos/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /movimentacoes/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+
+    // ── Usuários (apenas autenticados) ──
+    match /users/{docId} {
+      allow read, write: if isAuth();
+    }
+  }
+}

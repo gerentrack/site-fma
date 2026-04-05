@@ -160,7 +160,6 @@ export function validarCamposTecnicosPermit(ct) {
   if (!String(ct.sistemaApuracao || "").trim())   e.sistemaApuracao   = "Sistema de apuração obrigatório.";
   if (!String(ct.empresaCronometragem || "").trim()) e.empresaCronometragem = "Empresa de cronometragem obrigatória.";
   if (!String(ct.formaMedicaoPercurso || "").trim()) e.formaMedicaoPercurso = "Forma de aferição obrigatória.";
-  if (!String(ct.objetivoEvento || "").trim())    e.objetivoEvento    = "Objetivo do evento obrigatório.";
   if (ct.postoMedico && !String(ct.quantidadeAmbulancias || "").trim()) e.quantidadeAmbulancias = "Informe a quantidade de ambulâncias.";
   if (!String(ct.apoliceSeguros || "").trim())    e.apoliceSeguros    = "Número da apólice obrigatório.";
   if (!ct.regulamento?.temArquivo)  e.regulamento  = "Regulamento obrigatório.";
@@ -171,7 +170,6 @@ export function validarCamposTecnicosPermit(ct) {
 export function validarCamposTecnicosChancela(ct) {
   const e = {};
   if (!String(ct.linkDivulgacao || "").trim())   e.linkDivulgacao   = "Link de divulgação obrigatório.";
-  if (!String(ct.objetivoEvento || "").trim())   e.objetivoEvento   = "Objetivo do evento obrigatório.";
   _validarModalidades(ct, e);
   if (!String(ct.valorInscricao || "").trim())   e.valorInscricao   = "Valor de inscrição obrigatório.";
   if (ct.premiacaoDinheiro && !String(ct.valorPremiacaoTotal || "").trim()) e.valorPremiacaoTotal = "Informe o valor total de premiação.";

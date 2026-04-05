@@ -348,7 +348,8 @@ export const OrganizersService = {
   register: (data) => organizersAPI.register(data),
   update: (id, data) => organizersAPI.update(id, data),
   updatePassword: (id, opts) => organizersAPI.updatePassword(id, opts),
-  setActive: (id, active) => organizersAPI.setActive(id, active),
+  updateEmail: (id, newEmail, currentPassword) => organizersAPI.updateEmail(id, newEmail, currentPassword),
+  setActive: (id, active, motivo) => organizersAPI.setActive(id, active, motivo),
   delete: (id) => organizersAPI.delete(id),
 };
 
@@ -579,6 +580,8 @@ export const ArquivosService = {
 export const MovimentacoesService = {
   listBySolicitacao: (id, opts) => movimentacoesAPI.listBySolicitacao(id, opts),
   registrar: (data) => movimentacoesAPI.registrar(data),
+  delete: (id) => movimentacoesAPI.delete(id),
+  deleteBySolicitacao: (solId) => movimentacoesAPI.deleteBySolicitacao(solId),
 };
 
 // ─── Resultados ───────────────────────────────────────────────────────────────

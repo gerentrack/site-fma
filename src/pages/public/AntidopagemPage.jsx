@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { DocumentsService } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
+import PdfModal, { usePdfModal } from "../../components/ui/PdfModal";
 
 // ─── Links externos fixos (atualizar com URLs reais) ──────────────────────────
 
@@ -95,6 +96,7 @@ function Skeleton() {
 export default function AntidopagemPage() {
   const [docs,    setDocs]    = useState([]);
   const [loading, setLoading] = useState(true);
+  const { pdfModal, openPdf, closePdf } = usePdfModal();
 
   useEffect(() => {
     document.title = "Antidopagem | FMA";
@@ -226,13 +228,13 @@ export default function AntidopagemPage() {
                     )}
                   </div>
                   {doc.fileUrl && (
-                    <a href={doc.fileUrl} target="_blank" rel="noreferrer"
+                    <button onClick={() => openPdf(doc.fileUrl, doc.title)}
                       style={{ padding: "7px 16px", borderRadius: 8,
-                        background: COLORS.primary, color: "#fff",
+                        background: COLORS.primary, color: "#fff", border: "none", cursor: "pointer",
                         fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700,
-                        textDecoration: "none", textTransform: "uppercase", flexShrink: 0 }}>
-                      ⬇ Baixar
-                    </a>
+                        textTransform: "uppercase", flexShrink: 0 }}>
+                      📄 Visualizar
+                    </button>
                   )}
                 </div>
               ))}
@@ -240,6 +242,7 @@ export default function AntidopagemPage() {
           )}
         </section>
       </div>
+      <PdfModal url={pdfModal.url} title={pdfModal.title} onClose={closePdf} />
     </>
   );
 }

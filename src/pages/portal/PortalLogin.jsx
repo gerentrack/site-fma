@@ -123,7 +123,7 @@ export default function PortalLogin() {
           <div style={{ marginTop: 22, textAlign: "center", fontFamily: FONTS.body, fontSize: 13 }}>
             <span style={{ color: COLORS.gray }}>Ainda não tem conta? </span>
             <Link to="/portal/cadastro" style={{ color: "#0066cc", fontWeight: 700, textDecoration: "none" }}>
-              Cadastre-se gratuitamente
+              Cadastre-se
             </Link>
           </div>
         </div>

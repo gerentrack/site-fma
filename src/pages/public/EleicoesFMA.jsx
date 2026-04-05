@@ -14,6 +14,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { DocumentsService } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
+import PdfModal, { usePdfModal } from "../../components/ui/PdfModal";
 
 // ─── Utilitários ──────────────────────────────────────────────────────────────
 
@@ -50,7 +51,7 @@ function Skeleton() {
 
 // ─── Item de documento ────────────────────────────────────────────────────────
 
-function DocItem({ doc }) {
+function DocItem({ doc, onViewPdf }) {
   const [hov, setHov] = useState(false);
   const badge = extBadge(doc.fileUrl);
 
@@ -107,16 +108,16 @@ function DocItem({ doc }) {
           </span>
         )}
         {doc.fileUrl ? (
-          <a href={doc.fileUrl} target="_blank" rel="noreferrer"
+          <button onClick={() => onViewPdf(doc.fileUrl, doc.title)}
             style={{
               padding: "7px 16px", borderRadius: 8,
               background: COLORS.primary, color: "#fff", border: "none",
               fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700,
-              textDecoration: "none", cursor: "pointer",
+              cursor: "pointer",
               textTransform: "uppercase", letterSpacing: 0.5,
             }}>
-            ⬇ Baixar
-          </a>
+            📄 Visualizar
+          </button>
         ) : (
           <span style={{
             padding: "7px 16px", borderRadius: 8,
@@ -137,6 +138,7 @@ function DocItem({ doc }) {
 export default function EleicoesFMA() {
   const [docs,    setDocs]    = useState([]);
   const [loading, setLoading] = useState(true);
+  const { pdfModal, openPdf, closePdf } = usePdfModal();
 
   useEffect(() => {
     document.title = "Eleições | Portal da Transparência FMA";
@@ -257,7 +259,7 @@ export default function EleicoesFMA() {
 
                 {/* Documentos do ano */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {porAno[ano].map(doc => <DocItem key={doc.id} doc={doc} />)}
+                  {porAno[ano].map(doc => <DocItem key={doc.id} doc={doc} onViewPdf={openPdf} />)}
                 </div>
               </section>
             ))}
@@ -274,6 +276,7 @@ export default function EleicoesFMA() {
           </Link>
         </div>
       </div>
+      <PdfModal url={pdfModal.url} title={pdfModal.title} onClose={closePdf} />
     </>
   );
 }

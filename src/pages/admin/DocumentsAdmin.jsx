@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../components/admin/AdminLayout";
 import { documentsAPI } from "../../data/api";
 import { COLORS, FONTS } from "../../styles/colors";
+import { deleteFile } from "../../services/storageService";
 
 const CATEGORIES = [
   { value: "estatuto", label: "Estatuto" },
@@ -69,7 +70,13 @@ export function DocumentsList() {
   const navigate = useNavigate();
   const load = () => documentsAPI.list({ publishedOnly: false }).then(r => r.data && setItems(r.data));
   useEffect(() => { load(); }, []);
-  const handleDelete = async (id) => { if (!confirm("Excluir?")) return; await documentsAPI.delete(id); load(); };
+  const handleDelete = async (id) => {
+    if (!confirm("Excluir?")) return;
+    const doc = items.find(d => d.id === id);
+    if (doc?.fileUrl) deleteFile(doc.fileUrl).catch(() => {});
+    await documentsAPI.delete(id);
+    load();
+  };
   const handleToggle = async (item) => { await documentsAPI.update(item.id, { published: !item.published }); load(); };
 
   return (

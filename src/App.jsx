@@ -3,13 +3,12 @@ import { Analytics } from "@vercel/analytics/react";
 import { AdminProvider } from "./context/AdminContext";
 import { IntranetProvider } from "./context/IntranetContext";
 import { OrganizerProvider } from "./context/OrganizerContext";
-import { initializeData } from "./data/api";
 import AppRouter from "./router/index";
-
-// Seed localStorage with initial data on first run
-initializeData();
+import CookieBanner, { getCookieConsent } from "./components/common/CookieBanner";
 
 export default function App() {
+  const analyticsAllowed = getCookieConsent() === "accepted";
+
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AdminProvider>
@@ -20,7 +19,8 @@ export default function App() {
               rel="stylesheet"
             />
             <AppRouter />
-            <Analytics />
+            {analyticsAllowed && <Analytics />}
+            <CookieBanner />
           </OrganizerProvider>
         </IntranetProvider>
       </AdminProvider>

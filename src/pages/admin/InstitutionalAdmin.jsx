@@ -16,6 +16,7 @@ import Button from "../../components/ui/Button";
 import Table, { TableActions } from "../../components/ui/Table";
 import { FormField, TextInput, TextArea, SelectInput, CheckboxInput } from "../../components/ui/FormField";
 import FileUpload from "../../components/ui/FileUpload";
+import { deleteFile } from "../../services/storageService";
 import { useForm, required } from "../../hooks/useForm";
 import {
   InstitutionalPagesService,
@@ -87,6 +88,12 @@ export function InstitutionalList() {
 
   const handleDelete = async (page) => {
     if (!confirm(`Excluir a página "${page.title}" e TODAS as suas seções? Esta ação não pode ser desfeita.`)) return;
+    // Limpar arquivos das seções do Storage
+    const secRes = await InstitutionalSectionsService.list({ pageId: page.id, publishedOnly: false });
+    (secRes.data || []).forEach(sec => {
+      if (sec.image) deleteFile(sec.image).catch(() => {});
+      if (sec.fileUrl) deleteFile(sec.fileUrl).catch(() => {});
+    });
     await InstitutionalPagesService.delete(page.id);
     load();
   };
@@ -240,6 +247,8 @@ export function PageEditor() {
 
   const handleDeleteSection = async (section) => {
     if (!confirm(`Excluir a seção "${section.title}"?`)) return;
+    if (section.image) deleteFile(section.image).catch(() => {});
+    if (section.fileUrl) deleteFile(section.fileUrl).catch(() => {});
     await InstitutionalSectionsService.delete(section.id);
     loadSections();
   };

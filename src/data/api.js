@@ -12,6 +12,7 @@ import {
 import {
   signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword,
   updatePassword as fbUpdatePassword,
+  updateEmail as fbUpdateEmail,
   EmailAuthProvider, reauthenticateWithCredential, onAuthStateChanged,
 } from "firebase/auth";
 
@@ -659,9 +660,9 @@ export const organizerAuthAPI = {
       const profile = await readDoc("users", cred.user.uid);
       if (!profile || profile.role !== "organizer") { await signOut(auth); return err("Acesso restrito ao portal de organizadores."); }
       const org = await readDoc("organizers", profile.refId);
-      const orgAtivo = org && (org.status === "ativo" || org.active === true);
-      if (!orgAtivo) { await signOut(auth); return err("Conta inativa ou não encontrada."); }
-      const session = { organizerId: org.id, uid: cred.user.uid, email: org.email, name: org.name, loginAt: now() };
+      if (!org) { await signOut(auth); return err("Conta não encontrada."); }
+      const orgAtivo = org.status === "ativo" || org.active === true;
+      const session = { organizerId: org.id, uid: cred.user.uid, email: org.email, name: org.name, loginAt: now(), active: orgAtivo, motivoDesativacao: org.motivoDesativacao || "" };
       const { password: _, ...safe } = org;
       return ok({ session, organizer: safe });
     } catch (e) {
@@ -678,7 +679,8 @@ export const organizerAuthAPI = {
     if (!profile || profile.role !== "organizer") return null;
     const org = await readDoc("organizers", profile.refId);
     if (!org) return null;
-    return { organizerId: org.id, uid: u.uid, email: org.email, name: org.name };
+    const orgAtivo = org.status === "ativo" || org.active === true;
+    return { organizerId: org.id, uid: u.uid, email: org.email, name: org.name, active: orgAtivo, motivoDesativacao: org.motivoDesativacao || "" };
   },
   onAuthStateChange: (callback) => onAuthStateChanged(auth, callback),
   register: async (data) => {
@@ -687,7 +689,7 @@ export const organizerAuthAPI = {
     // Cria conta no Firebase Auth
     try {
       const cred = await createUserWithEmailAndPassword(auth, data.email, data.password);
-      const item = await createDoc("organizers", { ...data, status: "pendente" });
+      const item = await createDoc("organizers", { ...data, status: "ativo", active: true });
       await setDoc(doc(db, "users", cred.user.uid), {
         uid: cred.user.uid, email: data.email,
         role: "organizer", name: data.name, refId: item.id, createdAt: now(),
@@ -727,7 +729,37 @@ export const organizersAPI = {
     return ok(safe);
   },
   delete:         async (id)      => { await removeDoc("organizers",id); return ok(true); },
+  setActive:      async (id, active, motivo = "") => {
+    const data = { active: !!active };
+    if (!active) data.motivoDesativacao = motivo || "";
+    else { data.motivoDesativacao = ""; }
+    await patchDoc("organizers", id, data);
+    return ok(true);
+  },
   updatePassword: async (id,pass) => { await patchDoc("organizers",id,{password:pass}); return ok(true); },
+  updateEmail: async (id, newEmail, currentPassword) => {
+    const u = auth.currentUser;
+    if (!u) return err("Não autenticado.");
+    try {
+      // Reautenticar
+      const cred = EmailAuthProvider.credential(u.email, currentPassword);
+      await reauthenticateWithCredential(u, cred);
+      // Atualizar no Firebase Auth
+      await fbUpdateEmail(u, newEmail);
+      // Atualizar no Firestore — organizers
+      await patchDoc("organizers", id, { email: newEmail });
+      // Atualizar no Firestore — users
+      const usersSnap = await getDocs(collection(db, "users"));
+      const userDoc = usersSnap.docs.find(d => d.data().refId === id && d.data().role === "organizer");
+      if (userDoc) await updateDoc(doc(db, "users", userDoc.id), { email: newEmail });
+      return ok(true);
+    } catch (e) {
+      if (e.code === "auth/wrong-password" || e.code === "auth/invalid-credential") return err("Senha incorreta.");
+      if (e.code === "auth/email-already-in-use") return err("Este e-mail já está em uso por outra conta.");
+      if (e.code === "auth/invalid-email") return err("E-mail inválido.");
+      return err(e.message);
+    }
+  },
   updateProfile:  async (id,data) => {
     const item=await patchDoc("organizers",id,data);
     if (!item) return err("Não encontrado.");
@@ -826,6 +858,12 @@ export const movimentacoesAPI = {
     return ok(items);
   },
   create: async (data) => { const item=await createDoc("movimentacoes",{...data,criadoEm:now()}); return ok(item); },
+  delete: async (id) => { await removeDoc("movimentacoes",id); return ok(true); },
+  deleteBySolicitacao: async (solId) => {
+    const items = await readCol("movimentacoes");
+    await Promise.all(items.filter(m => m.solicitacaoId === solId).map(m => removeDoc("movimentacoes", m.id)));
+    return ok(true);
+  },
 };
 
 export const resultadosAPI = {

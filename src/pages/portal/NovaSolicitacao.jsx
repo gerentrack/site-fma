@@ -52,10 +52,32 @@ const secBtn = {
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function NovaSolicitacao() {
-  const { organizerId, organizerName } = useOrganizer();
+  const { organizerId, organizerName, organizerActive, motivoDesativacao } = useOrganizer();
   const navigate = useNavigate();
 
   useEffect(() => { initFormConfig(); }, []);
+
+  if (!organizerActive) {
+    return (
+      <div style={{ padding: "60px 40px", maxWidth: 600, margin: "0 auto", textAlign: "center" }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}></div>
+        <h2 style={{ fontFamily: FONTS.heading, fontSize: 22, fontWeight: 900, color: "#dc2626", textTransform: "uppercase", margin: "0 0 12px" }}>Conta bloqueada</h2>
+        <p style={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.gray, margin: "0 0 16px", lineHeight: 1.6 }}>
+          Sua conta foi desativada pela FMA. Não é possível criar novas solicitações.
+        </p>
+        {motivoDesativacao && (
+          <div style={{ padding: "12px 16px", borderRadius: 8, background: "#fef2f2", border: "1px solid #fecaca", textAlign: "left", marginBottom: 20 }}>
+            <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: "#dc2626", marginBottom: 4 }}>Motivo</div>
+            <div style={{ fontFamily: FONTS.body, fontSize: 14, color: "#991b1b" }}>{motivoDesativacao}</div>
+          </div>
+        )}
+        <button onClick={() => navigate("/portal")}
+          style={{ padding: "10px 24px", borderRadius: 8, border: "none", background: COLORS.primary, color: "#fff", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+          ← Voltar ao Portal
+        </button>
+      </div>
+    );
+  }
 
   const [step, setStep]   = useState(1);
   const [tipo, setTipo]   = useState("");
@@ -65,6 +87,7 @@ export default function NovaSolicitacao() {
   });
   const [numero, setNumero] = useState("");
   const [complemento, setComplemento] = useState("");
+  const [nomeLocal, setNomeLocal] = useState("");
   const { cep, setCep, setNumero: cepSetNumero, loading: cepLoading, error: cepError, endereco: cepEndereco } = useCep((found) => {
     setF("cidadeEvento", found.cidade);
     setF("localEvento", `${found.logradouro}${numero ? ", " + numero : ""}${complemento ? ", " + complemento : ""}, ${found.bairro}`);
@@ -85,6 +108,8 @@ export default function NovaSolicitacao() {
 
   const addModalidade = () =>
     setCt(c => ({ ...c, modalidades: [...(c.modalidades || []), { id: novaModalidadeId(), distancia: "", estimativaInscritos: "" }] }));
+  const addModalidadeComNome = (nome) =>
+    setCt(c => ({ ...c, modalidades: [...(c.modalidades || []), { id: novaModalidadeId(), distancia: nome, estimativaInscritos: "" }] }));
   const removeModalidade = (id) =>
     setCt(c => ({ ...c, modalidades: (c.modalidades || []).filter(m => m.id !== id) }));
   const setModalidade = (id, key, value) => {
@@ -170,7 +195,9 @@ export default function NovaSolicitacao() {
     if (Object.keys(eTec).length > 0)  { setCtErrors(eTec); return; }
 
     setSaving(true); setGlobalError("");
-    const r = await SolicitacoesService.create({ ...form, tipo, organizerId, campos: {}, camposTecnicos: ct });
+    const formFinal = { ...form };
+    if (nomeLocal.trim()) formFinal.localEvento = nomeLocal.trim() + " — " + formFinal.localEvento;
+    const r = await SolicitacoesService.create({ ...formFinal, tipo, organizerId, campos: {}, camposTecnicos: ct });
     if (r.error) { setGlobalError(r.error); setSaving(false); return; }
     const sol = r.data;
 
@@ -223,14 +250,14 @@ export default function NovaSolicitacao() {
               background: step === s.n ? "#0066cc" : step > s.n ? "#e8f0fe" : "#fff",
               borderRight: i < STEPS.length - 1 ? `1px solid ${COLORS.grayLight}` : "none" }}>
               <div style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, color: step === s.n ? "#fff" : step > s.n ? "#0066cc" : COLORS.gray }}>
-                {step > s.n ? "✓ " : `${s.n}. `}{s.l}
+                {`${s.n}. `}{s.l}
               </div>
             </div>
           ))}
         </div>
 
         {globalError && (
-          <div style={{ background: "#fff5f5", border: "1px solid #fca5a5", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontFamily: FONTS.body, fontSize: 13, color: "#dc2626" }}>⚠️ {globalError}</div>
+          <div style={{ background: "#fff5f5", border: "1px solid #fca5a5", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontFamily: FONTS.body, fontSize: 13, color: "#dc2626" }}>{globalError}</div>
         )}
 
         {/* ── Step 1: Tipo ── */}
@@ -238,19 +265,37 @@ export default function NovaSolicitacao() {
           <div>
             <h2 style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, margin: "0 0 18px" }}>Selecione o tipo de solicitação</h2>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
-              {SOLICITACAO_TIPOS.map(t => (
+              {SOLICITACAO_TIPOS.map(t => {
+                const detalhes = t.value === "permit" ? {
+                  norma: "Norma 07 da CBAt",
+                  modalidades: "Corridas de rua e ultramaratonas",
+                  distancias: "1 Milha, 5km, 10km, 15km, 20km, 25km, 30km, Meia-Maratona, Maratona, Ultramaratonas",
+                  inclui: "Arbitragem oficial, medição de percurso certificada e cronometragem",
+                } : {
+                  norma: "Norma 15 da CBAt",
+                  modalidades: "Corridas em montanha e corridas em trilha",
+                  distancias: "Subida Clássica, Subida e Descida, Vertical, Longa Distância, Revezamentos (classes XXS a XXL)",
+                  inclui: "Delegado Técnico, plano de segurança e autorização ambiental",
+                };
+                return (
                 <button key={t.value} onClick={() => handleSelectTipo(t.value)}
                   style={{ padding: "28px 24px", borderRadius: 14, textAlign: "left", cursor: "pointer",
                     border: `2.5px solid ${tipo === t.value ? "#0066cc" : COLORS.grayLight}`,
                     background: tipo === t.value ? "#eff6ff" : "#fff", transition: "all 0.15s" }}>
-                  <div style={{ fontSize: 36, marginBottom: 10 }}>{t.icon}</div>
                   <div style={{ fontFamily: FONTS.heading, fontSize: 20, fontWeight: 900, color: tipo === t.value ? "#0066cc" : COLORS.dark, textTransform: "uppercase", marginBottom: 8 }}>{t.label}</div>
-                  <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, lineHeight: 1.5 }}>{t.desc}</div>
+                  <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, lineHeight: 1.5, marginBottom: 12 }}>{t.desc}</div>
+                  <div style={{ fontSize: 12, fontFamily: FONTS.body, color: COLORS.gray, lineHeight: 1.7, borderTop: `1px solid ${COLORS.grayLight}`, paddingTop: 10 }}>
+                    <div><strong>Modalidades:</strong> {detalhes.modalidades}</div>
+                    <div><strong>Distâncias:</strong> {detalhes.distancias}</div>
+                    <div><strong>Inclui:</strong> {detalhes.inclui}</div>
+                    <div style={{ marginTop: 4, fontStyle: "italic", fontSize: 11, color: "#9ca3af" }}>Conforme {detalhes.norma}</div>
+                  </div>
                   {tipo === t.value && (
-                    <div style={{ marginTop: 14, display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20, background: "#0066cc", color: "#fff", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>✓ Selecionado</div>
+                    <div style={{ marginTop: 14, display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20, background: "#0066cc", color: "#fff", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>Selecionado</div>
                   )}
                 </button>
-              ))}
+                );
+              })}
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
               <button onClick={() => { if (tipo) setStep(2); }} disabled={!tipo}
@@ -266,7 +311,7 @@ export default function NovaSolicitacao() {
           <div>
             <TipoBadge tipo={tipo} onBack={() => setStep(1)} />
             <div style={card}>
-              <SecTitle>📋 Dados do Evento</SecTitle>
+              <SecTitle>Dados do Evento</SecTitle>
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <div>
                   <LBL req>Nome do Evento</LBL>
@@ -279,35 +324,25 @@ export default function NovaSolicitacao() {
                     {errors.dataEvento && <ErrMsg msg={errors.dataEvento} />}
                   </div>
                 <div>
-                  <LBL req>CEP do local de realização</LBL>
+                  <LBL req>Local de realização</LBL>
                   <CepField
                     cep={cep} onChange={setCep}
                     numero={numero} onNumero={(v) => {
                       setNumero(v);
-                      if (cepEndereco) setF("localEvento", `${cepEndereco.logradouro}, ${v}, ${cepEndereco.bairro}`);
+                      if (cepEndereco) setF("localEvento", [cepEndereco.logradouro, v, complemento, cepEndereco.bairro].filter(Boolean).join(", "));
                     }}
                     loading={cepLoading} error={cepError} endereco={cepEndereco}
                     complemento={complemento}
-                    onComplemento={setComplemento}
+                    onComplemento={(v) => {
+                      setComplemento(v);
+                      if (cepEndereco) setF("localEvento", [cepEndereco.logradouro, numero, v, cepEndereco.bairro].filter(Boolean).join(", "));
+                    }}
                     setNumero={cepSetNumero}
                     required
+                    nomeLocal={nomeLocal}
+                    onNomeLocal={setNomeLocal}
                   />
                   {(errors.cidadeEvento || errors.localEvento) && <ErrMsg msg={errors.cidadeEvento || errors.localEvento} />}
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                  <div>
-                    <LBL req>Município</LBL>
-                    <input value={form.cidadeEvento} onChange={e => setF("cidadeEvento", e.target.value)} placeholder="Preenchido automaticamente" style={inp(!!errors.cidadeEvento)} />
-                  </div>
-                  <div>
-                    <LBL req>Local de Realização</LBL>
-                    <input value={form.localEvento} onChange={e => setF("localEvento", e.target.value)} placeholder="Preenchido automaticamente" style={inp(!!errors.localEvento)} />
-                  </div>
-                </div>
-                <div>
-                  <LBL>Descrição do Evento</LBL>
-                  <textarea value={form.descricaoEvento} onChange={e => setF("descricaoEvento", e.target.value)}
-                    placeholder="Descreva brevemente o evento." rows={3} style={{ ...inp(), resize: "vertical" }} />
                 </div>
               </div>
             </div>
@@ -325,14 +360,16 @@ export default function NovaSolicitacao() {
 
             {/* Seção Modalidades — sempre presente */}
             <div style={card}>
-              <SecTitle>🏃 Modalidades / Distâncias</SecTitle>
+              <SecTitle>Modalidades / Distâncias</SecTitle>
               <ModalidadesSection
                 modalidades={ct.modalidades || []}
                 ctErrors={ctErrors}
                 setModalidade={setModalidade}
                 addModalidade={addModalidade}
+                addModalidadeComNome={addModalidadeComNome}
                 removeModalidade={removeModalidade}
                 inp={inp}
+                tipo={tipo}
               />
             </div>
 
@@ -351,10 +388,10 @@ export default function NovaSolicitacao() {
               <button onClick={() => setStep(2)} style={secBtn}>← Voltar</button>
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => handleSave(false)} disabled={saving} style={{ ...secBtn, opacity: saving ? 0.6 : 1 }}>
-                  📝 Salvar rascunho
+                  Salvar rascunho
                 </button>
                 <button onClick={() => handleSave(true)} disabled={saving} style={{ ...priBtn, opacity: saving ? 0.6 : 1 }}>
-                  {saving ? "Enviando..." : "📤 Enviar para análise"}
+                  {saving ? "Enviando..." : "Enviar para análise"}
                 </button>
               </div>
             </div>
@@ -394,41 +431,134 @@ function SecTitle({ children }) {
 }
 
 // ─── Modalidades ──────────────────────────────────────────────────────────────
-function ModalidadesSection({ modalidades, ctErrors, setModalidade, addModalidade, removeModalidade, inp }) {
+
+const SUGESTOES_PERMIT = [
+  "1 Milha", "5km", "10km", "15km", "20km", "25km", "30km",
+  "Meia-Maratona (21,097km)", "Maratona (42,195km)",
+  "Ultra 50km", "Ultra 100km", "Ultra 6h", "Ultra 12h", "Ultra 24h",
+  "Revezamento", "Caminhada",
+];
+
+const SUGESTOES_CHANCELA = [
+  "Trail XXS (0-24 EKm)", "Trail XS (25-44 EKm)", "Trail S (45-74 EKm)",
+  "Trail M (75-144 EKm)", "Trail L (115-154 EKm)", "Trail XL (155-209 EKm)", "Trail XXL (210+ EKm)",
+  "Subida Clássica", "Subida e Descida Clássica", "Vertical",
+  "Longa Distância", "Revezamento", "Corrida de Montanha",
+];
+
+function ModalidadesSection({ modalidades, ctErrors, setModalidade, addModalidade, addModalidadeComNome, removeModalidade, inp, tipo }) {
+  const [outraAberta, setOutraAberta] = useState(false);
+  const [outraTexto, setOutraTexto] = useState("");
+
   const total = modalidades.reduce((acc, m) => acc + (Number(m.estimativaInscritos) || 0), 0);
+  const sugestoes = tipo === "chancela" ? SUGESTOES_CHANCELA : SUGESTOES_PERMIT;
+  const usadas = new Set(modalidades.map(m => m.distancia));
+
+  const adicionarDistancia = (nome) => {
+    const vazia = modalidades.find(m => !m.distancia.trim());
+    if (vazia) setModalidade(vazia.id, "distancia", nome);
+    else addModalidadeComNome(nome);
+  };
+
+  const adicionarOutra = () => {
+    if (!outraTexto.trim()) return;
+    adicionarDistancia(outraTexto.trim());
+    setOutraTexto("");
+    setOutraAberta(false);
+  };
+
+  const chipBase = {
+    padding: "6px 14px", borderRadius: 20, border: "none", cursor: "pointer",
+    fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700,
+    whiteSpace: "nowrap", transition: "all 0.15s",
+  };
+  const chipDisponivel = { ...chipBase, background: "#f0f9ff", color: "#0066cc", border: "1.5px solid #bae6fd" };
+  const chipSelecionado = { ...chipBase, background: "#0066cc", color: "#fff" };
+
   return (
     <>
       {ctErrors.modalidades && <ErrMsg msg={ctErrors.modalidades} />}
       {ctErrors.modalidadesEstimativa && <ErrMsg msg={ctErrors.modalidadesEstimativa} />}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {modalidades.map((m, i) => (
-          <div key={m.id} style={{ display: "grid", gridTemplateColumns: "1fr 180px 36px", gap: 10, alignItems: "flex-end" }}>
-            <div>
-              {i === 0 && <label style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.grayDark, display: "block", marginBottom: 5 }}>Distância / Categoria <span style={{ color: COLORS.primary }}>*</span></label>}
-              <input value={m.distancia} onChange={e => setModalidade(m.id, "distancia", e.target.value)}
-                placeholder="Ex: 10km, 5km, Sub-18, Cadeirante"
-                style={inp(!!(ctErrors.modalidades && !m.distancia.trim()))} />
-            </div>
-            <div>
-              {i === 0 && <label style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.grayDark, display: "block", marginBottom: 5 }}>Estimativa <span style={{ color: COLORS.primary }}>*</span></label>}
-              <input type="number" min="1" value={m.estimativaInscritos}
-                onChange={e => setModalidade(m.id, "estimativaInscritos", e.target.value)}
-                placeholder="Qtd. atletas"
-                style={inp(!!(ctErrors.modalidadesEstimativa && !m.estimativaInscritos))} />
-            </div>
-            <div style={{ paddingTop: i === 0 ? 22 : 0 }}>
-              {modalidades.length > 1 && (
-                <button type="button" onClick={() => removeModalidade(m.id)}
-                  style={{ width: 36, height: 36, borderRadius: 8, border: "1px solid #fca5a5", background: "#fff5f5", color: "#dc2626", cursor: "pointer", fontSize: 16, fontWeight: 700 }}>×</button>
-              )}
-            </div>
-          </div>
-        ))}
+
+      {/* Chips de seleção */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, marginBottom: 8 }}>
+          Selecione as distâncias do evento:
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {sugestoes.map(s => {
+            const selecionada = usadas.has(s);
+            return (
+              <button key={s} type="button"
+                onClick={() => {
+                  if (selecionada) {
+                    const mod = modalidades.find(m => m.distancia === s);
+                    if (mod) removeModalidade(mod.id);
+                  } else {
+                    adicionarDistancia(s);
+                  }
+                }}
+                style={selecionada ? chipSelecionado : chipDisponivel}
+                onMouseEnter={e => { if (!selecionada) { e.currentTarget.style.background = "#0066cc"; e.currentTarget.style.color = "#fff"; } }}
+                onMouseLeave={e => { if (!selecionada) { e.currentTarget.style.background = "#f0f9ff"; e.currentTarget.style.color = "#0066cc"; } }}
+              >{selecionada ? s : s}</button>
+            );
+          })}
+          {/* Chip "Outra distância" */}
+          <button type="button" onClick={() => setOutraAberta(!outraAberta)}
+            style={{ ...chipBase, background: "#f8fafc", color: "#475569", border: `1.5px dashed ${COLORS.grayLight}` }}>
+            Outra distância
+          </button>
+        </div>
       </div>
-      <button type="button" onClick={addModalidade}
-        style={{ marginTop: 12, padding: "7px 16px", borderRadius: 8, border: "1.5px dashed #94a3b8", background: "#f8fafc", color: "#475569", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
-        + Adicionar modalidade
-      </button>
+
+      {/* Campo para distância personalizada */}
+      {outraAberta && (
+        <div style={{ display: "flex", gap: 10, alignItems: "flex-end", marginBottom: 14 }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.grayDark, display: "block", marginBottom: 5 }}>Distância personalizada</label>
+            <input value={outraTexto} onChange={e => setOutraTexto(e.target.value)}
+              placeholder="Ex: 8km, 12km, 3km"
+              onKeyDown={e => e.key === "Enter" && (e.preventDefault(), adicionarOutra())}
+              style={inp(false)} autoFocus />
+          </div>
+          <button type="button" onClick={adicionarOutra}
+            style={{ padding: "10px 18px", borderRadius: 8, border: "none", background: "#0066cc", color: "#fff",
+              fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+            Adicionar
+          </button>
+          <button type="button" onClick={() => { setOutraAberta(false); setOutraTexto(""); }}
+            style={{ padding: "10px 14px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray,
+              fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+            Cancelar
+          </button>
+        </div>
+      )}
+
+      {/* Lista de modalidades selecionadas com estimativa */}
+      {modalidades.filter(m => m.distancia.trim()).length > 0 && (
+        <div>
+          <label style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.grayDark, display: "block", marginBottom: 8 }}>
+            Estimativa de inscritos por modalidade <span style={{ color: COLORS.primary }}>*</span>
+          </label>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {modalidades.filter(m => m.distancia.trim()).map(m => (
+              <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8, background: "#f8fafc", border: `1px solid ${COLORS.grayLight}` }}>
+                <span style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark, flex: 1 }}>
+                  {m.distancia}
+                </span>
+                <input type="number" min="1" value={m.estimativaInscritos}
+                  onChange={e => setModalidade(m.id, "estimativaInscritos", e.target.value)}
+                  placeholder="Qtd. atletas"
+                  style={{ width: 140, padding: "7px 10px", borderRadius: 6, border: `1.5px solid ${ctErrors.modalidadesEstimativa && !m.estimativaInscritos ? "#dc2626" : COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 13, outline: "none", textAlign: "center" }} />
+                <button type="button" onClick={() => removeModalidade(m.id)}
+                  style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #fca5a5", background: "#fff5f5", color: "#dc2626", cursor: "pointer", fontSize: 14, fontWeight: 700, flexShrink: 0 }}>×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {total > 0 && (
         <div style={{ marginTop: 10, fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>
           Total estimado: <strong>{total.toLocaleString("pt-BR")} inscritos</strong>
@@ -465,6 +595,9 @@ function ConfigSections({ tipo, ct, ctErrors, setC, uploadRefs, onFileChange, ge
                 />
               ))}
               {uploadFields.map(f => {
+                // Condicional: esconder upload se condição não atendida
+                if (f.conditional && !ct[f.conditional]) return null;
+                if (f.conditionalValue && ct[f.conditionalValue.field] !== f.conditionalValue.value) return null;
                 const ref = getOrCreateRef(f.id);
                 return (
                   <UploadField
@@ -477,6 +610,7 @@ function ConfigSections({ tipo, ct, ctErrors, setC, uploadRefs, onFileChange, ge
                     fileRef={ref}
                     onFileChange={file => onFileChange(f.id, file)}
                     error={ctErrors[f.id]}
+                    showMergePdf={!!f.hintLink}
                   />
                 );
               })}
@@ -498,6 +632,7 @@ function DynamicField({ field: f, value, ctValue, error, onChange, inp }) {
 
   // Condicional: só exibir se condição for verdadeira
   if (f.conditional && !ctValue[f.conditional]) return null;
+  if (f.conditionalValue && ctValue[f.conditionalValue.field] !== f.conditionalValue.value) return null;
 
   if (f.type === "checkbox") {
     return (
@@ -546,6 +681,45 @@ function DynamicField({ field: f, value, ctValue, error, onChange, inp }) {
     );
   }
 
+  // currency — toggle Gratuito/Pago com campo de valor
+  if (f.type === "currency") {
+    const isGratuito = value === "Gratuito" || value === "gratuito";
+    return (
+      <div>
+        <LBL />
+        <div style={{ display: "flex", gap: 0, border: `1.5px solid ${COLORS.grayLight}`, borderRadius: 8, overflow: "hidden", marginBottom: 8 }}>
+          <button type="button" onClick={() => onChange("Gratuito")}
+            style={{ flex: 1, padding: "10px", border: "none", cursor: "pointer",
+              background: isGratuito ? "#15803d" : "#fff",
+              color: isGratuito ? "#fff" : COLORS.gray,
+              fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700 }}>
+            Gratuito
+          </button>
+          <button type="button" onClick={() => { if (isGratuito) onChange(""); }}
+            style={{ flex: 1, padding: "10px", border: "none", cursor: "pointer",
+              background: !isGratuito ? "#0066cc" : "#fff",
+              color: !isGratuito ? "#fff" : COLORS.gray,
+              fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700 }}>
+            Pago
+          </button>
+        </div>
+        {!isGratuito && (
+          <div style={{ position: "relative" }}>
+            <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontFamily: FONTS.body, fontSize: 14, color: COLORS.gray, pointerEvents: "none" }}>R$</span>
+            <input type="text" value={value === "Gratuito" ? "" : (value || "")}
+              onChange={e => {
+                const v = e.target.value.replace(/[^\d,.]/g, "");
+                onChange(v);
+              }}
+              placeholder="80,00"
+              style={{ ...inp(!!error), paddingLeft: 36 }} />
+          </div>
+        )}
+        {error && <ErrMsg msg={error} />}
+      </div>
+    );
+  }
+
   // text, date, time
   return (
     <div>
@@ -561,9 +735,52 @@ function DynamicField({ field: f, value, ctValue, error, onChange, inp }) {
 }
 
 // ─── Upload de arquivo ────────────────────────────────────────────────────────
-function UploadField({ label, required, hint, accept, arquivo, fileRef, onFileChange, error }) {
+function UploadField({ label, required, hint, accept, arquivo, fileRef, onFileChange, error, showMergePdf }) {
   const localRef = useRef(null);
   const ref = fileRef || localRef;
+  const mergeInputRef = useRef(null);
+  const [merging, setMerging] = useState(false);
+  const [mergeFiles, setMergeFiles] = useState([]);
+  const [showMerge, setShowMerge] = useState(false);
+  const [mergePreview, setMergePreview] = useState(null); // { url, file, pages }
+
+  const handleMerge = async () => {
+    if (mergeFiles.length < 2) return;
+    setMerging(true);
+    try {
+      const { PDFDocument } = await import("pdf-lib");
+      const merged = await PDFDocument.create();
+      for (const file of mergeFiles) {
+        const bytes = await file.arrayBuffer();
+        const tipo = file.type || file.name.split(".").pop().toLowerCase();
+        if (tipo === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+          try {
+            const pdf = await PDFDocument.load(bytes);
+            const pages = await merged.copyPages(pdf, pdf.getPageIndices());
+            pages.forEach(p => merged.addPage(p));
+          } catch { /* PDF inválido */ }
+        } else {
+          // Imagem (JPG/PNG) → converter em página PDF
+          try {
+            const isJpg = tipo.includes("jpeg") || tipo.includes("jpg") || file.name.toLowerCase().match(/\.jpe?g$/);
+            const img = isJpg ? await merged.embedJpg(bytes) : await merged.embedPng(bytes);
+            const { width, height } = img.scale(1);
+            const page = merged.addPage([width, height]);
+            page.drawImage(img, { x: 0, y: 0, width, height });
+          } catch { /* Imagem inválida */ }
+        }
+      }
+      const mergedBytes = await merged.save();
+      const blob = new Blob([mergedBytes], { type: "application/pdf" });
+      const mergedFile = new File([blob], "mapa_percurso_unificado.pdf", { type: "application/pdf" });
+      // Preview antes de confirmar
+      const previewUrl = URL.createObjectURL(blob);
+      setMergePreview({ url: previewUrl, file: mergedFile, pages: merged.getPageCount() });
+    } catch (e) {
+      alert("Erro ao unir os PDFs. Verifique se todos os arquivos são PDFs válidos.");
+    }
+    setMerging(false);
+  };
 
   return (
     <div>
@@ -577,7 +794,7 @@ function UploadField({ label, required, hint, accept, arquivo, fileRef, onFileCh
           style={{ display: "none" }} onChange={e => onFileChange(e.target.files?.[0])} />
         {arquivo?.temArquivo ? (
           <>
-            <span style={{ fontFamily: FONTS.body, fontSize: 13, color: "#15803d", flex: 1 }}>✅ {arquivo.nomeArquivo}</span>
+            <span style={{ fontFamily: FONTS.body, fontSize: 13, color: "#15803d", flex: 1 }}>{arquivo.nomeArquivo}</span>
             <button type="button" onClick={() => ref.current?.click()}
               style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid #86efac", background: "#fff", color: "#15803d", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
               Trocar
@@ -588,12 +805,92 @@ function UploadField({ label, required, hint, accept, arquivo, fileRef, onFileCh
             <span style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, flex: 1 }}>Nenhum arquivo selecionado</span>
             <button type="button" onClick={() => ref.current?.click()}
               style={{ padding: "7px 14px", borderRadius: 6, border: "none", background: "#0066cc", color: "#fff", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
-              📎 Selecionar
+              Selecionar
             </button>
           </>
         )}
       </div>
-      {hint && <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, marginTop: 3 }}>{hint}</div>}
+      {hint && <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, marginTop: 3, lineHeight: 1.5 }}>{hint}</div>}
+
+      {/* Preview do PDF unificado */}
+      {mergePreview && (
+        <div style={{ marginTop: 10, borderRadius: 8, border: "1.5px solid #86efac", overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "#f0fdf4" }}>
+            <span style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, color: "#15803d" }}>
+              PDF unificado — {mergePreview.pages} página(s)
+            </span>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button type="button" onClick={() => { onFileChange(mergePreview.file); setMergePreview(null); setShowMerge(false); setMergeFiles([]); }}
+                style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: "#15803d", color: "#fff", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
+                Confirmar e usar
+              </button>
+              <button type="button" onClick={() => { URL.revokeObjectURL(mergePreview.url); setMergePreview(null); }}
+                style={{ padding: "6px 14px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, cursor: "pointer", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
+                Voltar
+              </button>
+            </div>
+          </div>
+          <iframe src={mergePreview.url + "#toolbar=0&navpanes=0"} title="Preview PDF unificado"
+            style={{ width: "100%", height: 400, border: "none" }} />
+        </div>
+      )}
+
+      {/* Botão para unir PDFs */}
+      {showMergePdf && !arquivo?.temArquivo && (
+        <div style={{ marginTop: 8 }}>
+          {!showMerge ? (
+            <button type="button" onClick={() => setShowMerge(true)}
+              style={{ padding: "6px 14px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: "#0066cc",
+                cursor: "pointer", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
+              Unir múltiplos arquivos (PDFs e imagens) em um documento
+            </button>
+          ) : (
+            <div style={{ padding: "14px 16px", borderRadius: 8, background: "#f0f9ff", border: "1px solid #bae6fd" }}>
+              <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, color: "#1e40af", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                Unir PDFs
+              </div>
+              <input ref={mergeInputRef} type="file" accept=".pdf,.jpg,.jpeg,.png" multiple style={{ display: "none" }}
+                onChange={e => setMergeFiles(prev => [...prev, ...Array.from(e.target.files || [])])} />
+              <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                <button type="button" onClick={() => mergeInputRef.current?.click()}
+                  style={{ padding: "7px 14px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.dark,
+                    cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
+                  Adicionar arquivos
+                </button>
+                <button type="button" onClick={() => { setShowMerge(false); setMergeFiles([]); }}
+                  style={{ padding: "7px 14px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray,
+                    cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
+                  Cancelar
+                </button>
+              </div>
+              {mergeFiles.length > 0 && (
+                <div style={{ marginBottom: 10 }}>
+                  {mergeFiles.map((f, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", borderRadius: 6, background: "#fff", border: `1px solid ${COLORS.grayLight}`, marginBottom: 4 }}>
+                      <span style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.dark, flex: 1 }}>{i + 1}. {f.name}</span>
+                      <button type="button" onClick={() => setMergeFiles(prev => prev.filter((_, j) => j !== i))}
+                        style={{ width: 24, height: 24, borderRadius: 4, border: "1px solid #fca5a5", background: "#fff5f5", color: "#dc2626", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>
+                        x
+                      </button>
+                    </div>
+                  ))}
+                  <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, marginTop: 4 }}>
+                    {mergeFiles.length} arquivo(s) — serão unidos na ordem listada em um único PDF
+                  </div>
+                </div>
+              )}
+              {mergeFiles.length >= 2 && (
+                <button type="button" onClick={handleMerge} disabled={merging}
+                  style={{ padding: "8px 18px", borderRadius: 6, border: "none", background: merging ? COLORS.gray : "#0066cc", color: "#fff",
+                    cursor: merging ? "not-allowed" : "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
+                  {merging ? "Unindo..." : `Unir ${mergeFiles.length} arquivos`}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {error && <ErrMsg msg={error} />}
     </div>
   );

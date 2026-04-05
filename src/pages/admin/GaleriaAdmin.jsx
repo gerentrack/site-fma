@@ -10,6 +10,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../components/admin/AdminLayout";
 import { GalleryService } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
+import { deleteFile } from "../../services/storageService";
 
 // ─── Categorias ───────────────────────────────────────────────────────────────
 const CATS = [
@@ -52,6 +53,14 @@ export function GaleriaList() {
 
   const handleDelete = async (id) => {
     if (!confirm("Excluir este álbum permanentemente?")) return;
+    const album = items.find(a => a.id === id);
+    if (album) {
+      if (album.cover) deleteFile(album.cover).catch(() => {});
+      (album.images || []).forEach(img => {
+        const url = typeof img === "string" ? img : img?.url;
+        if (url) deleteFile(url).catch(() => {});
+      });
+    }
     await GalleryService.delete(id);
     load();
   };

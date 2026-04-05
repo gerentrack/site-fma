@@ -10,7 +10,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useOrganizer } from "../../context/OrganizerContext";
 import { SolicitacoesService, ArquivosService, MovimentacoesService } from "../../services/index";
-import { uploadFile } from "../../services/storageService";
+import { uploadFile, deleteFile } from "../../services/storageService";
 import { COLORS, FONTS } from "../../styles/colors";
 import { SOLICITACAO_STATUS, SOLICITACAO_TIPOS, MOVIMENTACAO_TIPOS, ARQUIVO_CATEGORIAS } from "../../config/navigation";
 import { getFieldsBySection, initFormConfig } from "../../utils/formSchema";
@@ -202,7 +202,6 @@ function EditDrawer({ sol, organizerId, organizerName, onClose, onSaved }) {
                 <div><Lbl req>Município</Lbl><input value={form.cidadeEvento} onChange={e=>setF("cidadeEvento",e.target.value)} style={baseInp(!!errors.cidadeEvento)}/>{errors.cidadeEvento&&<Err msg={errors.cidadeEvento}/>}</div>
               </div>
               <div><Lbl req>Local de realização</Lbl><input value={form.localEvento} onChange={e=>setF("localEvento",e.target.value)} style={baseInp(!!errors.localEvento)}/>{errors.localEvento&&<Err msg={errors.localEvento}/>}</div>
-              <div><Lbl>Descrição</Lbl><textarea value={form.descricaoEvento} onChange={e=>setF("descricaoEvento",e.target.value)} rows={3} style={{...baseInp(),resize:"vertical"}}/></div>
             </div>
           </div>
 
@@ -457,6 +456,16 @@ export default function SolicitacaoDetalhe() {
   const handleDelete = async () => {
     if (!confirm("Excluir este rascunho? Ação irreversível.")) return;
     setDeleting(true);
+    // 1. Excluir arquivos anexos do Storage + Firestore
+    const arqRes = await ArquivosService.listBySolicitacao(id);
+    for (const arq of (arqRes.data || [])) {
+      if (arq.storagePath) await deleteFile(arq.storagePath).catch(() => {});
+      else if (arq.url?.includes("firebasestorage.googleapis.com")) await deleteFile(arq.url).catch(() => {});
+      await ArquivosService.delete(arq.id).catch(() => {});
+    }
+    // 2. Excluir movimentações do Firestore
+    await MovimentacoesService.deleteBySolicitacao(id).catch(() => {});
+    // 3. Excluir a solicitação
     await SolicitacoesService.delete(id);
     navigate("/portal/solicitacoes");
   };
@@ -546,7 +555,6 @@ export default function SolicitacaoDetalhe() {
                 { label:"Data do evento",         value:sol.dataEvento?new Date(sol.dataEvento+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"2-digit",month:"long",year:"numeric"}):"—" },
                 { label:"Cidade",                 value:sol.cidadeEvento||"—" },
                 { label:"Local de realização",    value:sol.localEvento||"—", full:true },
-                { label:"Descrição",              value:sol.descricaoEvento||"—", full:true },
               ].map((f,i)=>(
                 <div key={i} style={{ gridColumn:f.full?"1/-1":undefined }}>
                   <div style={{ fontFamily:FONTS.heading, fontSize:10, fontWeight:800, textTransform:"uppercase", letterSpacing:1.5, color:COLORS.gray, marginBottom:5 }}>{f.label}</div>

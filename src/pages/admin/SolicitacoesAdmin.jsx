@@ -90,6 +90,8 @@ export function SolicitacoesList() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterTipo, setFilterTipo] = useState("");
+  const [selected, setSelected] = useState(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -121,6 +123,34 @@ export function SolicitacoesList() {
     }
     return true;
   });
+
+  const toggleSelect = (id) => setSelected(prev => {
+    const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
+  });
+  const allFilteredSelected = filtered.length > 0 && filtered.every(i => selected.has(i.id));
+  const toggleSelectAll = () => setSelected(allFilteredSelected ? new Set() : new Set(filtered.map(i => i.id)));
+
+  const handleBulkDelete = async (ids) => {
+    if (!ids.length) return;
+    if (!confirm(`Excluir ${ids.length} solicitação(ões) permanentemente?\nIsso inclui arquivos anexos e histórico de movimentações.`)) return;
+    setBulkDeleting(true);
+    for (const id of ids) {
+      // 1. Excluir arquivos anexos do Storage + Firestore
+      const arqRes = await ArquivosService.listBySolicitacao(id);
+      for (const arq of (arqRes.data || [])) {
+        if (arq.storagePath) await deleteFile(arq.storagePath).catch(() => {});
+        else if (arq.url?.includes("firebasestorage.googleapis.com")) await deleteFile(arq.url).catch(() => {});
+        await ArquivosService.delete(arq.id).catch(() => {});
+      }
+      // 2. Excluir movimentações do Firestore
+      await MovimentacoesService.deleteBySolicitacao(id).catch(() => {});
+      // 3. Excluir a solicitação do Firestore
+      await SolicitacoesService.delete(id).catch(() => {});
+    }
+    setSelected(new Set());
+    setBulkDeleting(false);
+    load();
+  };
 
   // Contadores por status
   const counts = SOLICITACAO_STATUS.filter(s => s.value).reduce((acc, s) => {
@@ -195,6 +225,34 @@ export function SolicitacoesList() {
           </div>
         </div>
 
+        {/* Barra de seleção em lote */}
+        {!loading && filtered.length > 0 && (
+          <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12, padding: "10px 16px", background: selected.size ? "#fff5f5" : "#f9fafb", borderRadius: 8, border: `1px solid ${selected.size ? "#fecaca" : COLORS.grayLight}` }}>
+            <span style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, color: COLORS.dark }}>
+              {selected.size ? `${selected.size} selecionada(s)` : `${filtered.length} solicitação(ões)`}
+            </span>
+            <div style={{ flex: 1 }} />
+            {selected.size > 0 && (
+              <>
+                <button onClick={() => handleBulkDelete([...selected])} disabled={bulkDeleting}
+                  style={{ padding: "7px 16px", borderRadius: 7, border: "none", background: "#dc2626", color: "#fff", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: bulkDeleting ? "not-allowed" : "pointer" }}>
+                  {bulkDeleting ? "Excluindo..." : `Excluir selecionadas (${selected.size})`}
+                </button>
+                <button onClick={() => setSelected(new Set())}
+                  style={{ padding: "7px 16px", borderRadius: 7, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                  Cancelar
+                </button>
+              </>
+            )}
+            {!selected.size && (
+              <button onClick={() => handleBulkDelete(filtered.map(i => i.id))} disabled={bulkDeleting}
+                style={{ padding: "7px 16px", borderRadius: 7, border: "1px solid #fecaca", background: "#fff5f5", color: "#dc2626", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                Excluir todas filtradas ({filtered.length})
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Tabela */}
         <div style={card}>
           {loading ? (
@@ -206,6 +264,9 @@ export function SolicitacoesList() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: `2px solid ${COLORS.grayLight}` }}>
+                    <th style={{ padding: "10px 8px", width: 32 }}>
+                      <input type="checkbox" checked={allFilteredSelected} onChange={toggleSelectAll} style={{ cursor: "pointer" }} />
+                    </th>
                     {["Tipo", "Evento", "Organizador", "Data Evento", "Status", "Protocolo", "Responsável FMA", "Enviado em", ""].map(h => (
                       <th key={h} style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, padding: "10px 12px", textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
                     ))}
@@ -218,6 +279,11 @@ export function SolicitacoesList() {
                       <tr key={item.id} style={{ borderBottom: `1px solid ${COLORS.grayLight}` }}
                         onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
                         onMouseLeave={e => e.currentTarget.style.background = ""}>
+                        <td style={{ padding: "12px 8px" }}>
+                          <input type="checkbox" checked={selected.has(item.id)}
+                            onChange={() => toggleSelect(item.id)} onClick={e => e.stopPropagation()}
+                            style={{ cursor: "pointer" }} />
+                        </td>
                         <td style={{ padding: "12px" }}><TipoBadge tipo={item.tipo} /></td>
                         <td style={{ padding: "12px", minWidth: 200 }}>
                           <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark }}>{item.nomeEvento}</div>
@@ -349,7 +415,10 @@ export function SolicitacaoEditor() {
     if (novoStatus !== "aprovada" || !sol) { setPermitNumbers([]); return; }
     if (sol.permitsGerados) { setPermitNumbers([]); return; } // já gerados
     const ct = normalizarCamposTecnicos(sol);
-    const mods = ct.modalidades || [];
+    const mods = (ct.modalidades || []).filter(m => {
+      const nome = (m.distancia || m.nome || "").toLowerCase();
+      return nome !== "caminhada";
+    });
     if (mods.length === 0) { setPermitNumbers([]); return; }
     const ano = new Date(sol.dataEvento || Date.now()).getFullYear();
     getProximoNumero(ano).then(proximo => {
@@ -788,8 +857,6 @@ export function SolicitacaoEditor() {
                 {lbl("Cidade")}{val(sol.cidadeEvento)}
               </div>
               {lbl("Local / endereço")}{val(sol.localEvento)}
-              {lbl("Descrição do evento")}
-              <div style={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.dark, marginBottom: 14, lineHeight: 1.6 }}>{sol.descricaoEvento || "—"}</div>
             </div>
 
             {/* Campos livres (objeto campos) */}
@@ -1012,11 +1079,11 @@ export function SolicitacaoEditor() {
                   📋 {sol.tipo === "chancela" ? "Chancelas" : "Permits"} a gerar ({permitNumbers.length})
                 </label>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 100px", gap: 8, fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, padding: "0 4px" }}>
-                    <span>Modalidade</span><span>Número</span><span>Tipo</span>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 100px 32px", gap: 8, fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, padding: "0 4px" }}>
+                    <span>Modalidade</span><span>Número</span><span>Tipo</span><span></span>
                   </div>
                   {permitNumbers.map((pn, i) => (
-                    <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 140px 100px", gap: 8, alignItems: "center", background: "#fff", padding: "8px 12px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}` }}>
+                    <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 140px 100px 32px", gap: 8, alignItems: "center", background: "#fff", padding: "8px 12px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}` }}>
                       <span style={{ fontFamily: FONTS.body, fontSize: 13, fontWeight: 600 }}>{pn.modalidade}</span>
                       <input
                         type="number"
@@ -1028,6 +1095,11 @@ export function SolicitacaoEditor() {
                         style={{ ...inp(), padding: "6px 10px", fontSize: 13, fontWeight: 700, textAlign: "center" }}
                       />
                       <TipoBadge tipo={sol.tipo} />
+                      <button type="button" onClick={() => setPermitNumbers(prev => prev.filter((_, j) => j !== i))}
+                        title="Excluir desta emissão"
+                        style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #fca5a5", background: "#fff5f5", color: "#dc2626", cursor: "pointer", fontSize: 14, fontWeight: 700 }}>
+                        ×
+                      </button>
                     </div>
                   ))}
                 </div>

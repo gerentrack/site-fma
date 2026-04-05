@@ -8,6 +8,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../components/admin/AdminLayout";
 import Table, { TableActions } from "../../components/ui/Table";
 import PageHeader from "../../components/ui/PageHeader";
+import { deleteFile } from "../../services/storageService";
 import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 import FileUpload from "../../components/ui/FileUpload";
@@ -44,6 +45,8 @@ export function CalendarList() {
   const [filterYear, setFilterYear] = useState("");
   const [years, setYears] = useState([]);
   const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -60,13 +63,51 @@ export function CalendarList() {
 
   const handleDelete = async (id) => {
     if (!confirm("Excluir este evento permanentemente?")) return;
-    await CalendarService.delete(id);
-    load();
+    try {
+      const ev = items.find(e => e.id === id);
+      if (ev) {
+        [ev.permitFileUrl, ev.chancelaFileUrl, ev.resultsFileUrl, ev.coverImage].filter(Boolean).forEach(url => deleteFile(url).catch(() => {}));
+        ev.modalidadesDetalhes?.forEach(m => {
+          [m.permitFileUrl, m.resultsFileUrl].filter(Boolean).forEach(url => deleteFile(url).catch(() => {}));
+        });
+      }
+      await CalendarService.delete(id);
+      load();
+    } catch (err) {
+      console.error("Erro ao excluir evento:", err);
+      alert("Erro ao excluir evento: " + (err.message || err));
+    }
   };
 
   const handleToggle = async (item) => {
     if (item.published) await CalendarService.unpublish(item.id);
     else await CalendarService.publish(item.id);
+    load();
+  };
+
+  const toggleSelect = (id) => setSelected(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
+  const handleBulkDelete = async (ids) => {
+    const count = ids.length;
+    if (!count) return;
+    if (!confirm(`Excluir ${count} evento(s) permanentemente?`)) return;
+    setBulkDeleting(true);
+    for (const id of ids) {
+      const ev = items.find(e => e.id === id);
+      if (ev) {
+        [ev.permitFileUrl, ev.chancelaFileUrl, ev.resultsFileUrl, ev.coverImage].filter(Boolean).forEach(url => deleteFile(url).catch(() => {}));
+        ev.modalidadesDetalhes?.forEach(m => {
+          [m.permitFileUrl, m.resultsFileUrl].filter(Boolean).forEach(url => deleteFile(url).catch(() => {}));
+        });
+      }
+      await CalendarService.delete(id).catch(() => {});
+    }
+    setSelected(new Set());
+    setBulkDeleting(false);
     load();
   };
 
@@ -77,7 +118,23 @@ export function CalendarList() {
     return true;
   });
 
+  const allFilteredSelected = filtered.length > 0 && filtered.every(e => selected.has(e.id));
+  const toggleSelectAll = () => {
+    if (allFilteredSelected) setSelected(new Set());
+    else setSelected(new Set(filtered.map(e => e.id)));
+  };
+
   const columns = [
+    {
+      key: "_select",
+      label: "",
+      render: (_, row) => (
+        <input type="checkbox" checked={selected.has(row.id)}
+          onChange={() => toggleSelect(row.id)}
+          onClick={e => e.stopPropagation()}
+          style={{ cursor: "pointer", width: 16, height: 16 }} />
+      ),
+    },
     {
       key: "date",
       label: "Data",
@@ -194,6 +251,34 @@ export function CalendarList() {
             <button onClick={() => { setFilterCat(""); setFilterYear(""); setSearch(""); }}
               style={{ padding: "9px 14px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", cursor: "pointer", fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>
               ✕ Limpar
+            </button>
+          )}
+        </div>
+
+        {/* Barra de seleção em lote */}
+        <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 16, padding: "10px 16px", background: selected.size ? "#fff5f5" : "#f9fafb", borderRadius: 8, border: `1px solid ${selected.size ? "#fecaca" : COLORS.grayLight}` }}>
+          <input type="checkbox" checked={allFilteredSelected && filtered.length > 0} onChange={toggleSelectAll}
+            style={{ cursor: "pointer", width: 16, height: 16 }} />
+          <span style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, color: COLORS.dark }}>
+            {selected.size ? `${selected.size} selecionado(s)` : `Selecionar todos (${filtered.length})`}
+          </span>
+          <div style={{ flex: 1 }} />
+          {selected.size > 0 && (
+            <>
+              <button onClick={() => handleBulkDelete([...selected])} disabled={bulkDeleting}
+                style={{ padding: "7px 16px", borderRadius: 7, border: "none", background: "#dc2626", color: "#fff", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: bulkDeleting ? "not-allowed" : "pointer" }}>
+                {bulkDeleting ? "Excluindo..." : `Excluir selecionados (${selected.size})`}
+              </button>
+              <button onClick={() => setSelected(new Set())}
+                style={{ padding: "7px 16px", borderRadius: 7, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                Cancelar
+              </button>
+            </>
+          )}
+          {!selected.size && filtered.length > 0 && (
+            <button onClick={() => handleBulkDelete(filtered.map(e => e.id))} disabled={bulkDeleting}
+              style={{ padding: "7px 16px", borderRadius: 7, border: "1px solid #fecaca", background: "#fff5f5", color: "#dc2626", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+              Excluir todos filtrados ({filtered.length})
             </button>
           )}
         </div>

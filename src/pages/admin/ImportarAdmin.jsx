@@ -343,7 +343,7 @@ export default function ImportarAdmin() {
           modalidadesDetalhes: modalidades,
           shortDescription: modalidades[0]?.descricao || "",
           featured:         linhas.some(l => l.row.featured),
-          published:        linhas.some(l => l.row.published),
+          published:        true,
           importedAt:       new Date().toISOString(),
           source:           "importacao",
         };

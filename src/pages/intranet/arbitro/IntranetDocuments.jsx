@@ -10,6 +10,7 @@ import IntranetLayout from "../IntranetLayout";
 import { RefereeContentService } from "../../../services/index";
 import { COLORS, FONTS } from "../../../styles/colors";
 import { REFEREE_CONTENT_CATEGORIES } from "../../../config/navigation";
+import PdfModal, { usePdfModal } from "../../../components/ui/PdfModal";
 
 const catMap = Object.fromEntries(REFEREE_CONTENT_CATEGORIES.filter(c => c.value).map(c => [c.value, c]));
 const DOC_CATS = ["formulario", "documento", "comunicado", "material"];
@@ -18,6 +19,7 @@ export default function IntranetDocuments() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("");
+  const { pdfModal, openPdf, closePdf } = usePdfModal();
 
   useEffect(() => {
     RefereeContentService.list({ publishedOnly: true }).then(r => {
@@ -79,10 +81,10 @@ export default function IntranetDocuments() {
                   </div>
                   <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                     {item.fileUrl && (
-                      <a href={item.fileUrl} target="_blank" rel="noreferrer"
-                        style={{ padding: "8px 14px", borderRadius: 7, background: COLORS.primary, color: "#fff", textDecoration: "none", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
-                        📎 Baixar
-                      </a>
+                      <button onClick={() => openPdf(item.fileUrl, item.title)}
+                        style={{ padding: "8px 14px", borderRadius: 7, background: COLORS.primary, color: "#fff", border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
+                        📄 Visualizar
+                      </button>
                     )}
                     {item.externalLink && (
                       <a href={item.externalLink} target="_blank" rel="noreferrer"
@@ -101,6 +103,7 @@ export default function IntranetDocuments() {
           </div>
         )}
       </div>
+      <PdfModal url={pdfModal.url} title={pdfModal.title} onClose={closePdf} />
     </IntranetLayout>
   );
 }

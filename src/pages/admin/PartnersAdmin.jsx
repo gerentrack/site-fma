@@ -6,6 +6,7 @@ import PageHeader from "../../components/ui/PageHeader";
 import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 import FileUpload from "../../components/ui/FileUpload";
+import { deleteFile } from "../../services/storageService";
 import { FormField, TextInput } from "../../components/ui/FormField";
 import { useCrud } from "../../hooks/useApi";
 import { useForm, required } from "../../hooks/useForm";
@@ -50,6 +51,7 @@ export function PartnersList() {
           onEdit={() => navigate(`/admin/parceiros/${row.id}`)}
           onDelete={async () => {
             if (!confirm(`Excluir "${row.name}"?`)) return;
+            if (row.logo) deleteFile(row.logo).catch(() => {});
             await remove(row.id);
           }}
         />

@@ -8,6 +8,7 @@ import { useParams, Link } from "react-router-dom";
 import { COLORS, FONTS } from "../../styles/colors";
 import { CalendarService } from "../../services/index";
 import { CALENDAR_CATEGORIES, EVENT_STATUS } from "../../config/navigation";
+import PdfModal, { usePdfModal } from "../../components/ui/PdfModal";
 
 const catMap    = Object.fromEntries(CALENDAR_CATEGORIES.filter(c => c.value).map(c => [c.value, c]));
 const statusMap = Object.fromEntries(EVENT_STATUS.map(s => [s.value, s]));
@@ -17,16 +18,17 @@ function fmtDate(d) {
   return new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
 }
 
-function DownloadBtn({ href, label, icon }) {
+function DownloadBtn({ href, label, icon, onView }) {
   if (!href || href === "#demo") return null;
   return (
-    <a href={href} target="_blank" rel="noreferrer"
-      style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 20px", borderRadius: 8, background: COLORS.primary, color: "#fff", textDecoration: "none", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, transition: "background 0.2s" }}
+    <button
+      onClick={() => onView(href, label)}
+      style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 20px", borderRadius: 8, background: COLORS.primary, color: "#fff", border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, transition: "background 0.2s" }}
       onMouseEnter={e => e.currentTarget.style.background = "#990000"}
       onMouseLeave={e => e.currentTarget.style.background = COLORS.primary}
     >
       <span style={{ fontSize: 16 }}>{icon}</span>{label}
-    </a>
+    </button>
   );
 }
 
@@ -49,6 +51,7 @@ export default function EventDetailPage() {
   const { id } = useParams();
   const [event, setEvent] = useState(null);
   const [status, setStatus] = useState("loading");
+  const { pdfModal, openPdf, closePdf } = usePdfModal();
 
   useEffect(() => {
     setStatus("loading");
@@ -180,7 +183,7 @@ export default function EventDetailPage() {
                         <div style={{ fontFamily: FONTS.heading, fontWeight: 800, fontSize: 13, color: COLORS.dark, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
                           📄 Regulamento
                         </div>
-                        <DownloadBtn href={reg} label="Regulamento Geral" icon="📄" />
+                        <DownloadBtn href={reg} label="Regulamento Geral" icon="📄" onView={openPdf} />
                       </div>
                     ) : null;
                   })()}
@@ -197,8 +200,8 @@ export default function EventDetailPage() {
                           return (
                             <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                               <span style={{ fontFamily: FONTS.heading, fontWeight: 700, fontSize: 12, color: COLORS.dark, minWidth: 60 }}>🏃 {mod.nome}</span>
-                              {mod.permitFileUrl  && <DownloadBtn href={mod.permitFileUrl}  label={mod.permitNumero ? `Permit N\u00BA ${mod.permitNumero}` : "Permit"} icon="📋" />}
-                              {mod.resultsFileUrl && <DownloadBtn href={mod.resultsFileUrl} label="Resultados" icon="📊" />}
+                              {mod.permitFileUrl  && <DownloadBtn href={mod.permitFileUrl}  label={mod.permitNumero ? `Permit N\u00BA ${mod.permitNumero}` : "Permit"} icon="📋" onView={openPdf} />}
+                              {mod.resultsFileUrl && <DownloadBtn href={mod.resultsFileUrl} label="Resultados" icon="📊" onView={openPdf} />}
                             </div>
                           );
                         })}
@@ -210,8 +213,8 @@ export default function EventDetailPage() {
                   {(event.chancelaFileUrl || event.permitFileUrl || event.permitUrl) && (
                     <div style={{ background: "#fff", borderRadius: 8, padding: "14px 16px", border: `1px solid ${COLORS.grayLight}` }}>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                        {(event.permitFileUrl || event.permitUrl) && <DownloadBtn href={event.permitFileUrl || event.permitUrl} label="Permit do Evento" icon="📋" />}
-                        {event.chancelaFileUrl && <DownloadBtn href={event.chancelaFileUrl} label="Chancela FMA" icon="🏅" />}
+                        {(event.permitFileUrl || event.permitUrl) && <DownloadBtn href={event.permitFileUrl || event.permitUrl} label="Permit do Evento" icon="📋" onView={openPdf} />}
+                        {event.chancelaFileUrl && <DownloadBtn href={event.chancelaFileUrl} label="Chancela FMA" icon="🏅" onView={openPdf} />}
                       </div>
                     </div>
                   )}
@@ -219,9 +222,9 @@ export default function EventDetailPage() {
               ) : (
                 /* Sem modalidades — exibe arquivos gerais */
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-                  {(event.permitFileUrl || event.permitUrl) && <DownloadBtn href={event.permitFileUrl || event.permitUrl} label="Permit do Evento" icon="📋" />}
-                  {event.chancelaFileUrl && <DownloadBtn href={event.chancelaFileUrl} label="Chancela FMA" icon="🏅" />}
-                  {event.resultsFileUrl  && <DownloadBtn href={event.resultsFileUrl}  label="Resultados"   icon="📊" />}
+                  {(event.permitFileUrl || event.permitUrl) && <DownloadBtn href={event.permitFileUrl || event.permitUrl} label="Permit do Evento" icon="📋" onView={openPdf} />}
+                  {event.chancelaFileUrl && <DownloadBtn href={event.chancelaFileUrl} label="Chancela FMA" icon="🏅" onView={openPdf} />}
+                  {event.resultsFileUrl  && <DownloadBtn href={event.resultsFileUrl}  label="Resultados"   icon="📊" onView={openPdf} />}
                 </div>
               )}
             </div>
@@ -259,6 +262,8 @@ export default function EventDetailPage() {
           </Link>
         </div>
       </div>
+
+      <PdfModal url={pdfModal.url} title={pdfModal.title} onClose={closePdf} />
     </div>
   );
 }

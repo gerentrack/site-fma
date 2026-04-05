@@ -46,7 +46,7 @@ function fmtDateTime(iso) {
 }
 
 export default function PortalHome() {
-  const { organizerId, organizerName } = useOrganizer();
+  const { organizerId, organizerName, organizerActive, motivoDesativacao } = useOrganizer();
   const [solicitacoes, setSolicitacoes] = useState([]);
   const [recentMovs, setRecentMovs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -110,6 +110,30 @@ export default function PortalHome() {
           </p>
         </div>
 
+        {/* Alerta de conta desativada */}
+        {!organizerActive && (
+          <div style={{ background: "#fef2f2", border: "2px solid #dc2626", borderRadius: 12,
+            padding: "20px 24px", marginBottom: 28 }}>
+            <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+              <span style={{ fontSize: 28, flexShrink: 0 }}>🔒</span>
+              <div>
+                <div style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 800, color: "#dc2626", textTransform: "uppercase", marginBottom: 6 }}>
+                  Conta bloqueada
+                </div>
+                <p style={{ fontFamily: FONTS.body, fontSize: 14, color: "#7f1d1d", margin: "0 0 4px", lineHeight: 1.6 }}>
+                  Sua conta foi desativada pela FMA. Você pode visualizar suas solicitações existentes, mas não pode criar novas solicitações.
+                </p>
+                {motivoDesativacao && (
+                  <div style={{ marginTop: 10, padding: "10px 14px", borderRadius: 8, background: "#fff", border: "1px solid #fecaca" }}>
+                    <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: "#dc2626", marginBottom: 4 }}>Motivo</div>
+                    <div style={{ fontFamily: FONTS.body, fontSize: 14, color: "#991b1b" }}>{motivoDesativacao}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Alertas de pendências */}
         {pendencias.length > 0 && (
           <div style={{ background: "#fffbeb", border: "1.5px solid #f59e0b", borderRadius: 12,
@@ -165,7 +189,7 @@ export default function PortalHome() {
                   Nenhuma solicitação ainda
                 </div>
                 <p style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, marginBottom: 20 }}>
-                  Solicite um Permit ou Chancela para seu evento.
+                  Solicite o reconhecimento e homologação do seu evento — Permit para corridas de rua ou Chancela para corridas em montanha e trilha.
                 </p>
                 <Link to="/portal/nova-solicitacao"
                   style={{ display: "inline-block", padding: "10px 22px", borderRadius: 8,

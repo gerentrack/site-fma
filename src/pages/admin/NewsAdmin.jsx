@@ -6,6 +6,7 @@ import Badge from "../../components/ui/Badge";
 import FilterBar from "../../components/ui/Filters";
 import Button from "../../components/ui/Button";
 import FileUpload from "../../components/ui/FileUpload";
+import { deleteFile } from "../../services/storageService";
 import { FormField, TextInput, TextArea, SelectInput, CheckboxInput, DateInput } from "../../components/ui/FormField";
 import { useCrud } from "../../hooks/useApi";
 import { useApi } from "../../hooks/useApi";
@@ -71,6 +72,8 @@ export function NewsList() {
           onEdit={() => navigate(`/admin/noticias/${row.id}`)}
           onDelete={async () => {
             if (!confirm("Excluir esta notícia?")) return;
+            if (row.image) deleteFile(row.image).catch(() => {});
+            if (row.gallery?.length) row.gallery.forEach(url => deleteFile(url).catch(() => {}));
             await remove(row.id);
           }}
         />

@@ -11,6 +11,7 @@ import PageHeader from "../../components/ui/PageHeader";
 import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 import FileUpload from "../../components/ui/FileUpload";
+import { deleteFile } from "../../services/storageService";
 import { FormField, TextInput, TextArea, SelectInput, CheckboxInput } from "../../components/ui/FormField";
 import { useForm, required } from "../../hooks/useForm";
 import { RefereeContentService } from "../../services/index";
@@ -55,6 +56,8 @@ export function RefereeContentList() {
 
   const handleDelete = async (item) => {
     if (!confirm(`Excluir "${item.title}"?`)) return;
+    if (item.fileUrl) deleteFile(item.fileUrl).catch(() => {});
+    if (item.image) deleteFile(item.image).catch(() => {});
     await RefereeContentService.delete(item.id);
     load();
   };

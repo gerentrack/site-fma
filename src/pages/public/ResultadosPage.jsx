@@ -22,6 +22,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { ResultadosService, CalendarService } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
+import PdfModal, { usePdfModal } from "../../components/ui/PdfModal";
 
 // ─── Config por categoria ─────────────────────────────────────────────────────
 
@@ -81,7 +82,7 @@ const FILE_CONFIG = {
 
 // ─── Componente de acesso ao resultado (download / link externo) ──────────────
 
-function AcessoBotao({ resultado, size = "normal", style: extraStyle = {} }) {
+function AcessoBotao({ resultado, size = "normal", style: extraStyle = {}, onViewPdf }) {
   const { tipoArquivo, fileUrl, externalLink } = resultado;
   const fc = FILE_CONFIG[tipoArquivo] || FILE_CONFIG.link;
 
@@ -114,11 +115,8 @@ function AcessoBotao({ resultado, size = "normal", style: extraStyle = {} }) {
   return (
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
       {hasFile && (
-        <a
-          href={fileUrl}
-          download
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={() => onViewPdf && onViewPdf(fileUrl, resultado.title || fc.label)}
           style={{
             ...btnBase,
             background: fc.bg,
@@ -129,8 +127,8 @@ function AcessoBotao({ resultado, size = "normal", style: extraStyle = {} }) {
           onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; }}
         >
           <span style={{ fontSize: size === "sm" ? 13 : 15 }}>{fc.icon}</span>
-          Baixar {fc.label}
-        </a>
+          Visualizar {fc.label}
+        </button>
       )}
       {hasLink && (
         <a
@@ -156,7 +154,7 @@ function AcessoBotao({ resultado, size = "normal", style: extraStyle = {} }) {
 
 // ─── Card de resultado na listagem ───────────────────────────────────────────
 
-function ResultadoCard({ resultado, cfg }) {
+function ResultadoCard({ resultado, cfg, onViewPdf }) {
   const { id, nomeEvento, dataEvento, cidade, modalidade, descricao, tipoArquivo } = resultado;
   const fc = FILE_CONFIG[tipoArquivo] || FILE_CONFIG.link;
   const [hov, setHov] = useState(false);
@@ -250,7 +248,7 @@ function ResultadoCard({ resultado, cfg }) {
           borderTop: `1px solid ${COLORS.grayLight}`,
           flexWrap: "wrap", gap: 8,
         }}>
-          <AcessoBotao resultado={resultado} size="sm" />
+          <AcessoBotao resultado={resultado} size="sm" onViewPdf={onViewPdf} />
           <Link
             to={`/resultados/${id}`}
             style={{
@@ -503,7 +501,7 @@ function CategoriaTabs({ atual }) {
 
 // ─── Lista de resultados agrupada por ano ────────────────────────────────────
 
-function ResultadosGrid({ resultados, cfg }) {
+function ResultadosGrid({ resultados, cfg, onViewPdf }) {
   if (resultados.length === 0) {
     return (
       <div style={{
@@ -576,7 +574,7 @@ function ResultadosGrid({ resultados, cfg }) {
             gap: 18,
           }}>
             {grupos[ano].map(r => (
-              <ResultadoCard key={r.id} resultado={r} cfg={cfg} />
+              <ResultadoCard key={r.id} resultado={r} cfg={cfg} onViewPdf={onViewPdf} />
             ))}
           </div>
         </div>
@@ -594,6 +592,7 @@ function ResultadosListagem({ categoria }) {
   const [cidades, setCidades] = useState([]);
   const [filtros, setFiltros] = useState({ busca: "", ano: "", cidade: "" });
   const [loading, setLoading] = useState(true);
+  const { pdfModal, openPdf, closePdf } = usePdfModal();
 
   useEffect(() => {
     setLoading(true);
@@ -650,10 +649,11 @@ function ResultadosListagem({ categoria }) {
               onChange={setFiltros}
               cfg={cfg}
             />
-            <ResultadosGrid resultados={visíveis} cfg={cfg} />
+            <ResultadosGrid resultados={visíveis} cfg={cfg} onViewPdf={openPdf} />
           </>
         )}
       </div>
+      <PdfModal url={pdfModal.url} title={pdfModal.title} onClose={closePdf} />
     </>
   );
 }
@@ -682,6 +682,7 @@ export function ResultadoDetalhe() {
   const [evento,    setEvento]    = useState(null);
   const [loading,   setLoading]   = useState(true);
   const [erro,      setErro]      = useState("");
+  const { pdfModal, openPdf, closePdf } = usePdfModal();
 
   useEffect(() => {
     ResultadosService.get(id).then(async r => {
@@ -891,7 +892,7 @@ export function ResultadoDetalhe() {
                 📁 Acessar Resultado
               </h3>
 
-              <AcessoBotao resultado={resultado} size="normal" style={{ width: "100%", justifyContent: "center" }} />
+              <AcessoBotao resultado={resultado} size="normal" style={{ width: "100%", justifyContent: "center" }} onViewPdf={openPdf} />
 
               <div style={{
                 marginTop: 16, paddingTop: 14,
@@ -916,6 +917,7 @@ export function ResultadoDetalhe() {
           </div>
         </div>
       </div>
+      <PdfModal url={pdfModal.url} title={pdfModal.title} onClose={closePdf} />
     </>
   );
 }

@@ -21,7 +21,8 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import AdminLayout from "../../components/admin/AdminLayout";
 import { COLORS, FONTS } from "../../styles/colors";
 import { SOLICITACAO_STATUS, SOLICITACAO_TIPOS } from "../../config/navigation";
-import { OrganizersService, SolicitacoesService } from "../../services/index";
+import { OrganizersService, SolicitacoesService, ArquivosService, MovimentacoesService } from "../../services/index";
+import { deleteFile } from "../../services/storageService";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const statusMap = Object.fromEntries(SOLICITACAO_STATUS.map(s => [s.value, s]));
@@ -234,10 +235,51 @@ export function OrganizadorEditor() {
 
   const flash = (text, type = "ok") => { setMsg({ text, type }); setTimeout(() => setMsg({ text: "", type: "" }), 3000); };
 
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [deactivateMotivo, setDeactivateMotivo] = useState("");
+  const [deactivating, setDeactivating] = useState(false);
+
   const handleToggleActive = async () => {
-    const r = await OrganizersService.setActive(id, !organizer.active);
-    if (r.data) { flash(`Conta ${!organizer.active ? "ativada" : "desativada"} com sucesso.`, "ok"); load(); }
+    if (organizer.active) {
+      setDeactivateMotivo("");
+      setShowDeactivateModal(true);
+      return;
+    }
+    const r = await OrganizersService.setActive(id, true);
+    if (r.data) { flash("Conta ativada com sucesso.", "ok"); load(); }
     else flash(r.error, "err");
+  };
+
+  const confirmDeactivate = async () => {
+    setDeactivating(true);
+    const r = await OrganizersService.setActive(id, false, deactivateMotivo);
+    setDeactivating(false);
+    setShowDeactivateModal(false);
+    if (r.data) { flash("Conta desativada com sucesso.", "ok"); load(); }
+    else flash(r.error, "err");
+  };
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const confirmDelete = async () => {
+    setDeleting(true);
+    // 1. Excluir todas as solicitações e dados relacionados
+    for (const sol of solicitacoes) {
+      const arqRes = await ArquivosService.listBySolicitacao(sol.id);
+      for (const arq of (arqRes.data || [])) {
+        if (arq.storagePath) await deleteFile(arq.storagePath).catch(() => {});
+        else if (arq.url?.includes("firebasestorage.googleapis.com")) await deleteFile(arq.url).catch(() => {});
+        await ArquivosService.delete(arq.id).catch(() => {});
+      }
+      await MovimentacoesService.deleteBySolicitacao(sol.id).catch(() => {});
+      await SolicitacoesService.delete(sol.id).catch(() => {});
+    }
+    // 2. Excluir o organizador
+    await OrganizersService.delete(id);
+    setDeleting(false);
+    setShowDeleteModal(false);
+    navigate("/admin/organizadores");
   };
 
   if (loading) {
@@ -274,14 +316,25 @@ export function OrganizadorEditor() {
               <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: organizer.active ? "#f0fdf4" : "#f3f4f6", color: organizer.active ? "#15803d" : "#6b7280" }}>
                 {organizer.active ? "✅ Conta ativa" : "🔒 Conta inativa"}
               </span>
+              {!organizer.active && organizer.motivoDesativacao && (
+                <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: "#fff5f5", color: "#dc2626" }}>
+                  Motivo: {organizer.motivoDesativacao}
+                </span>
+              )}
             </div>
             <h1 style={{ fontFamily: FONTS.heading, fontSize: 24, fontWeight: 900, textTransform: "uppercase", color: COLORS.dark, margin: "0 0 4px" }}>{organizer.name}</h1>
             {organizer.organization && <div style={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.gray }}>{organizer.organization}</div>}
           </div>
-          <button onClick={handleToggleActive}
-            style={{ padding: "10px 18px", borderRadius: 8, border: `2px solid ${organizer.active ? "#fca5a5" : "#86efac"}`, background: "#fff", color: organizer.active ? COLORS.primary : "#15803d", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700 }}>
-            {organizer.active ? "🔒 Desativar conta" : "✅ Ativar conta"}
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={handleToggleActive}
+              style={{ padding: "10px 18px", borderRadius: 8, border: `2px solid ${organizer.active ? "#fca5a5" : "#86efac"}`, background: "#fff", color: organizer.active ? COLORS.primary : "#15803d", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700 }}>
+              {organizer.active ? "🔒 Desativar conta" : "✅ Ativar conta"}
+            </button>
+            <button onClick={() => setShowDeleteModal(true)}
+              style={{ padding: "10px 18px", borderRadius: 8, border: "2px solid #dc2626", background: "#fff", color: "#dc2626", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700 }}>
+              🗑️ Excluir conta
+            </button>
+          </div>
         </div>
 
         {msg.text && (
@@ -357,6 +410,83 @@ export function OrganizadorEditor() {
           )}
         </div>
       </div>
+
+      {/* Modal de exclusão */}
+      {showDeleteModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+          onClick={() => setShowDeleteModal(false)}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 480, padding: "28px 32px", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <span style={{ fontSize: 28 }}>🗑️</span>
+              <div>
+                <h3 style={{ fontFamily: FONTS.heading, fontSize: 18, fontWeight: 900, color: "#dc2626", margin: 0, textTransform: "uppercase" }}>Excluir conta</h3>
+                <p style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, margin: "4px 0 0" }}>{organizer.name}</p>
+              </div>
+            </div>
+            <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "14px 16px", marginBottom: 20 }}>
+              <p style={{ fontFamily: FONTS.body, fontSize: 13, color: "#991b1b", margin: 0, lineHeight: 1.6 }}>
+                Esta ação é <strong>irreversível</strong>. Serão excluídos permanentemente:
+              </p>
+              <ul style={{ fontFamily: FONTS.body, fontSize: 13, color: "#991b1b", margin: "8px 0 0", paddingLeft: 20, lineHeight: 1.8 }}>
+                <li>Dados do organizador</li>
+                <li>{solicitacoes.length} solicitação(ões) e seus arquivos</li>
+                <li>Todo o histórico de movimentações</li>
+              </ul>
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button onClick={() => setShowDeleteModal(false)}
+                style={{ padding: "10px 20px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                Cancelar
+              </button>
+              <button onClick={confirmDelete} disabled={deleting}
+                style={{ padding: "10px 20px", borderRadius: 8, border: "none", background: "#dc2626", color: "#fff", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: deleting ? "not-allowed" : "pointer", opacity: deleting ? 0.6 : 1 }}>
+                {deleting ? "Excluindo..." : "Excluir permanentemente"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de desativação */}
+      {showDeactivateModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+          onClick={() => setShowDeactivateModal(false)}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 480, padding: "28px 32px", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+              <span style={{ fontSize: 28 }}>🔒</span>
+              <div>
+                <h3 style={{ fontFamily: FONTS.heading, fontSize: 18, fontWeight: 900, color: COLORS.dark, margin: 0, textTransform: "uppercase" }}>Desativar conta</h3>
+                <p style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, margin: "4px 0 0" }}>{organizer.name}</p>
+              </div>
+            </div>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, display: "block", marginBottom: 8 }}>
+                Motivo da desativação
+              </label>
+              <textarea
+                value={deactivateMotivo}
+                onChange={e => setDeactivateMotivo(e.target.value)}
+                placeholder="Informe o motivo (será exibido ao organizador ao fazer login)..."
+                rows={3}
+                style={{ width: "100%", padding: "10px 14px", borderRadius: 8, border: `1.5px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 14, resize: "vertical", outline: "none", boxSizing: "border-box" }}
+                autoFocus
+              />
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button onClick={() => setShowDeactivateModal(false)}
+                style={{ padding: "10px 20px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                Cancelar
+              </button>
+              <button onClick={confirmDeactivate} disabled={deactivating}
+                style={{ padding: "10px 20px", borderRadius: 8, border: "none", background: "#dc2626", color: "#fff", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: deactivating ? "not-allowed" : "pointer", opacity: deactivating ? 0.6 : 1 }}>
+                {deactivating ? "Desativando..." : "Confirmar desativação"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }

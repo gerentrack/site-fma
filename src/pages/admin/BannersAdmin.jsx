@@ -4,6 +4,7 @@ import AdminLayout from "../../components/admin/AdminLayout";
 import { bannersAPI } from "../../data/api";
 import { COLORS, FONTS } from "../../styles/colors";
 import FileUpload from "../../components/ui/FileUpload";
+import { deleteFile } from "../../services/storageService";
 
 const empty = {
   title: "", subtitle: "", cta: "", ctaLink: "#",
@@ -78,7 +79,13 @@ export function BannersList() {
   const navigate = useNavigate();
   const load = () => bannersAPI.list({ activeOnly: false }).then(r => r.data && setItems(r.data));
   useEffect(() => { load(); }, []);
-  const handleDelete = async (id) => { if (!confirm("Excluir banner?")) return; await bannersAPI.delete(id); load(); };
+  const handleDelete = async (id) => {
+    if (!confirm("Excluir banner?")) return;
+    const banner = items.find(b => b.id === id);
+    if (banner?.image) deleteFile(banner.image).catch(() => {});
+    await bannersAPI.delete(id);
+    load();
+  };
   const handleToggle = async (item) => { await bannersAPI.update(item.id, { active: !item.active }); load(); };
 
   return (

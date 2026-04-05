@@ -10,6 +10,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import AdminLayout from "../../components/admin/AdminLayout";
 import { ResultadosService } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
+import { deleteFile } from "../../services/storageService";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const CATEGORIAS = [
@@ -63,6 +64,8 @@ export function ResultadosList() {
 
   const handleDelete = async (id) => {
     if (!confirm("Excluir este resultado permanentemente?")) return;
+    const res = items.find(r => r.id === id);
+    if (res?.fileUrl) deleteFile(res.fileUrl).catch(() => {});
     await ResultadosService.delete(id);
     load();
   };

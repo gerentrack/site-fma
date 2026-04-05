@@ -57,9 +57,11 @@ export function OrganizerProvider({ children }) {
       logout,
       register,
       isAuthenticated,
-      organizerId:    session?.organizerId || null,
-      organizerName:  session?.name        || "",
-      organizerEmail: session?.email       || "",
+      organizerId:          session?.organizerId || null,
+      organizerName:        session?.name        || "",
+      organizerEmail:       session?.email       || "",
+      organizerActive:      session?.active !== false,
+      motivoDesativacao:    session?.motivoDesativacao || "",
     }}>
       {children}
     </OrganizerContext.Provider>

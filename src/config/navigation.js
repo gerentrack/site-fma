@@ -137,6 +137,7 @@ export const ADMIN_NAV = [
   { label: "Organizadores",         icon: "🏢", path: "/admin/organizadores" },
   { label: "Equipes",              icon: "🏃", path: "/admin/equipes" },
   { label: "Formulários",           icon: "🔧", path: "/admin/formularios" },
+  { label: "Limpeza do Storage",   icon: "🧹", path: "/admin/storage-cleanup" },
 ];
 
 export const QUICK_ACCESS = [
@@ -297,8 +298,8 @@ export const SOLICITACAO_STATUS = [
 ];
 
 export const SOLICITACAO_TIPOS = [
-  { value: "permit",   label: "Permit",   icon: "🏃", desc: "Para eventos que necessitam de homologação de percurso e arbitragem oficial da FMA." },
-  { value: "chancela", label: "Chancela", icon: "🏅", desc: "Para eventos que buscam reconhecimento e apoio institucional da FMA sem arbitragem obrigatória." },
+  { value: "permit",   label: "Permit",   icon: "🏃", desc: "Reconhecimento e homologação de corridas de rua e ultramaratonas, conforme Norma 07 da CBAt. Inclui arbitragem, medição de percurso e cronometragem oficial." },
+  { value: "chancela", label: "Chancela", icon: "🏔️", desc: "Reconhecimento e homologação de corridas em montanha e corridas em trilha, conforme Norma 15 da CBAt. Inclui Delegado Técnico e requisitos de segurança." },
 ];
 
 export const MOVIMENTACAO_TIPOS = {
