@@ -56,6 +56,7 @@ export function UsuariosList() {
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    if (!user) return;
     setLoading(true);
     const result = await adminUsersAPI.list();
     if (result.data) {
@@ -73,7 +74,7 @@ export function UsuariosList() {
 
   const handleToggle = async (u) => {
     if (u.level === "master") return; // nunca desativar master
-    if (u.uid === user.uid) return;   // nunca desativar a si mesmo
+    if (u.uid === user?.uid) return;   // nunca desativar a si mesmo
     const fn = u.active === false ? adminUsersAPI.activate : adminUsersAPI.deactivate;
     await fn(u.uid);
     load();
@@ -111,7 +112,7 @@ export function UsuariosList() {
             {/* Rows */}
             {users.map(u => {
               const lc = LEVEL_COLOR[u.level] || LEVEL_COLOR.viewer;
-              const isSelf = u.uid === user.uid;
+              const isSelf = u.uid === user?.uid;
               return (
                 <div key={u.uid} style={{
                   display: "grid", gridTemplateColumns: "2fr 2fr 1fr 1fr 1fr 120px",
@@ -174,7 +175,6 @@ export function UsuariosEditor() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [loadError, setLoadError] = useState(null);
-  const [reAuthNeeded, setReAuthNeeded] = useState(false);
 
   const levelOptions = isMaster ? LEVEL_OPTIONS_MASTER : LEVEL_OPTIONS_ADMIN;
 
@@ -229,13 +229,7 @@ export function UsuariosEditor() {
           setSubmitting(false);
           return;
         }
-        // Se o email já existia (role adicionado), não precisa re-auth
-        // Se foi criado novo, createUserWithEmailAndPassword desloga o admin atual
-        if (result.data?.uid && result.data.uid !== currentUser.uid) {
-          setReAuthNeeded(true);
-        } else {
-          navigate("/admin/usuarios");
-        }
+        navigate("/admin/usuarios");
       } else {
         const result = await adminUsersAPI.update(uid, {
           name: values.name,
@@ -259,28 +253,6 @@ export function UsuariosEditor() {
     return <AdminLayout minLevel="admin"><div style={{ padding: 40, color: COLORS.primary, fontFamily: FONTS.body }}>{loadError}</div></AdminLayout>;
   }
 
-  // Após criar usuário, exibir aviso de re-auth
-  if (reAuthNeeded) {
-    return (
-      <AdminLayout minLevel="admin">
-        <div style={{ padding: 40, maxWidth: 500 }}>
-          <div style={{ background: "#fff", borderRadius: 12, padding: 32, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", textAlign: "center" }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
-            <h2 style={{ fontFamily: FONTS.heading, fontSize: 20, color: COLORS.dark, margin: "0 0 12px" }}>Usuário criado com sucesso!</h2>
-            <p style={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.gray, marginBottom: 8 }}>
-              <strong>{values.name}</strong> ({values.email})
-            </p>
-            <p style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, marginBottom: 24 }}>
-              Como a criação de conta exige re-autenticação do Firebase, você precisa fazer login novamente.
-            </p>
-            <Button variant="primary" onClick={() => navigate("/admin/login")}>
-              Fazer login novamente
-            </Button>
-          </div>
-        </div>
-      </AdminLayout>
-    );
-  }
 
   return (
     <AdminLayout minLevel="admin">

@@ -81,12 +81,56 @@ export default function PoliticaPrivacidade() {
       </ul>
 
       <h3 style={S.h3}>3.3 Árbitros e Colaboradores (Intranet)</h3>
+      <p style={S.p}>
+        Para fins de gestão da equipe de arbitragem, emissão de documentos oficiais,
+        escalação em eventos e cumprimento de obrigações junto à CBAt/World Athletics,
+        coletamos as seguintes categorias de dados:
+      </p>
+
+      <p style={{ ...S.p, fontWeight: 600 }}>Dados pessoais e de identificação:</p>
       <ul style={S.ul}>
-        <li>Nome completo</li>
-        <li>E-mail</li>
-        <li>Telefone</li>
-        <li>Cidade</li>
-        <li>Categoria e função</li>
+        <li>Nome completo, data de nascimento, sexo, estado civil, escolaridade</li>
+        <li>Município e UF de nascimento</li>
+        <li>Nome do pai e da mãe (filiação)</li>
+        <li>CPF, RG (número, órgão expedidor, UF e data de expedição)</li>
+        <li>NIS/PIS</li>
+        <li>E-mail, telefone</li>
+        <li>Endereço completo (CEP, logradouro, número, complemento, bairro, cidade, UF)</li>
+        <li>Foto 3×4</li>
+      </ul>
+
+      <p style={{ ...S.p, fontWeight: 600 }}>Dados sensíveis (Art. 11 da LGPD):</p>
+      <ul style={S.ul}>
+        <li><strong>Cor/raça</strong> — coletada conforme classificação do IBGE, para fins de relatórios estatísticos e políticas de inclusão no esporte</li>
+        <li><strong>Tipo sanguíneo</strong> — para segurança do árbitro durante atuação em eventos esportivos (atendimento emergencial)</li>
+      </ul>
+      <div style={S.card}>
+        <p style={{ ...S.p, margin: 0, fontSize: 13 }}>
+          <strong>Consentimento específico:</strong> O tratamento de dados sensíveis é realizado
+          mediante consentimento específico e destacado do titular, conforme Art. 11, I da LGPD.
+          O consentimento é coletado no momento do preenchimento do perfil na Intranet, podendo
+          ser revogado a qualquer momento por meio de solicitação ao e-mail mg@cbat.org.br.
+        </p>
+      </div>
+
+      <p style={{ ...S.p, fontWeight: 600 }}>Dados financeiros:</p>
+      <ul style={S.ul}>
+        <li>Dados bancários (banco, agência, conta, tipo de conta)</li>
+        <li>Chave PIX (tipo e valor)</li>
+      </ul>
+      <p style={S.p}>
+        <strong>Finalidade:</strong> exclusivamente para pagamento de diárias, ressarcimentos e
+        valores devidos aos árbitros pela atuação em eventos. Estes dados não são utilizados
+        para nenhuma outra finalidade.
+      </p>
+
+      <p style={{ ...S.p, fontWeight: 600 }}>Dados profissionais:</p>
+      <ul style={S.ul}>
+        <li>Nível de arbitragem (A, B, C, NI)</li>
+        <li>Número de registro na CBAT</li>
+        <li>Tamanho de camisa (para uniforme de arbitragem)</li>
+        <li>Disponibilidade de deslocamento</li>
+        <li>Contato de emergência (nome e telefone)</li>
       </ul>
 
       <h3 style={S.h3}>3.4 Visitantes do Site</h3>
@@ -107,13 +151,15 @@ export default function PoliticaPrivacidade() {
         <li>Cumprimento de obrigações regulatórias esportivas</li>
       </ul>
 
-      <h2 style={S.h2}>5. Base Legal para o Tratamento (Art. 7º)</h2>
+      <h2 style={S.h2}>5. Base Legal para o Tratamento (Arts. 7º e 11)</h2>
       <p style={S.p}>O tratamento de dados pessoais pela FMA fundamenta-se nas seguintes bases legais:</p>
       <ul style={S.ul}>
         <li><strong>Consentimento (Art. 7º, I):</strong> para cookies de analytics e comunicações de marketing</li>
-        <li><strong>Execução de contrato (Art. 7º, V):</strong> para cadastro e gestão de organizadores e solicitações de permit/chancela</li>
+        <li><strong>Consentimento específico e destacado (Art. 11, I):</strong> para dados sensíveis de árbitros (cor/raça e tipo sanguíneo)</li>
+        <li><strong>Execução de contrato (Art. 7º, V):</strong> para cadastro e gestão de organizadores, solicitações de permit/chancela e gestão da equipe de arbitragem</li>
         <li><strong>Cumprimento de obrigação legal (Art. 7º, II):</strong> para obrigações regulatórias da federação junto à CBAt e World Athletics</li>
         <li><strong>Exercício regular de direitos (Art. 7º, VI):</strong> para defesa em processos administrativos ou judiciais</li>
+        <li><strong>Legítimo interesse (Art. 7º, IX):</strong> para dados bancários de árbitros, estritamente necessários ao pagamento de diárias e ressarcimentos</li>
       </ul>
 
       <h2 style={S.h2}>6. Compartilhamento de Dados com Terceiros</h2>
@@ -151,6 +197,15 @@ export default function PoliticaPrivacidade() {
         tratamento, os dados serão eliminados ou anonimizados, conforme Arts. 15 e 16 da LGPD,
         salvo nas hipóteses de conservação previstas em lei.
       </p>
+      <p style={S.p}><strong>Prazos de retenção por categoria:</strong></p>
+      <ul style={S.ul}>
+        <li><strong>Dados de árbitros ativos:</strong> mantidos enquanto o vínculo com a FMA estiver ativo</li>
+        <li><strong>Dados de árbitros inativos:</strong> mantidos por até 5 (cinco) anos após a inativação, para cumprimento de obrigações regulatórias junto à CBAt</li>
+        <li><strong>Dados bancários:</strong> eliminados em até 30 (trinta) dias após solicitação do titular ou inativação do cadastro, salvo obrigação fiscal em contrário</li>
+        <li><strong>Dados sensíveis (cor/raça, tipo sanguíneo):</strong> eliminados imediatamente mediante revogação do consentimento ou inativação do cadastro</li>
+        <li><strong>Dados de organizadores:</strong> mantidos enquanto houver solicitações em aberto ou histórico de aprovação</li>
+        <li><strong>Dados de navegação:</strong> até 12 (doze) meses</li>
+      </ul>
 
       <h2 style={S.h2}>9. Cookies e Tecnologias de Rastreamento</h2>
       <p style={S.p}>Este site utiliza:</p>

@@ -8,6 +8,8 @@
 import { useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useIntranet } from "../../context/IntranetContext";
+import { useSessionTimeout } from "../../hooks/useSessionTimeout";
+import SessionWarning from "../../components/ui/SessionWarning";
 import { COLORS, FONTS } from "../../styles/colors";
 import {
   INTRANET_NAV_ARBITRO,
@@ -40,15 +42,33 @@ function NavLink({ item }) {
 }
 
 export default function IntranetLayout({ children, requireRole = null }) {
-  const { isAuthenticated, loading, logout, name, role, canManage } = useIntranet();
+  const { isAuthenticated, loading, logout, name, role, canManage, mustChangePassword, profileComplete } = useIntranet();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const { warningSecondsLeft, dismiss } = useSessionTimeout({
+    timeoutMinutes: 1440, // 24 horas
+    warningMinutes: 10,
+    onTimeout: async () => { await logout(); navigate("/intranet/login", { replace: true }); },
+    enabled: isAuthenticated,
+  });
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       navigate("/intranet/login", { replace: true, state: { from: location.pathname } });
     }
   }, [isAuthenticated, loading]);
+
+  // Fluxo de primeiro acesso: troca de senha → completar perfil
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      if (mustChangePassword && location.pathname !== "/intranet/alterar-senha") {
+        navigate("/intranet/alterar-senha", { replace: true });
+      } else if (!mustChangePassword && !profileComplete && location.pathname !== "/intranet/completar-perfil") {
+        navigate("/intranet/completar-perfil", { replace: true });
+      }
+    }
+  }, [isAuthenticated, loading, mustChangePassword, profileComplete, location.pathname]);
 
   // Role guard
   useEffect(() => {
@@ -67,6 +87,7 @@ export default function IntranetLayout({ children, requireRole = null }) {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f4f4f4" }}>
+      <SessionWarning secondsLeft={warningSecondsLeft} onDismiss={dismiss} />
       {/* Sidebar */}
       <aside style={{ width: 220, background: "#1a1a1a", display: "flex", flexDirection: "column", flexShrink: 0, position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
         {/* Brand */}
@@ -89,6 +110,14 @@ export default function IntranetLayout({ children, requireRole = null }) {
         <nav style={{ flex: 1, padding: "12px 8px", display: "flex", flexDirection: "column", gap: 2 }}>
           {nav.map(item => <NavLink key={item.path} item={item} />)}
         </nav>
+
+        {/* Aviso de sigilo */}
+        <div style={{ padding: "10px 14px", margin: "0 8px 8px", borderRadius: 8, background: "rgba(255,200,0,0.08)", border: "1px solid rgba(255,200,0,0.15)" }}>
+          <div style={{ fontFamily: FONTS.heading, fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#fbbf24", marginBottom: 3 }}>Ambiente confidencial</div>
+          <div style={{ fontFamily: FONTS.body, fontSize: 10, color: "rgba(255,255,255,0.45)", lineHeight: 1.4 }}>
+            É proibida a divulgação, captura de tela ou compartilhamento de qualquer informação desta área.
+          </div>
+        </div>
 
         {/* Footer */}
         <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", gap: 8 }}>

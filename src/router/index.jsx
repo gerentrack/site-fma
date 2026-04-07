@@ -26,6 +26,8 @@ import IntranetDocuments      from "../pages/intranet/arbitro/IntranetDocuments"
 import { IntranetRefereeList, IntranetRefereeEditor } from "../pages/intranet/admin/RefereesAdmin";
 import { IntranetEventList, IntranetEventEditor }     from "../pages/intranet/admin/EventsAdmin";
 import { AssignmentList, AssignmentEditor }           from "../pages/intranet/admin/AssignmentPanel";
+import ChangePasswordIntranet from "../pages/intranet/ChangePasswordIntranet";
+import CompleteProfileWizard  from "../pages/intranet/CompleteProfileWizard";
 
 // ── Páginas admin FMA ─────────────────────────────────────────────────────────
 import AdminLogin                              from "../pages/admin/AdminLogin";
@@ -78,7 +80,9 @@ import ImportarAdmin from "../pages/admin/ImportarAdmin";
 import StorageCleanup from "../pages/admin/StorageCleanup";
 import { UsuariosList, UsuariosEditor } from "../pages/admin/UsuariosAdmin";
 import ArbitrosVisaoAdmin from "../pages/admin/ArbitrosVisaoAdmin";
+import ArbitroDetalheAdmin from "../pages/admin/ArbitroDetalheAdmin";
 import EscalasVisaoAdmin from "../pages/admin/EscalasVisaoAdmin";
+import ChangePasswordPage from "../pages/admin/ChangePasswordPage";
 
 // ── Layout público ────────────────────────────────────────────────────────────
 function PublicLayout({ children }) {
@@ -135,6 +139,8 @@ export default function AppRouter() {
       {/* ══ Intranet de Árbitros ════════════════════════════════════════════ */}
       <Route path="/intranet"                    element={<IntranetHome />} />
       <Route path="/intranet/login"              element={<IntranetLogin />} />
+      <Route path="/intranet/alterar-senha"      element={<ChangePasswordIntranet />} />
+      <Route path="/intranet/completar-perfil"   element={<CompleteProfileWizard />} />
       {/* Área do árbitro */}
       <Route path="/intranet/disponibilidade"    element={<MyAvailability />} />
       <Route path="/intranet/escalas"            element={<MyAssignments />} />
@@ -191,6 +197,7 @@ export default function AppRouter() {
 
       {/* ══ Admin FMA ════════════════════════════════════════════════════════ */}
       <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/admin/alterar-senha" element={<ChangePasswordPage />} />
       <Route path="/admin"       element={<Dashboard />} />
 
       <Route path="/admin/noticias"     element={<NewsList />} />
@@ -227,7 +234,8 @@ export default function AppRouter() {
       <Route path="/admin/usuarios/:uid" element={<UsuariosEditor />} />
 
       {/* Visão da intranet no admin */}
-      <Route path="/admin/arbitros"  element={<ArbitrosVisaoAdmin />} />
+      <Route path="/admin/arbitros"      element={<ArbitrosVisaoAdmin />} />
+      <Route path="/admin/arbitros/:id"  element={<ArbitroDetalheAdmin />} />
       <Route path="/admin/escalas"   element={<EscalasVisaoAdmin />} />
       <Route path="/admin/pistas"        element={<PistasList />} />
       <Route path="/admin/pistas/novo"  element={<PistasEditor />} />

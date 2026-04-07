@@ -67,7 +67,68 @@ export default function TermosUso() {
         apresentem informações falsas ou sejam utilizadas de forma irregular.
       </p>
 
-      <h2 style={S.h2}>4. Uso Aceitável</h2>
+      <h2 style={S.h2}>4. Cadastro e Acesso à Intranet de Arbitragem</h2>
+      <p style={S.p}>
+        A Intranet é a área restrita destinada a árbitros, coordenadores e colaboradores da FMA.
+        O acesso é concedido mediante cadastro realizado pela coordenação de arbitragem.
+      </p>
+      <p style={S.p}>Ao acessar a Intranet, o árbitro compromete-se a:</p>
+      <ul style={S.ul}>
+        <li>Alterar a senha temporária no primeiro acesso</li>
+        <li>Preencher integralmente o formulário de perfil com dados verídicos e atualizados</li>
+        <li>Manter seus dados pessoais, bancários e de contato sempre atualizados</li>
+        <li>Não compartilhar suas credenciais de acesso com terceiros</li>
+      </ul>
+
+      <h3 style={{ ...S.h2, fontSize: 15, margin: "24px 0 8px" }}>4.1 Dados Sensíveis</h3>
+      <p style={S.p}>
+        Durante o preenchimento do perfil, serão solicitados dados classificados como sensíveis
+        pela LGPD (Lei nº 13.709/2018), especificamente <strong>cor/raça</strong> e <strong>tipo
+        sanguíneo</strong>. O fornecimento destes dados requer consentimento específico e
+        destacado, que será coletado no formulário de perfil.
+      </p>
+      <ul style={S.ul}>
+        <li><strong>Cor/raça:</strong> utilizada exclusivamente para relatórios estatísticos e políticas de inclusão no esporte, conforme classificação do IBGE</li>
+        <li><strong>Tipo sanguíneo:</strong> utilizado exclusivamente para segurança do árbitro em caso de atendimento emergencial durante eventos</li>
+      </ul>
+      <p style={S.p}>
+        O consentimento pode ser revogado a qualquer momento, sem prejuízo ao acesso à Intranet,
+        mediante solicitação ao e-mail <strong>mg@cbat.org.br</strong>.
+      </p>
+
+      <h3 style={{ ...S.h2, fontSize: 15, margin: "24px 0 8px" }}>4.2 Sigilo e Confidencialidade</h3>
+      <p style={S.p}>
+        A Intranet de Arbitragem é ambiente restrito e de uso exclusivo para fins
+        institucionais relacionados à função de arbitragem. Todas as informações
+        nela contidas — incluindo escalas, dados de árbitros, designações, documentos
+        internos e quaisquer outros conteúdos — são de caráter estritamente confidencial
+        e não público.
+      </p>
+      <p style={{ ...S.p, fontWeight: 600 }}>
+        Constitui infração grave e é terminantemente proibido:
+      </p>
+      <ul style={S.ul}>
+        <li>Divulgar, compartilhar ou reproduzir, por qualquer meio, informações obtidas na Intranet</li>
+        <li>Realizar capturas de tela (prints), gravações, fotografias ou qualquer forma de registro do conteúdo exibido na Intranet</li>
+        <li>Encaminhar documentos, escalas, dados pessoais de outros árbitros ou informações internas a terceiros, por e-mail, aplicativos de mensagens, redes sociais ou qualquer outro canal</li>
+        <li>Utilizar informações da Intranet para finalidades distintas daquelas relacionadas à função de arbitragem</li>
+      </ul>
+      <p style={S.p}>
+        O descumprimento desta cláusula configura violação dos presentes Termos de Uso e
+        poderá ensejar a suspensão ou desativação imediata do acesso à Intranet, além das
+        medidas administrativas e judiciais cabíveis, incluindo responsabilização civil e
+        criminal nos termos da legislação vigente, bem como comunicação à ANPD quando
+        envolver dados pessoais de terceiros (Art. 52 da LGPD).
+      </p>
+
+      <h3 style={{ ...S.h2, fontSize: 15, margin: "24px 0 8px" }}>4.3 Dados Bancários</h3>
+      <p style={S.p}>
+        Os dados bancários são coletados exclusivamente para viabilizar o pagamento de diárias,
+        ressarcimentos e valores devidos pela atuação em eventos. A FMA não utiliza estes dados
+        para nenhuma outra finalidade e adota medidas técnicas para proteger seu armazenamento.
+      </p>
+
+      <h2 style={S.h2}>5. Uso Aceitável</h2>
       <p style={S.p}>Ao utilizar o site, o usuário compromete-se a não:</p>
       <ul style={S.ul}>
         <li>Utilizar o site para fins ilegais ou não autorizados</li>
@@ -78,7 +139,7 @@ export default function TermosUso() {
         <li>Enviar documentos falsos ou fraudulentos nas solicitações de Permit e Chancela</li>
       </ul>
 
-      <h2 style={S.h2}>5. Propriedade Intelectual</h2>
+      <h2 style={S.h2}>6. Propriedade Intelectual</h2>
       <p style={S.p}>
         Todo o conteúdo do site — incluindo textos, imagens, logotipos, gráficos, layout,
         documentos e software — é de propriedade da FMA ou de seus licenciadores e está
@@ -89,7 +150,7 @@ export default function TermosUso() {
         sem autorização prévia e expressa da FMA.
       </p>
 
-      <h2 style={S.h2}>6. Solicitações de Permit e Chancela</h2>
+      <h2 style={S.h2}>7. Solicitações de Permit e Chancela</h2>
       <p style={S.p}>
         O <strong>Permit</strong> é o reconhecimento e homologação de corridas de rua e
         ultramaratonas, conforme Norma 07 da CBAt. A <strong>Chancela</strong> é o reconhecimento
@@ -102,7 +163,7 @@ export default function TermosUso() {
         documentos complementares e definir prazos para adequação.
       </p>
 
-      <h2 style={S.h2}>7. Limitação de Responsabilidade</h2>
+      <h2 style={S.h2}>8. Limitação de Responsabilidade</h2>
       <p style={S.p}>A FMA não se responsabiliza por:</p>
       <ul style={S.ul}>
         <li>Eventuais indisponibilidades temporárias do site por manutenção ou falhas técnicas</li>
@@ -111,7 +172,7 @@ export default function TermosUso() {
         <li>Perda de dados resultante de falha do usuário em manter backups de suas informações</li>
       </ul>
 
-      <h2 style={S.h2}>8. Privacidade e Proteção de Dados</h2>
+      <h2 style={S.h2}>9. Privacidade e Proteção de Dados</h2>
       <p style={S.p}>
         O tratamento de dados pessoais é regido pela nossa{" "}
         <Link to="/privacidade" style={{ color: COLORS.primary, textDecoration: "underline" }}>
@@ -120,21 +181,21 @@ export default function TermosUso() {
         o usuário declara ter lido e concordado com a Política de Privacidade.
       </p>
 
-      <h2 style={S.h2}>9. Alterações nos Termos</h2>
+      <h2 style={S.h2}>10. Alterações nos Termos</h2>
       <p style={S.p}>
         A FMA pode alterar estes Termos de Uso a qualquer momento. As alterações entram em
         vigor na data de sua publicação nesta página. O uso continuado do site após as
         alterações constitui aceitação dos novos termos.
       </p>
 
-      <h2 style={S.h2}>10. Legislação Aplicável e Foro</h2>
+      <h2 style={S.h2}>11. Legislação Aplicável e Foro</h2>
       <p style={S.p}>
         Estes Termos de Uso são regidos pela legislação brasileira. Fica eleito o foro da
         comarca de Belo Horizonte — MG para dirimir quaisquer controvérsias decorrentes
         destes termos, com renúncia a qualquer outro, por mais privilegiado que seja.
       </p>
 
-      <h2 style={S.h2}>11. Contato</h2>
+      <h2 style={S.h2}>12. Contato</h2>
       <div style={S.card}>
         <p style={{ ...S.p, margin: 0 }}>
           <strong>Federação Mineira de Atletismo (FMA)</strong><br />

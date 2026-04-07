@@ -46,9 +46,11 @@ export function IntranetProvider({ children }) {
     <IntranetContext.Provider value={{
       session, loading, login, logout,
       isAuthenticated, isAdmin, isCoordinator, canManage,
-      refereeId: session?.refereeId || null,
-      role:      session?.role      || null,
-      name:      session?.name      || "",
+      refereeId:           session?.refereeId || null,
+      role:                session?.role      || null,
+      name:                session?.name      || "",
+      mustChangePassword:  session?.mustChangePassword || false,
+      profileComplete:     session?.profileComplete || false,
     }}>
       {children}
     </IntranetContext.Provider>

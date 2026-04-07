@@ -6,6 +6,8 @@
 import { useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useOrganizer } from "../../context/OrganizerContext";
+import { useSessionTimeout } from "../../hooks/useSessionTimeout";
+import SessionWarning from "../../components/ui/SessionWarning";
 import { COLORS, FONTS } from "../../styles/colors";
 import { PORTAL_NAV } from "../../config/navigation";
 
@@ -34,6 +36,13 @@ export default function PortalLayout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const { warningSecondsLeft, dismiss } = useSessionTimeout({
+    timeoutMinutes: 10080, // 7 dias
+    warningMinutes: 30,
+    onTimeout: async () => { await logout(); navigate("/portal/login", { replace: true }); },
+    enabled: isAuthenticated,
+  });
+
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       navigate("/portal/login", { replace: true, state: { from: location.pathname } });
@@ -51,6 +60,7 @@ export default function PortalLayout({ children }) {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f1f5f9" }}>
+      <SessionWarning secondsLeft={warningSecondsLeft} onDismiss={dismiss} />
       {/* Sidebar */}
       <aside style={{ width: 230, background: "#0f172a", display: "flex", flexDirection: "column",
         flexShrink: 0, position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>

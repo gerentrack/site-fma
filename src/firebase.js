@@ -1,7 +1,7 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, deleteApp } from "firebase/app";
 import { getFirestore }  from "firebase/firestore";
 import { getStorage }    from "firebase/storage";
-import { getAuth }       from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signOut } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey:            "AIzaSyCQ7UrzSxnL5YGxjF1-yOWvS66xG7585Nk",
@@ -17,3 +17,23 @@ const app = initializeApp(firebaseConfig);
 export const db      = getFirestore(app);
 export const storage = getStorage(app);
 export const auth    = getAuth(app);
+
+/**
+ * Cria um usuário no Firebase Auth SEM deslogar o admin atual.
+ * Usa uma instância secundária do Firebase App que é descartada após o uso.
+ * Retorna o uid do novo usuário.
+ */
+export async function createAuthUserSafe(email, password) {
+  const tempApp  = initializeApp(firebaseConfig, "_temp_create_user_" + Date.now());
+  const tempAuth = getAuth(tempApp);
+  try {
+    const cred = await createUserWithEmailAndPassword(tempAuth, email, password);
+    const uid  = cred.user.uid;
+    await signOut(tempAuth);
+    await deleteApp(tempApp);
+    return { uid, error: null };
+  } catch (e) {
+    try { await deleteApp(tempApp); } catch (_) {}
+    return { uid: null, error: e };
+  }
+}

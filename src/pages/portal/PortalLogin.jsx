@@ -10,6 +10,8 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useOrganizer } from "../../context/OrganizerContext";
 import { COLORS, FONTS } from "../../styles/colors";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "../../firebase";
 
 export default function PortalLogin() {
   const { login, isAuthenticated } = useOrganizer();
@@ -22,6 +24,8 @@ export default function PortalLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPass, setShowPass] = useState(false);
+  const [resetMsg, setResetMsg] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) navigate(from, { replace: true });
@@ -43,6 +47,19 @@ export default function PortalLogin() {
     setLoading(false);
     if (result.error) { setError(result.error); return; }
     navigate(from, { replace: true });
+  };
+
+  const handleResetPassword = async () => {
+    setResetMsg(""); setError("");
+    if (!email.trim()) { setError("Digite seu e-mail acima para recuperar a senha."); return; }
+    setResetLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      setResetMsg("E-mail de recuperação enviado! Verifique sua caixa de entrada.");
+    } catch {
+      setResetMsg("Se este e-mail estiver cadastrado, você receberá as instruções de recuperação.");
+    }
+    setResetLoading(false);
   };
 
   return (
@@ -120,7 +137,19 @@ export default function PortalLogin() {
             </button>
           </form>
 
-          <div style={{ marginTop: 22, textAlign: "center", fontFamily: FONTS.body, fontSize: 13 }}>
+          <div style={{ marginTop: 16, textAlign: "center" }}>
+            <button type="button" onClick={handleResetPassword} disabled={resetLoading}
+              style={{ background: "none", border: "none", padding: 0, fontFamily: FONTS.body, fontSize: 13, color: "#0066cc", cursor: resetLoading ? "not-allowed" : "pointer", textDecoration: "underline" }}>
+              {resetLoading ? "Enviando..." : "Esqueci minha senha"}
+            </button>
+            {resetMsg && (
+              <div style={{ marginTop: 10, padding: "10px 14px", borderRadius: 8, background: "#f0fdf4", border: "1px solid #86efac", fontFamily: FONTS.body, fontSize: 12, color: "#15803d" }}>
+                {resetMsg}
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginTop: 14, textAlign: "center", fontFamily: FONTS.body, fontSize: 13 }}>
             <span style={{ color: COLORS.gray }}>Ainda não tem conta? </span>
             <Link to="/portal/cadastro" style={{ color: "#0066cc", fontWeight: 700, textDecoration: "none" }}>
               Cadastre-se
@@ -128,16 +157,9 @@ export default function PortalLogin() {
           </div>
         </div>
 
-        {/* Demo credentials */}
-        <div style={{ marginTop: 20, background: "rgba(255,255,255,0.06)", borderRadius: 10,
-          padding: "14px 16px", fontFamily: FONTS.body, fontSize: 11 }}>
-          <div style={{ color: "rgba(255,255,255,0.5)", fontWeight: 700, marginBottom: 6,
-            fontFamily: FONTS.heading, fontSize: 10, textTransform: "uppercase", letterSpacing: 1 }}>
-            🔐 Credenciais de demonstração
-          </div>
-          <div style={{ color: "rgba(255,255,255,0.7)" }}>
-            <div>joao@correiasports.com.br / FMA16681</div>
-            <div>contato@atleticamineira.com.br / FMA16681</div>
+        <div style={{ marginTop: 20, textAlign: "center" }}>
+          <div style={{ fontFamily: FONTS.body, fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+            Acesso restrito a organizadores cadastrados.
           </div>
         </div>
 

@@ -11,6 +11,7 @@ import { useOrganizer } from "../../context/OrganizerContext";
 import { COLORS, FONTS } from "../../styles/colors";
 import PoliticaPrivacidade from "../public/PoliticaPrivacidade";
 import TermosUso from "../public/TermosUso";
+import { enviarBoasVindasOrganizador } from "../../services/emailService";
 
 const ESTADOS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
@@ -132,6 +133,11 @@ export default function PortalRegister() {
     });
     setLoading(false);
     if (result.error) { setError(result.error); return; }
+    enviarBoasVindasOrganizador({
+      email: form.email,
+      nome: form.name,
+      organizacao: form.organization || form.name,
+    }).catch(e => console.warn("Email boas-vindas:", e));
     navigate("/portal", { replace: true });
   };
 

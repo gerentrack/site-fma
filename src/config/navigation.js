@@ -238,11 +238,13 @@ export const REFEREE_CONTENT_CATEGORIES = [
 ];
 
 export const REFEREE_CATEGORIES = [
-  { value: "A",   label: "A",   color: "#cc0000" },
-  { value: "B",   label: "B",   color: "#0066cc" },
-  { value: "C",   label: "C",   color: "#007733" },
-  { value: "NAR", label: "NAR", color: "#884400" },
+  { value: "A",   label: "Nível A", color: "#cc0000" },
+  { value: "B",   label: "Nível B", color: "#0066cc" },
+  { value: "C",   label: "Nível C", color: "#007733" },
+  { value: "NI",  label: "NI",      color: "#884400" },
 ];
+
+export const REFEREE_LEVELS = REFEREE_CATEGORIES;
 
 export const REFEREE_ROLES = [
   { value: "admin",       label: "Administrador",  color: "#cc0000" },

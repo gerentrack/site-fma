@@ -9,6 +9,7 @@ import IntranetLayout from "../IntranetLayout";
 import { RefereesService } from "../../../services/index";
 import { COLORS, FONTS } from "../../../styles/colors";
 import { REFEREE_CATEGORIES, REFEREE_ROLES, REFEREE_STATUS } from "../../../config/navigation";
+import { notificarArbitroCadastro, notificarArbitroStatus } from "../../../services/emailService";
 
 const roleMap  = Object.fromEntries((REFEREE_ROLES   || []).map(r => [r.value, r]));
 const statusMap= Object.fromEntries((REFEREE_STATUS  || []).map(s => [s.value, s]));
@@ -42,6 +43,14 @@ export function IntranetRefereeList() {
 
   const handleStatus = async (id, status) => {
     await RefereesService.update(id, { status });
+    const ref = refs.find(r => r.id === id);
+    if (ref?.email) {
+      notificarArbitroStatus({
+        arbitroEmail: ref.email,
+        arbitroNome: ref.name,
+        novoStatus: status,
+      }).catch(e => console.warn("Email status árbitro:", e));
+    }
     load();
   };
 
@@ -163,7 +172,7 @@ export function IntranetRefereeList() {
 }
 
 // ─── Editor ───────────────────────────────────────────────────────────────────
-const emptyRef = { name: "", email: "", password: "", phone: "", category: "corrida-rua", city: "", role: "arbitro", status: "ativo", notes: "" };
+const emptyRef = { name: "", email: "", password: "", nivel: "", role: "arbitro", status: "ativo", mustChangePassword: true, profileComplete: false, notes: "" };
 
 export function IntranetRefereeEditor() {
   const { id } = useParams();
@@ -173,7 +182,6 @@ export function IntranetRefereeEditor() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
   useEffect(() => {
     if (isNew) return;
     RefereesService.get(id).then(r => {
@@ -187,11 +195,23 @@ export function IntranetRefereeEditor() {
 
   const save = async () => {
     if (!form.name || !form.email) { setError("Nome e e-mail são obrigatórios."); return; }
-    if (isNew && !form.password) { setError("Senha é obrigatória para novo árbitro."); return; }
+    if (isNew && !form.password) { setError("Senha temporária é obrigatória."); return; }
+    if (isNew && form.password.length < 6) { setError("Senha deve ter no mínimo 6 caracteres."); return; }
     setSaving(true); setError("");
-    const r = isNew ? await RefereesService.create(form) : await RefereesService.update(id, form);
+
+    const payload = isNew
+      ? { ...form, mustChangePassword: true, profileComplete: false }
+      : form;
+
+    const r = isNew ? await RefereesService.create(payload) : await RefereesService.update(id, payload);
     setSaving(false);
     if (r.error) { setError(r.error); return; }
+    if (isNew && form.email) {
+      notificarArbitroCadastro({
+        arbitroEmail: form.email,
+        arbitroNome: form.name,
+      }).catch(e => console.warn("Email cadastro árbitro:", e));
+    }
     navigate("/intranet/admin/arbitros");
   };
 
@@ -218,64 +238,123 @@ export function IntranetRefereeEditor() {
 
         {error && <div style={{ background: "#fff5f5", border: "1px solid #fca5a5", borderRadius: 8, padding: "10px 16px", marginBottom: 16, color: "#991b1b", fontFamily: FONTS.body, fontSize: 13 }}>{error}</div>}
 
-        {/* Dados Pessoais */}
-        <div style={card}>
-          {section("Dados Pessoais")}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            <div style={{ gridColumn: "1 / -1" }}>
-              {label("Nome completo", true)}
-              <input value={form.name} onChange={e => set("name", e.target.value)} placeholder="Nome completo do árbitro" style={inp()} />
+        {isNew ? (
+          <>
+            {/* ── Criação simplificada ── */}
+            <div style={card}>
+              {section("Dados de Acesso")}
+              <p style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, margin: "0 0 16px" }}>
+                Informe apenas o mínimo. O árbitro completará os demais dados no primeiro acesso.
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  {label("Nome completo", true)}
+                  <input value={form.name} onChange={e => set("name", e.target.value)} placeholder="Nome completo do árbitro" style={inp()} />
+                </div>
+                <div>
+                  {label("E-mail (login)", true)}
+                  <input type="email" value={form.email} onChange={e => set("email", e.target.value)} placeholder="email@exemplo.com" style={inp()} />
+                </div>
+                <div>
+                  {label("Senha temporária", true)}
+                  <input type="password" value={form.password} onChange={e => set("password", e.target.value)} placeholder="Mínimo 6 caracteres" style={inp()} />
+                </div>
+                <div>
+                  {label("Nível")}
+                  <select value={form.nivel} onChange={e => set("nivel", e.target.value)} style={sel()}>
+                    <option value="">Selecione...</option>
+                    {REFEREE_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  {label("Perfil / Role")}
+                  <select value={form.role} onChange={e => set("role", e.target.value)} style={sel()}>
+                    {REFEREE_ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                  </select>
+                </div>
+              </div>
             </div>
-            <div>
-              {label("E-mail (login)", true)}
-              <input type="email" value={form.email} onChange={e => set("email", e.target.value)} placeholder="email@exemplo.com" style={inp()} />
-            </div>
-            <div>
-              {label("Telefone")}
-              <input value={form.phone} onChange={e => set("phone", e.target.value)} placeholder="(31) 99999-0000" style={inp()} />
-            </div>
-            <div>
-              {label("Cidade")}
-              <input value={form.city} onChange={e => set("city", e.target.value)} placeholder="Belo Horizonte" style={inp()} />
-            </div>
-            <div>
-              {label("Categoria de Árbitro")}
-              <select value={form.category} onChange={e => set("category", e.target.value)} style={sel()}>
-                {REFEREE_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-              </select>
-            </div>
-          </div>
-        </div>
 
-        {/* Acesso */}
-        <div style={card}>
-          {section("Perfil e Acesso")}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
-            <div>
-              {label("Perfil / Role")}
-              <select value={form.role} onChange={e => set("role", e.target.value)} style={sel()}>
-                {REFEREE_ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-              </select>
+            <div style={card}>
+              {section("Observações")}
+              <textarea value={form.notes} onChange={e => set("notes", e.target.value)} rows={2} placeholder="Observações internas (opcional)..."
+                style={{ width: "100%", padding: "10px 13px", borderRadius: 8, border: `1.5px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 14, resize: "vertical", outline: "none", boxSizing: "border-box" }} />
             </div>
-            <div>
-              {label("Status")}
-              <select value={form.status} onChange={e => set("status", e.target.value)} style={sel()}>
-                {REFEREE_STATUS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
+          </>
+        ) : (
+          <>
+            {/* ── Edição: dados completos visíveis ── */}
+            <div style={card}>
+              {section("Dados Pessoais")}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  {label("Nome completo", true)}
+                  <input value={form.name} onChange={e => set("name", e.target.value)} style={inp()} />
+                </div>
+                <div>
+                  {label("E-mail (login)", true)}
+                  <input type="email" value={form.email} onChange={e => set("email", e.target.value)} style={inp()} disabled />
+                </div>
+                <div>
+                  {label("Telefone")}
+                  <input value={form.phone || ""} onChange={e => set("phone", e.target.value)} style={inp()} />
+                </div>
+                <div>
+                  {label("CPF")}
+                  <input value={form.cpf || ""} disabled style={{ ...inp(), opacity: 0.6 }} />
+                </div>
+                <div>
+                  {label("Data de Nascimento")}
+                  <input value={form.dataNascimento || ""} disabled style={{ ...inp(), opacity: 0.6 }} />
+                </div>
+                <div>
+                  {label("Cidade")}
+                  <input value={form.city || ""} disabled style={{ ...inp(), opacity: 0.6 }} />
+                </div>
+                <div>
+                  {label("UF")}
+                  <input value={form.state || ""} disabled style={{ ...inp(), opacity: 0.6 }} />
+                </div>
+              </div>
+              {!form.profileComplete && (
+                <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 8, background: "#fef3c7", fontFamily: FONTS.body, fontSize: 12, color: "#92400e" }}>
+                  Este árbitro ainda não completou o perfil.
+                </div>
+              )}
             </div>
-            <div>
-              {label(isNew ? "Senha" : "Nova senha (deixe em branco para manter)", isNew)}
-              <input type="password" value={form.password} onChange={e => set("password", e.target.value)} placeholder={isNew ? "Mínimo 6 caracteres" : "••••••• (inalterado)"} style={inp()} />
-            </div>
-          </div>
-        </div>
 
-        {/* Obs */}
-        <div style={card}>
-          {section("Observações")}
-          <textarea value={form.notes} onChange={e => set("notes", e.target.value)} rows={3} placeholder="Informações adicionais sobre este árbitro..."
-            style={{ width: "100%", padding: "10px 13px", borderRadius: 8, border: `1.5px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 14, resize: "vertical", outline: "none", boxSizing: "border-box" }} />
-        </div>
+            <div style={card}>
+              {section("Perfil e Acesso")}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
+                <div>
+                  {label("Nível")}
+                  <select value={form.nivel || ""} onChange={e => set("nivel", e.target.value)} style={sel()}>
+                    <option value="">Selecione...</option>
+                    {REFEREE_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  {label("Perfil / Role")}
+                  <select value={form.role} onChange={e => set("role", e.target.value)} style={sel()}>
+                    {REFEREE_ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  {label("Status")}
+                  <select value={form.status} onChange={e => set("status", e.target.value)} style={sel()}>
+                    {REFEREE_STATUS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div style={card}>
+              {section("Observações")}
+              <textarea value={form.notes} onChange={e => set("notes", e.target.value)} rows={3} placeholder="Informações adicionais sobre este árbitro..."
+                style={{ width: "100%", padding: "10px 13px", borderRadius: 8, border: `1.5px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 14, resize: "vertical", outline: "none", boxSizing: "border-box" }} />
+            </div>
+          </>
+        )}
       </div>
     </IntranetLayout>
   );

@@ -349,27 +349,81 @@ export const institutionalSectionModel = {
 /**
  * Árbitro cadastrado na intranet. Entidade dual:
  *   - É usuário da intranet (login, role, status)
- *   - Tem perfil profissional (categoria, cidade, certificação)
+ *   - Tem perfil completo (pessoal, documentos, endereço, bancário, profissional)
  *
  * Roles:
  *   admin       → acesso total à intranet admin (mesmo que coordenador + gerencia árbitros)
  *   coordenador → escala árbitros, gerencia eventos na intranet
  *   arbitro     → declara disponibilidade, vê próprias escalas
+ *
+ * Fluxo de primeiro acesso:
+ *   1. Coordenador cria conta com nome + email + senha temporária + nível
+ *   2. Árbitro faz login → troca senha (mustChangePassword)
+ *   3. Preenche perfil completo em wizard de 5 etapas (profileComplete)
+ *   4. Intranet liberada após completar tudo
  */
 export const refereeModel = {
   id: "",
+
+  // ── Auth & Status ──────────────────────────────────────────────────────
+  email: "",              // login da intranet — único
+  password: "",           // bcrypt em produção
+  role: "arbitro",        // "admin" | "coordenador" | "arbitro"
+  status: "ativo",        // "ativo" | "inativo" | "suspenso"
+  mustChangePassword: true,
+  profileComplete: false,
+
+  // ── Etapa 1: Dados Pessoais ────────────────────────────────────────────
   name: "",
-  email: "",             // login da intranet — único
-  password: "",          // bcrypt em produção
-  phone: "",
-  cpf: "",               // CPF somente dígitos — para emissão de documentos futuros
-  category: "corrida-rua", // corrida-rua|pista-campo|trail|marcha|todos
+  dataNascimento: "",     // YYYY-MM-DD
+  sexo: "",               // "masculino" | "feminino"
+  estadoCivil: "",        // "solteiro" | "casado" | "divorciado" | "viuvo" | "uniao_estavel"
+  cor: "",                // "branca" | "preta" | "parda" | "amarela" | "indigena"
+  escolaridade: "",       // "fundamental" | "medio" | "superior" | "pos_graduacao"
+  municipioNascimento: "",
+  ufNascimento: "",
+  nomePai: "",
+  nomeMae: "",
+
+  // ── Etapa 2: Documentos ────────────────────────────────────────────────
+  cpf: "",                // somente dígitos (11)
+  rg: "",
+  rgOrgao: "",            // ex: "SSP", "PC", "IFP"
+  rgUf: "",
+  rgDataExpedicao: "",    // YYYY-MM-DD
+  nisPis: "",             // somente dígitos (11)
+
+  // ── Etapa 3: Endereço ──────────────────────────────────────────────────
+  cep: "",
+  logradouro: "",
+  numero: "",
+  complemento: "",        // opcional
+  bairro: "",
   city: "",
   state: "MG",
-  role: "arbitro",       // "admin" | "coordenador" | "arbitro"
-  status: "ativo",       // "ativo" | "inativo" | "suspenso"
-  certificationLevel: "", // nível CBAT — futuro
-  notes: "",             // anotações internas da coordenação
+
+  // ── Etapa 4: Dados Bancários ───────────────────────────────────────────
+  banco: "",              // código ex: "001"
+  bancoNome: "",          // ex: "Banco do Brasil"
+  tipoConta: "",          // "corrente" | "poupanca" | "pagamento"
+  agencia: "",            // sem dígito
+  contaDigito: "",        // ex: "12345-6"
+  chavePix: "",
+  chavePixTipo: "",       // "cpf" | "email" | "telefone" | "aleatoria"
+
+  // ── Etapa 5: Profissional + Emergência ─────────────────────────────────
+  phone: "",
+  nivel: "",              // "A" | "B" | "C" | "NI"
+  registroCbat: "",       // número de registro na CBAT
+  foto: "",               // URL da foto 3x4
+  tamanhoCamisa: "",      // "P" | "M" | "G" | "GG" | "XG"
+  tipoSanguineo: "",      // "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-"
+  contatoEmergenciaNome: "",
+  contatoEmergenciaTelefone: "",
+  disponibilidadeDeslocamento: "", // "local" | "metropolitana" | "estadual" | "nacional"
+
+  // ── Sistema ────────────────────────────────────────────────────────────
+  notes: "",              // anotações internas da coordenação
   createdAt: "",
   updatedAt: "",
 };

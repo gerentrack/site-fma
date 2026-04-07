@@ -16,7 +16,7 @@ import {
   EmailAuthProvider, reauthenticateWithCredential, onAuthStateChanged,
 } from "firebase/auth";
 
-import { db, auth } from "../firebase";
+import { db, auth, createAuthUserSafe } from "../firebase";
 import { garantirProtocolo } from "../utils/protocolo";
 
 import {
@@ -166,6 +166,7 @@ export const authAPI = {
         id: profile.refId, uid: cred.user.uid, name: profile.name, email: profile.email,
         role: "admin", roles: profile.roles || [profile.role], level: profile.level || "admin",
         permissions: profile.permissions || [], createdBy: profile.createdBy || null,
+        mustChangePassword: profile.mustChangePassword || false,
       }});
     } catch (e) {
       if (["auth/invalid-credential","auth/wrong-password","auth/user-not-found"].includes(e.code)) return err("Credenciais inválidas.");
@@ -183,6 +184,7 @@ export const authAPI = {
       id: profile.refId, uid: u.uid, name: profile.name, email: profile.email,
       role: "admin", roles: profile.roles || [profile.role], level: profile.level || "admin",
       permissions: profile.permissions || [], createdBy: profile.createdBy || null,
+      mustChangePassword: profile.mustChangePassword || false,
     };
   },
   onAuthStateChange: (callback) => onAuthStateChanged(auth, callback),
@@ -193,6 +195,8 @@ export const authAPI = {
       const cred = EmailAuthProvider.credential(u.email, currentPassword);
       await reauthenticateWithCredential(u, cred);
       await fbUpdatePassword(u, newPassword);
+      // Limpar flag de troca obrigatória
+      await updateDoc(doc(db, "users", u.uid), { mustChangePassword: false, updatedAt: now() });
       return ok(true);
     } catch (e) { return err(e.message); }
   },
@@ -240,21 +244,24 @@ export const adminUsersAPI = {
       return ok(safe);
     }
 
-    // Caso 2: email novo — criar Firebase Auth + users doc
+    // Caso 2: email novo — criar Firebase Auth (sem deslogar admin) + users doc
+    const { uid: newUid, error: authErr } = await createAuthUserSafe(data.email, data.password);
+    if (authErr) {
+      if (authErr.code === "auth/email-already-in-use") return err("E-mail já possui conta de autenticação mas não foi encontrado no sistema. Contate o suporte.");
+      return err(authErr.message);
+    }
     try {
-      const cred = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const userDoc = {
-        uid: cred.user.uid, email: data.email, name: data.name,
+        uid: newUid, email: data.email, name: data.name,
         roles: ["admin"], level: data.level || "editor",
         permissions: data.permissions || [], active: true,
+        mustChangePassword: true,
         createdBy: creatorUid, createdAt: now(),
       };
-      await setDoc(doc(db, "users", cred.user.uid), userDoc);
-      await signOut(auth);
+      await setDoc(doc(db, "users", newUid), userDoc);
       const { password: _, ...safe } = userDoc;
       return ok(safe);
     } catch (e) {
-      if (e.code === "auth/email-already-in-use") return err("E-mail já possui conta de autenticação mas não foi encontrado no sistema. Contate o suporte.");
       return err(e.message);
     }
   },
@@ -606,7 +613,11 @@ export const intranetAuthAPI = {
       if (!profile || !hasRole(profile, "referee")) { await signOut(auth); return err("Acesso restrito à intranet de árbitros."); }
       const referee = await readDoc("referees", profile.refId);
       if (!referee || referee.status !== "ativo") { await signOut(auth); return err("Árbitro inativo ou não encontrado."); }
-      const session = { refereeId: referee.id, uid: cred.user.uid, email: referee.email, name: referee.name, role: referee.role, loginAt: now() };
+      const session = {
+        refereeId: referee.id, uid: cred.user.uid, email: referee.email, name: referee.name, role: referee.role, loginAt: now(),
+        mustChangePassword: referee.mustChangePassword || false,
+        profileComplete: referee.profileComplete || false,
+      };
       const { password: _, ...safe } = referee;
       return ok({ session, referee: safe });
     } catch (e) {
@@ -623,9 +634,28 @@ export const intranetAuthAPI = {
     if (!profile || !hasRole(profile, "referee")) return null;
     const referee = await readDoc("referees", profile.refId);
     if (!referee) return null;
-    return { refereeId: referee.id, uid: u.uid, email: referee.email, name: referee.name, role: referee.role };
+    return {
+      refereeId: referee.id, uid: u.uid, email: referee.email, name: referee.name, role: referee.role,
+      mustChangePassword: referee.mustChangePassword || false,
+      profileComplete: referee.profileComplete || false,
+    };
   },
   onAuthStateChange: (callback) => onAuthStateChanged(auth, callback),
+  updatePassword: async (currentPassword, newPassword, refereeId) => {
+    const u = auth.currentUser;
+    if (!u) return err("Não autenticado.");
+    try {
+      const cred = EmailAuthProvider.credential(u.email, currentPassword);
+      await reauthenticateWithCredential(u, cred);
+      await fbUpdatePassword(u, newPassword);
+      // Limpar flag no referee doc
+      await updateDoc(doc(db, "referees", refereeId), { mustChangePassword: false, updatedAt: now() });
+      return ok(true);
+    } catch (e) {
+      if (e.code === "auth/wrong-password" || e.code === "auth/invalid-credential") return err("Senha atual incorreta.");
+      return err(e.message);
+    }
+  },
 };
 
 export const refereesAPI = {
@@ -645,7 +675,22 @@ export const refereesAPI = {
   create: async (data) => {
     const all=await readCol("referees");
     if (all.find(r=>r.email===data.email)) return err("E-mail já cadastrado.");
-    const item=await createDoc("referees",data);
+    const item=await createDoc("referees",{ ...data, mustChangePassword: true, profileComplete: false });
+    // Criar Firebase Auth user (sem deslogar admin) + users doc
+    const { uid: newUid, error: authErr } = await createAuthUserSafe(data.email, data.password);
+    if (newUid) {
+      const usersSnap = await getDocs(collection(db, "users"));
+      const existingUser = usersSnap.docs.find(d => d.id === newUid);
+      if (existingUser) {
+        const userData = existingUser.data();
+        const currentRoles = userData.roles || (userData.role ? [userData.role] : []);
+        await updateDoc(doc(db, "users", newUid), { roles: [...new Set([...currentRoles, "referee"])], refId: item.id, updatedAt: now() });
+      } else {
+        await setDoc(doc(db, "users", newUid), { uid: newUid, email: data.email, roles: ["referee"], name: data.name, refId: item.id, createdAt: now() });
+      }
+    } else if (authErr?.code !== "auth/email-already-in-use") {
+      console.warn("Auth create referee:", authErr?.message);
+    }
     const {password,...safe}=item;
     return ok(safe);
   },

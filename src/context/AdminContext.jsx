@@ -10,11 +10,10 @@ export function AdminProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Aguarda Firebase Auth resolver o estado de sessão
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const profile = await authAPI.getUser();
-        setUser(profile || null); // authAPI.getUser() já retorna null se não for admin
+        setUser(profile || null);
       } else {
         setUser(null);
       }
