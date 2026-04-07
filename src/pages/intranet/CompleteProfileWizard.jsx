@@ -227,8 +227,7 @@ export default function CompleteProfileWizard() {
       return;
     }
 
-    // Re-carregar sessão
-    const loginResult = await login({ email: session.email, password: undefined });
+    // Recarregar sessão — o reload re-aciona onAuthStateChanged que busca o perfil atualizado
     navigate("/intranet", { replace: true });
     window.location.reload();
   };

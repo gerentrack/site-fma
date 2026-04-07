@@ -675,9 +675,17 @@ export const refereesAPI = {
   create: async (data) => {
     const all=await readCol("referees");
     if (all.find(r=>r.email===data.email)) return err("E-mail já cadastrado.");
-    const item=await createDoc("referees",{ ...data, mustChangePassword: true, profileComplete: false });
-    // Criar Firebase Auth user (sem deslogar admin) + users doc
+
+    // 1. Criar Firebase Auth user primeiro (sem deslogar admin)
     const { uid: newUid, error: authErr } = await createAuthUserSafe(data.email, data.password);
+    if (!newUid && authErr?.code !== "auth/email-already-in-use") {
+      return err(authErr?.message || "Erro ao criar conta de autenticação.");
+    }
+
+    // 2. Criar referee doc no Firestore (só se Auth ok)
+    const item=await createDoc("referees",{ ...data, mustChangePassword: true, profileComplete: false });
+
+    // 3. Criar/atualizar users doc
     if (newUid) {
       const usersSnap = await getDocs(collection(db, "users"));
       const existingUser = usersSnap.docs.find(d => d.id === newUid);
@@ -688,8 +696,6 @@ export const refereesAPI = {
       } else {
         await setDoc(doc(db, "users", newUid), { uid: newUid, email: data.email, roles: ["referee"], name: data.name, refId: item.id, createdAt: now() });
       }
-    } else if (authErr?.code !== "auth/email-already-in-use") {
-      console.warn("Auth create referee:", authErr?.message);
     }
     const {password,...safe}=item;
     return ok(safe);

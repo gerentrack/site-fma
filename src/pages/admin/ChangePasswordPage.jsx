@@ -40,9 +40,10 @@ export default function ChangePasswordPage() {
     }
 
     // Recarregar o perfil para limpar mustChangePassword
-    // Fazer re-login silencioso com a nova senha
+    // Salvar email antes do logout (logout limpa o user do contexto)
+    const email = user.email;
     await authAPI.logout();
-    await login({ email: user.email, password: form.newPass });
+    await login({ email, password: form.newPass });
     navigate("/admin", { replace: true });
   };
 

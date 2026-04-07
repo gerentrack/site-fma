@@ -145,7 +145,7 @@ export function IntranetRefereeList() {
                       {ref.phone && <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>{ref.phone}</div>}
                     </td>
                     <td style={{ padding: "14px 16px" }}><Badge value={ref.role} map={roleMap} /></td>
-                    <td style={{ padding: "14px 16px" }}><span style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.dark }}>{catMap[ref.category]?.label || ref.category}</span></td>
+                    <td style={{ padding: "14px 16px" }}><span style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.dark }}>{catMap[ref.nivel]?.label || ref.nivel || "—"}</span></td>
                     <td style={{ padding: "14px 16px" }}><span style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.dark }}>{ref.city}</span></td>
                     <td style={{ padding: "14px 16px" }}><Badge value={ref.status} map={statusMap} /></td>
                     <td style={{ padding: "14px 16px" }}>

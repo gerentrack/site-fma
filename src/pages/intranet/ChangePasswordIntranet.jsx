@@ -30,9 +30,10 @@ export default function ChangePasswordIntranet() {
 
     if (result.error) { setError(result.error); return; }
 
-    // Re-login com nova senha
+    // Salvar email antes do logout (logout limpa a session do contexto)
+    const email = session.email;
     await intranetAuthAPI.logout();
-    await login({ email: session.email, password: form.newPass });
+    await login({ email, password: form.newPass });
     navigate("/intranet", { replace: true });
   };
 
