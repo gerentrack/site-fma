@@ -65,6 +65,24 @@ async function imgToBase64(url) {
   });
 }
 
+/** Converte imagem PNG para JPEG comprimido via canvas (qualidade 0-1). */
+async function imgToJpegBase64(url, quality = 0.75) {
+  if (_cache["jpeg_" + url]) return _cache["jpeg_" + url];
+  const img = new Image();
+  img.src = url;
+  await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; });
+  const canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0);
+  const result = canvas.toDataURL("image/jpeg", quality);
+  _cache["jpeg_" + url] = result;
+  return result;
+}
+
 /** Converte URL de font (ttf) para ArrayBuffer base64 string para jsPDF. */
 async function fontToBase64(url) {
   if (_cache["font_" + url]) return _cache["font_" + url];
@@ -111,14 +129,14 @@ async function gerarPdf(dados, tipo) {
   const doc = new jsPDF("p", "mm", "a4");
   await registerCalibri(doc);
 
-  // ── 1. Fundo cobrindo página inteira ──
-  const bg = await imgToBase64(tipo === "chancela" ? chancelaBg : permitBg);
-  doc.addImage(bg, "PNG", 0, 0, PAGE_W, PAGE_H);
+  // ── 1. Fundo cobrindo página inteira (convertido para JPEG comprimido) ──
+  const bg = await imgToJpegBase64(tipo === "chancela" ? chancelaBg : permitBg, 0.75);
+  doc.addImage(bg, "JPEG", 0, 0, PAGE_W, PAGE_H, undefined, "FAST");
 
   // ── 2. Logo FMA centralizada no topo (acima do badge PERMIT BRONZE) ──
   const logo = await imgToBase64(fmaLogo);
   // Logo FMA: 1064x500px → ratio 2.13:1 → 50mm x 23mm, centralizada
-  doc.addImage(logo, "PNG", (PAGE_W - 48) / 2, 5, 48, 22);
+  doc.addImage(logo, "PNG", (PAGE_W - 48) / 2, 5, 48, 22, undefined, "FAST");
 
   // ── 3. Número "Nº XXX/YYYY" — Calibri 26 bold ──
   // Chancela tem badge menor, informações sobem mais
@@ -199,7 +217,7 @@ async function gerarPdf(dados, tipo) {
 
   // Assinatura (500x500px = quadrado → 30x30mm)
   const sig = await imgToBase64(assinatura);
-  doc.addImage(sig, "PNG", 75, y - 12, 60, 60);
+  doc.addImage(sig, "PNG", 75, y - 12, 60, 60, undefined, "FAST");
 
   return doc.output("blob");
 }

@@ -12,8 +12,9 @@ import {
   refereeContentAPI, intranetAuthAPI, refereesAPI,
   refereeEventsAPI, refereeAvailabilityAPI, refereeAssignmentsAPI,
   organizerAuthAPI, organizersAPI, solicitacoesAPI,
-  solicitacaoArquivosAPI, movimentacoesAPI,
+  solicitacaoArquivosAPI, movimentacoesAPI, pagamentosAPI,
   resultadosAPI, equipesAPI,
+  taxasConfigAPI,
 } from "../data/api";
 
 function slugify(str = "") {
@@ -572,7 +573,9 @@ export const ProtocoloService = {
 
 export const ArquivosService = {
   listBySolicitacao: (id) => solicitacaoArquivosAPI.listBySolicitacao(id),
+  get: (id) => solicitacaoArquivosAPI.get(id),
   create: (data) => solicitacaoArquivosAPI.create(data),
+  update: (id, data) => solicitacaoArquivosAPI.update(id, data),
   delete: (id) => solicitacaoArquivosAPI.delete(id),
   upload: (data) => solicitacaoArquivosAPI.create(data),
 };
@@ -615,4 +618,37 @@ export const EquipesService = {
   delete:    (id)        => equipesAPI.delete(id),
   publish:   (id)        => equipesAPI.update(id, { published: true }),
   unpublish: (id)        => equipesAPI.update(id, { published: false }),
+};
+
+// ─── Pagamentos ──────────────────────────────────────────────────────────────
+export const PagamentosService = {
+  listBySolicitacao: (solId) => pagamentosAPI.listBySolicitacao(solId),
+  list: (filtros) => pagamentosAPI.list(filtros),
+  get: (id) => pagamentosAPI.get(id),
+  create: (data) => pagamentosAPI.create(data),
+  update: (id, data) => pagamentosAPI.update(id, data),
+  delete: (id) => pagamentosAPI.delete(id),
+  deleteBySolicitacao: (solId) => pagamentosAPI.deleteBySolicitacao(solId),
+};
+
+// ─── Configuração de Taxas ───────────────────────────────────────────────────
+
+const TAXAS_CONFIG_DEFAULT = {
+  bloqueioEnvioSemPagamento: true,
+  dadosBancarios: {
+    banco: "336 – C6 S.A.",
+    agencia: "0001",
+    conta: "39896016-0",
+    pix: "16.681.223/0001-00",
+    favorecido: "Federação Mineira de Atletismo",
+    cnpj: "16.681.223/0001-00",
+  },
+};
+
+export const TaxasConfigService = {
+  get: async () => {
+    const r = await taxasConfigAPI.get();
+    return { data: { ...TAXAS_CONFIG_DEFAULT, ...r.data }, error: null };
+  },
+  update: (data) => taxasConfigAPI.update(data),
 };

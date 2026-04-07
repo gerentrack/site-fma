@@ -54,6 +54,8 @@ import MeusDados          from "../pages/portal/MeusDados";
 import { SolicitacoesList, SolicitacaoEditor } from "../pages/admin/SolicitacoesAdmin";
 import { OrganizadoresList, OrganizadorEditor } from "../pages/admin/OrganizadoresAdmin";
 import FormConfigAdmin from "../pages/admin/FormConfigAdmin";
+import TaxasConfigAdmin from "../pages/admin/TaxasConfigAdmin";
+import RelatorioFinanceiro from "../pages/admin/RelatorioFinanceiro";
 import {
   ResultadosCorridas, ResultadosPista, ResultadosTrail, ResultadoDetalhe,
 } from "../pages/public/ResultadosPage";
@@ -253,6 +255,8 @@ export default function AppRouter() {
       <Route path="/admin/organizadores"       element={<OrganizadoresList />} />
       <Route path="/admin/organizadores/:id"   element={<OrganizadorEditor />} />
       <Route path="/admin/formularios"         element={<FormConfigAdmin />} />
+      <Route path="/admin/taxas"               element={<TaxasConfigAdmin />} />
+      <Route path="/admin/financeiro"          element={<RelatorioFinanceiro />} />
 
     </Routes>
   );

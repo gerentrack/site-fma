@@ -22,13 +22,17 @@ import AdminLayout from "../../components/admin/AdminLayout";
 import { COLORS, FONTS } from "../../styles/colors";
 import {
   SOLICITACAO_STATUS, SOLICITACAO_TIPOS, MOVIMENTACAO_TIPOS, ARQUIVO_CATEGORIAS,
+  PAGAMENTO_STATUS,
 } from "../../config/navigation";
 import {
   SolicitacoesService, OrganizersService, ArquivosService, MovimentacoesService,
-  CalendarService,
+  CalendarService, TaxasConfigService, PagamentosService,
 } from "../../services/index";
 import { uploadFile, deleteFile } from "../../services/storageService";
 import { normalizarCamposTecnicos, totalEstimativaInscritos, modalidadesLabel } from "../../utils/permitDefaults";
+import { calcularTaxaTotal, formatarMoeda, TABELA_PADRAO, TABELA_ARBITRAGEM, PRAZOS } from "../../utils/taxaCalculator";
+import { reservarNumeroRecibo, formatarNumeroRecibo } from "../../utils/reciboCounter";
+import { gerarReciboPdf } from "../../services/reciboPdfService";
 import { notificarStatusSolicitacao } from "../../services/emailService";
 import { getProximoNumero, reservarNumeros, setContador, formatarNumero } from "../../utils/permitCounter";
 import { gerarPermitPdf, gerarChancelaPdf, preloadAssets } from "../../services/permitPdfService";
@@ -517,9 +521,11 @@ export function SolicitacaoEditor() {
           dataEmissao,
         });
 
-        const fileName = `${tipoDoc}_${String(pn.numero).padStart(3, "0")}_${ano}.pdf`;
+        const sanitizeP = (s) => (s || "sem-nome").replace(/[^a-zA-Z0-9\u00C0-\u024F\s-]/g, "").trim().replace(/\s+/g, "_");
+        const fileName = `${tipoDoc}_${sanitizeP(sol.nomeEvento)}_${sanitizeP(pn.modalidade)}_${numFormatado.replace("/", "-")}.pdf`;
         const file = new File([pdfBlob], fileName, { type: "application/pdf" });
-        const { url, path, error: uploadErr } = await uploadFile(file, `eventos/permits/${ano}`);
+        const folderP = `solicitacoes/${ano}/${sanitizeP(organizer?.organization || organizer?.name || "")}/${sanitizeP(sol.nomeEvento)}`;
+        const { url, path, error: uploadErr } = await uploadFile(file, folderP);
         if (uploadErr) { flash(`Erro ao enviar ${fileName}.`, "err"); return; }
 
         // Registrar como arquivo da solicitação
@@ -688,7 +694,10 @@ export function SolicitacaoEditor() {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { flash("Arquivo muito grande (máx. 5 MB).", "err"); return; }
     setUploading(true);
-    const { url, path, error: uploadError } = await uploadFile(file, `solicitacoes/${id}`);
+    const sanitize = (s) => (s || "sem-nome").replace(/[^a-zA-Z0-9\u00C0-\u024F\s-]/g, "").trim().replace(/\s+/g, "_");
+    const ano = (sol.dataEvento || "").slice(0, 4) || String(new Date().getFullYear());
+    const folder = `solicitacoes/${ano}/${sanitize(organizer?.organization || organizer?.name || "")}/${sanitize(sol.nomeEvento)}`;
+    const { url, path, error: uploadError } = await uploadFile(file, folder);
     if (uploadError) { flash("Erro ao enviar arquivo.", "err"); setUploading(false); e.target.value = ""; return; }
     const r = await ArquivosService.create({
       solicitacaoId: id,
@@ -755,6 +764,7 @@ export function SolicitacaoEditor() {
   const tipo = tipoMap[sol.tipo] || { label: sol.tipo, icon: "📋" };
   const abas = [
     { key: "dados",    label: "📄 Dados",    count: null },
+    { key: "taxas",    label: "💰 Taxas",    count: null },
     { key: "arquivos", label: "📎 Arquivos",  count: arquivos.length },
     { key: "analise",  label: "🔍 Análise",   count: null },
     { key: "historico",label: "📋 Histórico", count: movimentacoes.length },
@@ -884,6 +894,11 @@ export function SolicitacaoEditor() {
               </div>
             </div>
           </>
+        )}
+
+        {/* ── ABA TAXAS ──────────────────────────────────────────────────────── */}
+        {aba === "taxas" && (
+          <AbaTaxas sol={sol} organizer={organizer} onSaved={load} flash={flash} card={card} lbl={lbl} val={val} inp={inp} />
         )}
 
         {/* ── ABA ARQUIVOS ─────────────────────────────────────────────────── */}
@@ -1169,6 +1184,33 @@ export function SolicitacaoEditor() {
                   }}
                     style={{ padding: "6px 14px", borderRadius: 7, border: "1px solid #fca5a5", background: "#fff", color: COLORS.primary, fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>
                     🔄 Regerar
+                  </button>
+                  <button onClick={async () => {
+                    if (!confirm(`Excluir ${sol.tipo === "chancela" ? "chancelas" : "permits"} gerados (${sol.permitsNumeros.join(", ")})? Os PDFs serão removidos permanentemente.`)) return;
+                    const permitsAntigos = arquivos.filter(a =>
+                      a.categoria === "resposta_fma" && (a.nome?.startsWith("permit_") || a.nome?.startsWith("chancela_"))
+                    );
+                    for (const arq of permitsAntigos) {
+                      if (arq.storagePath) await deleteFile(arq.storagePath).catch(() => {});
+                      else if (arq.url?.includes("firebasestorage.googleapis.com")) await deleteFile(arq.url).catch(() => {});
+                      await ArquivosService.delete(arq.id);
+                    }
+                    const eventoId = sol.eventoCalendarioId || sol.eventoId;
+                    if (eventoId) {
+                      await CalendarService.update(eventoId, { modalidadesDetalhes: [] });
+                    }
+                    await SolicitacoesService.update(id, { permitsGerados: false, permitsNumeros: [] });
+                    await MovimentacoesService.registrar({
+                      solicitacaoId: sol.id, tipoEvento: "permit_excluido",
+                      statusAnterior: sol.status, statusNovo: sol.status,
+                      descricao: `${sol.tipo === "chancela" ? "Chancelas" : "Permits"} excluídos: ${sol.permitsNumeros.join(", ")}.`,
+                      autor: "fma", autorNome: "Equipe FMA", autorId: "admin", visivel: false,
+                    });
+                    flash(`${sol.tipo === "chancela" ? "Chancelas" : "Permits"} excluídos.`);
+                    load();
+                  }}
+                    style={{ padding: "6px 14px", borderRadius: 7, border: "1px solid #fca5a5", background: "#fff5f5", color: "#dc2626", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>
+                    🗑️ Excluir
                   </button>
                 </div>
               </div>
@@ -1801,6 +1843,607 @@ function FieldsCustomRows({ ct, tipoBuiltinKeys, Row }) {
         }
         return <Row key={k} label={k.replace(/^custom_[a-z]+_\d+$/, k)}>{display}</Row>;
       })}
+    </div>
+  );
+}
+
+// ─── Aba Taxas e Pagamento ───────────────────────────────────────────────────
+
+const pagStatusMap = Object.fromEntries(PAGAMENTO_STATUS.map(s => [s.value, s]));
+
+function AbaTaxas({ sol, organizer, onSaved, flash, card, lbl, val, inp }) {
+  const ct = normalizarCamposTecnicos(sol);
+  const taxas = sol.taxas || {};
+  const pagamento = sol.pagamento || {};
+  const isParceiro = organizer?.parceiro;
+
+  const [expandido, setExpandido] = useState(null);
+  const [ajusteAberto, setAjusteAberto] = useState(false);
+  const [ajusteValor, setAjusteValor] = useState(taxas.total || 0);
+  const [ajusteObs, setAjusteObs] = useState(taxas.observacaoAjuste || "");
+  const [saving, setSaving] = useState(false);
+
+  // Recalcular com base nos dados atuais
+  const tabela = (isParceiro && organizer?.parceiroTipo === "tabela_customizada" && organizer?.tabelaTaxas)
+    ? organizer.tabelaTaxas : TABELA_PADRAO;
+  const desconto = isParceiro
+    ? { tipo: organizer.parceiroTipo, percentual: organizer.parceiroDesconto || 0 }
+    : null;
+  const recalc = calcularTaxaTotal(ct.modalidades || [], sol.dataEvento, sol.tipo, tabela, desconto);
+
+  const handleAjustar = async () => {
+    setSaving(true);
+    await SolicitacoesService.update(sol.id, {
+      taxas: { ...taxas, total: Number(ajusteValor), ajustadoPorFMA: true, observacaoAjuste: ajusteObs, calculadoEm: new Date().toISOString() },
+    });
+    await MovimentacoesService.registrar({
+      solicitacaoId: sol.id, tipoEvento: "taxa_calculada",
+      statusAnterior: sol.status, statusNovo: sol.status,
+      descricao: `Taxa ajustada manualmente para ${formatarMoeda(Number(ajusteValor))}. Motivo: ${ajusteObs || "—"}`,
+      autor: "fma", autorNome: "Equipe FMA", autorId: "admin", visivel: false,
+    });
+    flash("Taxa ajustada!");
+    setSaving(false);
+    setAjusteAberto(false);
+    onSaved();
+  };
+
+  const handleRecalcular = async () => {
+    setSaving(true);
+    const novaTaxa = {
+      modalidades: recalc.modalidades,
+      subtotal: recalc.subtotal,
+      urgencia: recalc.urgencia,
+      descontoTipo: recalc.desconto?.tipo || "",
+      descontoValor: recalc.desconto?.valor || 0,
+      descontoDescricao: recalc.desconto?.descricao || "",
+      total: recalc.total,
+      calculadoEm: new Date().toISOString(),
+      ajustadoPorFMA: false,
+      observacaoAjuste: "",
+    };
+    await SolicitacoesService.update(sol.id, { taxas: novaTaxa });
+    await MovimentacoesService.registrar({
+      solicitacaoId: sol.id, tipoEvento: "taxa_calculada",
+      statusAnterior: sol.status, statusNovo: sol.status,
+      descricao: `Taxa recalculada: ${formatarMoeda(recalc.total)}.`,
+      autor: "fma", autorNome: "Sistema FMA", autorId: "sistema", visivel: false,
+    });
+    flash("Taxa recalculada!");
+    setSaving(false);
+    onSaved();
+  };
+
+  return (
+    <>
+      {/* Bloco Taxa */}
+      <div style={card}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <h3 style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, margin: 0 }}>
+            💰 Calculo de Taxas
+          </h3>
+          {isParceiro && (
+            <span style={{ padding: "4px 12px", borderRadius: 16, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0" }}>
+              Parceiro FMA — {organizer.parceiroDescricao || organizer.parceiroTipo}
+            </span>
+          )}
+        </div>
+
+        {/* Tabela por modalidade com detalhamento */}
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, marginBottom: 12 }}>
+          <thead>
+            <tr style={{ background: COLORS.offWhite }}>
+              <th style={{ textAlign: "left", padding: "8px 12px", fontSize: 11, fontWeight: 700 }}>Modalidade</th>
+              <th style={{ textAlign: "right", padding: "8px 12px", fontSize: 11, fontWeight: 700 }}>Inscritos</th>
+              <th style={{ textAlign: "right", padding: "8px 12px", fontSize: 11, fontWeight: 700 }}>Bruto</th>
+              <th style={{ textAlign: "right", padding: "8px 12px", fontSize: 11, fontWeight: 700 }}>Final</th>
+              <th style={{ width: 30 }}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {recalc.modalidades.map(m => (
+              <React.Fragment key={m.id}>
+                <tr style={{ borderBottom: expandido === m.id ? "none" : `1px solid ${COLORS.grayLight}`, cursor: "pointer" }}
+                  onClick={() => setExpandido(expandido === m.id ? null : m.id)}>
+                  <td style={{ padding: "8px 12px" }}>{m.distancia}</td>
+                  <td style={{ padding: "8px 12px", textAlign: "right" }}>{m.inscritos.toLocaleString("pt-BR")}</td>
+                  <td style={{ padding: "8px 12px", textAlign: "right", color: COLORS.gray }}>{formatarMoeda(m.valorBruto)}</td>
+                  <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600 }}>{formatarMoeda(m.valorFinal)}</td>
+                  <td style={{ padding: "8px 4px", textAlign: "center", fontSize: 10, color: COLORS.gray }}>{expandido === m.id ? "▲" : "▼"}</td>
+                </tr>
+                {expandido === m.id && m.detalhamento && (
+                  <tr>
+                    <td colSpan={5} style={{ padding: "0 12px 10px", background: "#f8fafc" }}>
+                      <div style={{ padding: "10px 14px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, fontSize: 12 }}>
+                        <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, marginBottom: 6 }}>Calculo por faixa</div>
+                        {m.detalhamento.map((d, i) => (
+                          <div key={i} style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                            <span>
+                              {d.qtd.toLocaleString("pt-BR")} inscritos x {formatarMoeda(d.valorUnitario)}/inscrito
+                              <span style={{ fontSize: 10, color: COLORS.gray, marginLeft: 4 }}>(faixa: {d.faixaLabel})</span>
+                            </span>
+                            <span style={{ fontWeight: 600 }}>{formatarMoeda(d.subtotal)}</span>
+                          </div>
+                        ))}
+                        {m.aplicouMinimo && <div style={{ fontSize: 11, color: "#d97706", marginTop: 4, padding: "4px 8px", background: "#fffbeb", borderRadius: 4 }}>Valor minimo aplicado: {formatarMoeda(m.valorBruto)} → {formatarMoeda(m.valorFinal)}</div>}
+                        {m.aplicouMaximo && <div style={{ fontSize: 11, color: "#d97706", marginTop: 4, padding: "4px 8px", background: "#fffbeb", borderRadius: 4 }}>Valor maximo aplicado: {formatarMoeda(m.valorBruto)} → {formatarMoeda(m.valorFinal)}</div>}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+
+        {/* Totais */}
+        <div style={{ fontSize: 13, fontFamily: FONTS.body }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+            <span>Subtotal</span><span>{formatarMoeda(recalc.subtotal)}</span>
+          </div>
+          {recalc.urgencia > 0 && (
+            <div style={{ display: "flex", justifyContent: "space-between", color: "#92400e", marginBottom: 4 }}>
+              <span>Taxa de urgencia ({recalc.diasAteEvento} dias ate o evento)</span><span>+{formatarMoeda(recalc.urgencia)}</span>
+            </div>
+          )}
+          {recalc.desconto?.valor > 0 && (
+            <div style={{ display: "flex", justifyContent: "space-between", color: "#15803d", marginBottom: 4 }}>
+              <span>{recalc.desconto.descricao}</span><span>-{formatarMoeda(recalc.desconto.valor)}</span>
+            </div>
+          )}
+          <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: 18, marginTop: 8, paddingTop: 8, borderTop: `2px solid ${COLORS.grayLight}` }}>
+            <span>Total (recalculado)</span><span style={{ color: COLORS.primary }}>{formatarMoeda(recalc.total)}</span>
+          </div>
+          {taxas.total > 0 && taxas.total !== recalc.total && !taxas.ajustadoPorFMA && (
+            <div style={{ fontSize: 11, color: "#d97706", marginTop: 4 }}>
+              Valor salvo na solicitacao: {formatarMoeda(taxas.total)} (difere do recalculo)
+            </div>
+          )}
+          {taxas.ajustadoPorFMA && (
+            <div style={{ fontSize: 11, color: "#7c3aed", marginTop: 4 }}>
+              Valor ajustado manualmente: {formatarMoeda(taxas.total)}{taxas.observacaoAjuste ? ` — ${taxas.observacaoAjuste}` : ""}
+            </div>
+          )}
+        </div>
+
+        {/* Alertas de prazo */}
+        {recalc.isPrazoInsuficiente && (
+          <div style={{ marginTop: 12, padding: "8px 14px", borderRadius: 8, background: "#fef2f2", border: "1px solid #fca5a5", fontSize: 12, color: "#dc2626" }}>
+            Prazo insuficiente ({recalc.diasAteEvento} dias). Solicitacao pode ser indeferida.
+          </div>
+        )}
+        {recalc.isUrgente && !recalc.isPrazoInsuficiente && (
+          <div style={{ marginTop: 12, padding: "8px 14px", borderRadius: 8, background: "#fffbeb", border: "1px solid #fcd34d", fontSize: 12, color: "#92400e" }}>
+            Prazo inferior a {recalc.prazos.urgenciaDias} dias — taxa de urgencia aplicada.
+          </div>
+        )}
+
+        {/* Acoes */}
+        <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
+          <button onClick={handleRecalcular} disabled={saving}
+            style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.grayDark, fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            🔄 Recalcular
+          </button>
+          <button onClick={() => { setAjusteAberto(!ajusteAberto); setAjusteValor(taxas.total || recalc.total); }}
+            style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: "#7c3aed", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            ✏️ Ajustar valor
+          </button>
+        </div>
+
+        {ajusteAberto && (
+          <div style={{ marginTop: 12, padding: 14, background: COLORS.offWhite, borderRadius: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+            <div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark }}>Valor ajustado (R$)</span>
+              <input type="number" min="0" step="0.01" value={ajusteValor} onChange={e => setAjusteValor(e.target.value)}
+                style={inp({ width: 200 })} />
+            </div>
+            <div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark }}>Justificativa</span>
+              <input value={ajusteObs} onChange={e => setAjusteObs(e.target.value)} placeholder="Motivo do ajuste..."
+                style={inp()} />
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={handleAjustar} disabled={saving}
+                style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#7c3aed", color: "#fff", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                Salvar ajuste
+              </button>
+              <button onClick={() => setAjusteAberto(false)}
+                style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Bloco Pagamentos e Recibos */}
+      <BlocoPagamentos sol={sol} organizer={organizer} taxas={taxas} recalc={recalc} onSaved={onSaved} flash={flash} card={card} inp={inp} />
+
+      {/* Bloco Arbitragem (informativo) */}
+      <div style={card}>
+        <h3 style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, margin: "0 0 4px" }}>
+          ⚖️ Arbitragem — Referencia (Art. 6)
+        </h3>
+        <p style={{ fontSize: 12, color: COLORS.gray, margin: "0 0 12px" }}>
+          Custeio integral do organizador (Art. 8), acrescido de transporte, hospedagem e alimentacao.
+        </p>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.grayDark, marginBottom: 6 }}>Corridas de Rua (ate 6h)</div>
+            {TABELA_ARBITRAGEM.corridaDeRua6h.map((r, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 2 }}>
+                <span>{r.funcao}</span><span style={{ fontWeight: 600 }}>{formatarMoeda(r.diaria)}</span>
+              </div>
+            ))}
+          </div>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.grayDark, marginBottom: 6 }}>Corridas de Rua (ate 12h)</div>
+            {TABELA_ARBITRAGEM.corridaDeRua12h.map((r, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 2 }}>
+                <span>{r.funcao}</span><span style={{ fontWeight: 600 }}>{formatarMoeda(r.diaria)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── Bloco Pagamentos e Recibos ──────────────────────────────────────────────
+
+function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, inp }) {
+  const pagamento = sol.pagamento || {};
+  const [pagamentos, setPagamentos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [novoAberto, setNovoAberto] = useState(false);
+  const [novoValor, setNovoValor] = useState("");
+  const [novoTipo, setNovoTipo] = useState("taxa_solicitacao");
+  const [novoNatureza, setNovoNatureza] = useState("total");
+
+  useEffect(() => {
+    PagamentosService.listBySolicitacao(sol.id).then(r => { setPagamentos(r.data || []); setLoading(false); });
+  }, [sol.id]);
+
+  const totalPago = pagamentos.filter(p => p.status === "confirmado").reduce((a, p) => a + (p.valor || 0), 0);
+  const taxaTotal = taxas.total || recalc.total || 0;
+  const saldo = taxaTotal - totalPago;
+
+  const handleRegistrarPagamento = async () => {
+    if (!novoValor || Number(novoValor) <= 0) return;
+    setSaving(true);
+    const valor = Number(novoValor);
+    const nat = valor >= saldo ? "total" : "parcial";
+
+    await PagamentosService.create({
+      solicitacaoId: sol.id,
+      organizerId: sol.organizerId,
+      valor,
+      tipo: novoTipo,
+      natureza: pagamentos.some(p => p.status === "confirmado") ? "complemento" : nat,
+      comprovanteArquivoId: pagamento.comprovanteArquivoId || "",
+      comprovanteNome: "",
+      pagadorNome: pagamento.pagadorTerceiro ? pagamento.pagadorNome : (organizer?.name || ""),
+      pagadorCpfCnpj: pagamento.pagadorTerceiro ? pagamento.pagadorCpfCnpj : (organizer?.cpfCnpj || ""),
+      pagadorEndereco: pagamento.pagadorTerceiro ? pagamento.pagadorEndereco : (organizer?.address || ""),
+      pagadorContato: pagamento.pagadorTerceiro ? pagamento.pagadorContato : (organizer?.email || ""),
+      terceiro: pagamento.pagadorTerceiro || false,
+      status: "confirmado",
+      confirmadoPor: "Equipe FMA",
+      confirmadoEm: new Date().toISOString(),
+      observacaoFMA: "",
+      reciboNumero: "",
+      reciboArquivoId: "",
+      reciboGeradoEm: "",
+    });
+
+    // Atualizar status do pagamento na solicitacao
+    const novoTotal = totalPago + valor;
+    const novoStatus = novoTotal >= taxaTotal ? "confirmado" : "comprovante_anexado";
+    await SolicitacoesService.update(sol.id, {
+      pagamento: { ...pagamento, status: novoStatus, confirmadoPor: "Equipe FMA", confirmadoEm: new Date().toISOString() },
+    });
+
+    await MovimentacoesService.registrar({
+      solicitacaoId: sol.id, tipoEvento: "pagamento_confirmado",
+      statusAnterior: sol.status, statusNovo: sol.status,
+      descricao: `Pagamento de ${formatarMoeda(valor)} confirmado (${novoTotal >= taxaTotal ? "integral" : "parcial"}).`,
+      autor: "fma", autorNome: "Equipe FMA", autorId: "admin", visivel: true,
+    });
+
+    flash("Pagamento registrado!");
+    setSaving(false);
+    setNovoAberto(false);
+    setNovoValor("");
+    // Recarregar
+    const r = await PagamentosService.listBySolicitacao(sol.id);
+    setPagamentos(r.data || []);
+    onSaved();
+  };
+
+  const handleGerarRecibo = async (pag) => {
+    setSaving(true);
+    try {
+      const ano = new Date().getFullYear();
+      const num = await reservarNumeroRecibo(ano);
+      const reciboNumero = formatarNumeroRecibo(num, ano);
+
+      const blob = await gerarReciboPdf({
+        reciboNumero,
+        valor: pag.valor,
+        tipo: pag.tipo,
+        natureza: pag.natureza,
+        pagadorNome: pag.pagadorNome,
+        pagadorCpfCnpj: pag.pagadorCpfCnpj,
+        pagadorEndereco: pag.pagadorEndereco,
+        nomeEvento: sol.nomeEvento,
+        dataEvento: sol.dataEvento,
+        protocoloFMA: sol.protocoloFMA,
+        organizadorNome: organizer?.name || "",
+        tipoSolicitacao: sol.tipo,
+      });
+
+      // Upload do PDF
+      const nomeEvento = (sol.nomeEvento || "evento").replace(/[^a-zA-Z0-9\u00C0-\u024F\s-]/g, "").trim().replace(/\s+/g, "_");
+      const fileName = `Recibo_${reciboNumero.replace("/", "-")}_${nomeEvento}.pdf`;
+      const file = new File([blob], fileName, { type: "application/pdf" });
+      const sanitizeR = (s) => (s || "sem-nome").replace(/[^a-zA-Z0-9\u00C0-\u024F\s-]/g, "").trim().replace(/\s+/g, "_");
+      const anoR = (sol.dataEvento || "").slice(0, 4) || String(new Date().getFullYear());
+      const folderR = `solicitacoes/${anoR}/${sanitizeR(organizer?.organization || organizer?.name || "")}/${sanitizeR(sol.nomeEvento)}`;
+      const { url, path } = await uploadFile(file, folderR);
+
+      const arqR = await ArquivosService.upload({
+        solicitacaoId: sol.id, nome: fileName,
+        tamanho: file.size, tipo: "application/pdf",
+        descricao: `Recibo ${reciboNumero}`, categoria: "resposta_fma",
+        url, storagePath: path,
+        enviadoPor: "fma", enviadoPorId: "admin",
+      });
+
+      await PagamentosService.update(pag.id, {
+        reciboNumero,
+        reciboArquivoId: arqR.data?.id || "",
+        reciboGeradoEm: new Date().toISOString(),
+      });
+
+      await MovimentacoesService.registrar({
+        solicitacaoId: sol.id, tipoEvento: "pagamento_confirmado",
+        statusAnterior: sol.status, statusNovo: sol.status,
+        descricao: `Recibo ${reciboNumero} gerado — ${formatarMoeda(pag.valor)}.`,
+        autor: "fma", autorNome: "Equipe FMA", autorId: "admin", visivel: true,
+      });
+
+      flash(`Recibo ${reciboNumero} gerado!`);
+      // Abrir PDF
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, "_blank");
+    } catch (e) {
+      console.error("Erro ao gerar recibo:", e);
+      flash("Erro ao gerar recibo.");
+    }
+    setSaving(false);
+    const r = await PagamentosService.listBySolicitacao(sol.id);
+    setPagamentos(r.data || []);
+    onSaved();
+  };
+
+  const handleExcluirRecibo = async (pag) => {
+    if (!confirm(`Excluir recibo ${pag.reciboNumero}? O arquivo será removido permanentemente.`)) return;
+    setSaving(true);
+    try {
+      // 1. Excluir arquivo do Storage e do Firestore
+      if (pag.reciboArquivoId) {
+        const arqR = await ArquivosService.get(pag.reciboArquivoId);
+        if (arqR.data) {
+          if (arqR.data.storagePath) await deleteFile(arqR.data.storagePath).catch(() => {});
+          else if (arqR.data.url?.includes("firebasestorage.googleapis.com")) await deleteFile(arqR.data.url).catch(() => {});
+          await ArquivosService.delete(pag.reciboArquivoId);
+        }
+      }
+      // 2. Limpar campos do pagamento
+      await PagamentosService.update(pag.id, {
+        reciboNumero: "",
+        reciboArquivoId: "",
+        reciboGeradoEm: "",
+      });
+      // 3. Registrar movimentação
+      await MovimentacoesService.registrar({
+        solicitacaoId: sol.id, tipoEvento: "recibo_excluido",
+        statusAnterior: sol.status, statusNovo: sol.status,
+        descricao: `Recibo ${pag.reciboNumero} excluído.`,
+        autor: "fma", autorNome: "Equipe FMA", autorId: "admin", visivel: false,
+      });
+      flash(`Recibo ${pag.reciboNumero} excluído.`);
+    } catch (e) {
+      console.error("Erro ao excluir recibo:", e);
+      flash("Erro ao excluir recibo.");
+    }
+    setSaving(false);
+    const r = await PagamentosService.listBySolicitacao(sol.id);
+    setPagamentos(r.data || []);
+    onSaved();
+  };
+
+  const handleCobrar = async () => {
+    setSaving(true);
+    await MovimentacoesService.registrar({
+      solicitacaoId: sol.id, tipoEvento: "pagamento_cobrado",
+      statusAnterior: sol.status, statusNovo: sol.status,
+      descricao: `Cobranca de pagamento: ${formatarMoeda(saldo > 0 ? saldo : taxaTotal)}. Por favor, anexe o comprovante.`,
+      autor: "fma", autorNome: "Equipe FMA", autorId: "admin", visivel: true,
+    });
+    flash("Cobranca registrada e visivel ao organizador.");
+    setSaving(false);
+    onSaved();
+  };
+
+  const tipoLabels = { taxa_solicitacao: "Solicitacao", taxa_arbitragem: "Arbitragem", complemento: "Complemento" };
+  const natLabels = { total: "Integral", parcial: "Parcial", complemento: "Complementar" };
+
+  return (
+    <div style={card}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <h3 style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, margin: 0 }}>
+          🧾 Pagamentos e Recibos
+        </h3>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {saldo > 0 && (
+            <span style={{ fontSize: 12, fontFamily: FONTS.heading, fontWeight: 700, color: "#d97706", padding: "4px 10px", borderRadius: 12, background: "#fffbeb", border: "1px solid #fcd34d" }}>
+              Saldo: {formatarMoeda(saldo)}
+            </span>
+          )}
+          {saldo <= 0 && totalPago > 0 && (
+            <span style={{ fontSize: 12, fontFamily: FONTS.heading, fontWeight: 700, color: "#15803d", padding: "4px 10px", borderRadius: 12, background: "#f0fdf4", border: "1px solid #86efac" }}>
+              ✅ Quitado
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Terceiro pagador */}
+      {pagamento.pagadorTerceiro && (
+        <div style={{ marginBottom: 16, padding: "12px 16px", borderRadius: 8, background: "#fffbeb", border: "1px solid #fcd34d" }}>
+          <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: "#92400e", marginBottom: 8 }}>
+            ⚠️ Pagamento por terceiro
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 16px", fontSize: 13, fontFamily: FONTS.body }}>
+            <div><strong>Permit emitido para:</strong></div>
+            <div>{organizer?.name || "—"} ({organizer?.cpfCnpj || "—"})</div>
+            <div><strong>Recibo emitido para:</strong></div>
+            <div>{pagamento.pagadorNome || "—"} ({pagamento.pagadorCpfCnpj || "—"})</div>
+            {pagamento.pagadorContato && <><div><strong>Contato:</strong></div><div>{pagamento.pagadorContato}</div></>}
+            {pagamento.pagadorEndereco && <><div><strong>Endereco:</strong></div><div>{pagamento.pagadorEndereco}</div></>}
+          </div>
+          {pagamento.anuenciaAceita && (
+            <div style={{ marginTop: 8, fontSize: 11, color: "#15803d" }}>
+              ✅ Anuencia aceita em {pagamento.anuenciaAceitaEm ? new Date(pagamento.anuenciaAceitaEm).toLocaleString("pt-BR") : "—"}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Resumo financeiro */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
+        <div style={{ padding: "10px 14px", background: COLORS.offWhite, borderRadius: 8, textAlign: "center" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: COLORS.gray, textTransform: "uppercase" }}>Taxa total</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: COLORS.dark }}>{formatarMoeda(taxaTotal)}</div>
+        </div>
+        <div style={{ padding: "10px 14px", background: "#f0fdf4", borderRadius: 8, textAlign: "center" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#15803d", textTransform: "uppercase" }}>Pago</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "#15803d" }}>{formatarMoeda(totalPago)}</div>
+        </div>
+        <div style={{ padding: "10px 14px", background: saldo > 0 ? "#fffbeb" : COLORS.offWhite, borderRadius: 8, textAlign: "center" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: saldo > 0 ? "#d97706" : COLORS.gray, textTransform: "uppercase" }}>Saldo</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: saldo > 0 ? "#d97706" : COLORS.gray }}>{formatarMoeda(saldo > 0 ? saldo : 0)}</div>
+        </div>
+      </div>
+
+      {/* Lista de pagamentos */}
+      {loading ? (
+        <div style={{ textAlign: "center", padding: 20, color: COLORS.gray }}>Carregando...</div>
+      ) : pagamentos.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 20, color: COLORS.gray, fontSize: 13 }}>Nenhum pagamento registrado.</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+          {pagamentos.map((pag, i) => (
+            <div key={pag.id} style={{ padding: "12px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: COLORS.dark }}>#{i + 1}</span>
+                  <span style={{ padding: "2px 8px", borderRadius: 10, fontSize: 10, fontWeight: 700, background: "#eff6ff", color: "#0066cc" }}>
+                    {tipoLabels[pag.tipo] || pag.tipo}
+                  </span>
+                  <span style={{ padding: "2px 8px", borderRadius: 10, fontSize: 10, fontWeight: 700, background: pag.natureza === "total" ? "#f0fdf4" : "#fffbeb", color: pag.natureza === "total" ? "#15803d" : "#d97706" }}>
+                    {natLabels[pag.natureza] || pag.natureza}
+                  </span>
+                </div>
+                <span style={{ fontSize: 16, fontWeight: 800, color: COLORS.primary }}>{formatarMoeda(pag.valor)}</span>
+              </div>
+              <div style={{ fontSize: 12, color: COLORS.gray, marginBottom: 6 }}>
+                Pagador: {pag.pagadorNome} ({pag.pagadorCpfCnpj}){pag.terceiro ? " (terceiro)" : ""} — {pag.confirmadoEm ? new Date(pag.confirmadoEm).toLocaleDateString("pt-BR") : "—"}
+              </div>
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                {pag.reciboNumero ? (
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#15803d", display: "flex", alignItems: "center", gap: 4 }}>
+                    📄 {pag.reciboNumero}
+                    {pag.reciboArquivoId && (
+                      <button onClick={async () => {
+                        const r = await ArquivosService.get(pag.reciboArquivoId);
+                        if (r.data?.url) window.open(r.data.url, "_blank");
+                      }} style={{ background: "none", border: "none", color: "#0066cc", cursor: "pointer", fontSize: 11, textDecoration: "underline", padding: 0 }}>
+                        Baixar
+                      </button>
+                    )}
+                    <button onClick={() => handleExcluirRecibo(pag)} disabled={saving}
+                      style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: 11, textDecoration: "underline", padding: 0 }}>
+                      Excluir
+                    </button>
+                  </span>
+                ) : (
+                  <button onClick={() => handleGerarRecibo(pag)} disabled={saving}
+                    style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: "#0066cc", color: "#fff", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                    📄 Gerar recibo
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Acoes */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <button onClick={() => { setNovoAberto(!novoAberto); setNovoValor(saldo > 0 ? String(saldo) : ""); }}
+          style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#15803d", color: "#fff", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+          ✅ Registrar pagamento
+        </button>
+        {saldo > 0 && (
+          <button onClick={handleCobrar} disabled={saving}
+            style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#d97706", color: "#fff", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+            📨 Cobrar {pagamentos.length > 0 ? "complemento" : "pagamento"}
+          </button>
+        )}
+      </div>
+
+      {/* Formulario novo pagamento */}
+      {novoAberto && (
+        <div style={{ marginTop: 12, padding: 14, background: COLORS.offWhite, borderRadius: 8, display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+            <div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark }}>Valor (R$)</span>
+              <input type="number" min="0" step="0.01" value={novoValor} onChange={e => setNovoValor(e.target.value)} style={inp()} />
+            </div>
+            <div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark }}>Tipo</span>
+              <select value={novoTipo} onChange={e => setNovoTipo(e.target.value)} style={inp({ cursor: "pointer" })}>
+                <option value="taxa_solicitacao">Taxa de Solicitacao de Permit/Chancela</option>
+                <option value="taxa_arbitragem">Taxa de Arbitragem</option>
+                <option value="complemento">Complemento</option>
+              </select>
+            </div>
+            <div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark }}>Natureza</span>
+              <select value={novoNatureza} onChange={e => setNovoNatureza(e.target.value)} style={inp({ cursor: "pointer" })}>
+                <option value="total">Integral</option>
+                <option value="parcial">Parcial</option>
+                <option value="complemento">Complementar</option>
+              </select>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={handleRegistrarPagamento} disabled={saving}
+              style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#15803d", color: "#fff", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+              {saving ? "Salvando..." : "Confirmar"}
+            </button>
+            <button onClick={() => setNovoAberto(false)}
+              style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

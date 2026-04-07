@@ -39,10 +39,9 @@ export const FORM_SECTIONS = {
 // ─── Opções de selects ───────────────────────────────────────────────────────
 
 export const OPCOES_APURACAO = [
-  "Chip/Transponder eletrônico",
-  "Cronômetro manual",
-  "Sistema de gun time",
-  "Outro",
+  "Chip",
+  "Photo Finish",
+  "Manual",
 ];
 export const OPCOES_MEDICAO = [
   "Medição Oficial (Roda Medidora / Jones Counter)",
@@ -81,7 +80,7 @@ export const PERMIT_FIELDS_DEFAULT = [
   { id: "empresasServicos",           label: "Empresas prestadoras e suas funções", type: "textarea", section: "composicao",     required: false, active: true, builtin: true, order: 40 },
 
   // ── Documentos ────────────────────────────────────────────────────────
-  { id: "regulamento",                label: "Regulamento do Evento",               type: "upload",   section: "documentos",     required: true,  active: true, builtin: true, order: 10, accept: ".pdf,.doc,.docx" },
+  { id: "regulamento",                label: "Regulamento do Evento",               type: "upload",   section: "documentos",     required: true,  active: true, builtin: true, order: 10, accept: ".pdf,.doc,.docx", hint: "O regulamento deve ser enviado em PDF digital e legível. Não serão aceitos documentos digitalizados (escaneados) ou fotografados. Utilize um editor de texto para gerar o PDF diretamente." },
   { id: "mapaPercurso",               label: "Mapa do Percurso (documento único)",  type: "upload",   section: "documentos",     required: true,  active: true, builtin: true, order: 20, accept: ".pdf,.jpg,.png", hint: "O mapa deve contemplar todas as modalidades em um único documento. Caso haja mais de um percurso, unir todos os mapas em um único PDF. A não observação desta regra acarretará em pendência para regularização antes da análise da solicitação.", hintLink: { label: "Unir PDFs gratuitamente", url: "https://www.ilovepdf.com/pt/juntar_pdf" } },
 ];
 
@@ -114,7 +113,7 @@ export const CHANCELA_FIELDS_DEFAULT = [
   { id: "equipamentosObrigatorios",   label: "Lista de Equipamentos Obrigatórios",  type: "textarea", section: "seguros",        required: true,  active: true, builtin: true, order: 20, hint: "Equipamentos e vestuário permitidos, recomendados e/ou obrigatórios para os atletas (conforme Norma 15, item 4.6e)" },
 
   // ── Documentos ────────────────────────────────────────────────────────
-  { id: "regulamento",                label: "Upload do Regulamento",               type: "upload",   section: "documentos",     required: true,  active: true, builtin: true, order: 10, accept: ".pdf,.doc,.docx" },
+  { id: "regulamento",                label: "Upload do Regulamento",               type: "upload",   section: "documentos",     required: true,  active: true, builtin: true, order: 10, accept: ".pdf,.doc,.docx", hint: "O regulamento deve ser enviado em PDF digital e legível. Não serão aceitos documentos digitalizados (escaneados) ou fotografados. Utilize um editor de texto para gerar o PDF diretamente." },
   { id: "mapaPercurso",               label: "Mapa do Percurso (documento único)",  type: "upload",   section: "documentos",     required: true,  active: true, builtin: true, order: 20, accept: ".pdf,.jpg,.png", hint: "O mapa deve contemplar todas as modalidades em um único documento. Caso haja mais de um percurso, unir todos os mapas em um único PDF. A não observação desta regra acarretará em pendência para regularização antes da análise da solicitação.", hintLink: { label: "Unir PDFs gratuitamente", url: "https://www.ilovepdf.com/pt/juntar_pdf" } },
   { id: "arquivoGPX",                 label: "Arquivo Digital do Percurso (GPX/KML)", type: "upload", section: "documentos",     required: true,  active: true, builtin: true, order: 30, accept: ".gpx,.kml", hint: "Compatível com o mapa apresentado" },
   { id: "planoSegurancaResgate",      label: "Plano de Segurança e Resgate",        type: "upload",   section: "documentos",     required: true,  active: true, builtin: true, order: 40, accept: ".pdf,.doc,.docx", hint: "Contemplando estrutura mínima de resgate" },

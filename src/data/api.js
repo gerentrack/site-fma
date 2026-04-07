@@ -364,6 +364,11 @@ export const footerConfigAPI = {
   update: async (data) => { await setDoc(doc(db,"config","footerConfig"),{...data,updatedAt:now()},{merge:true}); return ok(data); },
 };
 
+export const taxasConfigAPI = {
+  get:    async ()     => { const item=await readDoc("config","taxas"); return ok(item||{}); },
+  update: async (data) => { await setDoc(doc(db,"config","taxas"),{...data,updatedAt:now()},{merge:true}); return ok(data); },
+};
+
 export const institutionalPagesAPI = {
   list: async ({ publishedOnly=true }={}) => {
     let items=await readCol("institutionalPages");
@@ -771,12 +776,13 @@ export const organizersAPI = {
 export const solicitacoesAPI = {
   list: async ({ organizerId=null, status=null }={}) => {
     let items=await readCol("solicitacoes");
+    items=items.map(s=>({ ...s, status: s.status || "rascunho" }));
     if (organizerId) items=items.filter(s=>s.organizerId===organizerId);
     if (status)      items=items.filter(s=>s.status===status);
     items.sort((a,b)=>new Date(b.criadoEm||b.createdAt)-new Date(a.criadoEm||a.createdAt));
     return ok(items);
   },
-  get:    async (id)      => { const item=await readDoc("solicitacoes",id); return item?ok(item):err("Solicitação não encontrada."); },
+  get:    async (id)      => { const item=await readDoc("solicitacoes",id); return item?ok({ ...item, status: item.status || "rascunho" }):err("Solicitação não encontrada."); },
   create: async (data)    => { const item=await createDoc("solicitacoes",{...data,criadoEm:now()}); return ok(item); },
   update: async (id,data) => { const item=await patchDoc("solicitacoes",id,data); return item?ok(item):err("Não encontrado."); },
   delete: async (id)      => { await removeDoc("solicitacoes",id); return ok(true); },
@@ -834,8 +840,35 @@ export const solicitacaoArquivosAPI = {
     items.sort((a,b)=>new Date(b.enviadoEm||b.createdAt)-new Date(a.enviadoEm||a.createdAt));
     return ok(items);
   },
+  get:    async (id)   => { const item=await readDoc("solicitacaoArquivos",id); return item?ok(item):err("Arquivo não encontrado."); },
   create: async (data) => { const item=await createDoc("solicitacaoArquivos",{...data,enviadoEm:now()}); return ok(item); },
+  update: async (id,data) => { const item=await patchDoc("solicitacaoArquivos",id,data); return item?ok(item):err("Não encontrado."); },
   delete: async (id)   => { await removeDoc("solicitacaoArquivos",id); return ok(true); },
+};
+
+export const pagamentosAPI = {
+  listBySolicitacao: async (solId) => {
+    let items = await readCol("pagamentos");
+    items = items.filter(p => p.solicitacaoId === solId);
+    items.sort((a, b) => new Date(a.criadoEm || a.createdAt) - new Date(b.criadoEm || b.createdAt));
+    return ok(items);
+  },
+  list: async (filtros = {}) => {
+    let items = await readCol("pagamentos");
+    if (filtros.organizerId) items = items.filter(p => p.organizerId === filtros.organizerId);
+    if (filtros.status) items = items.filter(p => p.status === filtros.status);
+    items.sort((a, b) => new Date(b.criadoEm || b.createdAt) - new Date(a.criadoEm || a.createdAt));
+    return ok(items);
+  },
+  get: async (id) => { const item = await readDoc("pagamentos", id); return item ? ok(item) : err("Pagamento nao encontrado."); },
+  create: async (data) => { const item = await createDoc("pagamentos", { ...data, criadoEm: now() }); return ok(item); },
+  update: async (id, data) => { const item = await patchDoc("pagamentos", id, data); return item ? ok(item) : err("Nao encontrado."); },
+  delete: async (id) => { await removeDoc("pagamentos", id); return ok(true); },
+  deleteBySolicitacao: async (solId) => {
+    const items = await readCol("pagamentos");
+    await Promise.all(items.filter(p => p.solicitacaoId === solId).map(p => removeDoc("pagamentos", p.id)));
+    return ok(true);
+  },
 };
 
 export const movimentacoesAPI = {

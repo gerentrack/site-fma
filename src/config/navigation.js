@@ -137,6 +137,8 @@ export const ADMIN_NAV = [
   { label: "Organizadores",         icon: "🏢", path: "/admin/organizadores" },
   { label: "Equipes",              icon: "🏃", path: "/admin/equipes" },
   { label: "Formulários",           icon: "🔧", path: "/admin/formularios" },
+  { label: "Taxas",                icon: "💰", path: "/admin/taxas" },
+  { label: "Financeiro",           icon: "📊", path: "/admin/financeiro" },
   { label: "Limpeza do Storage",   icon: "🧹", path: "/admin/storage-cleanup" },
 ];
 
@@ -320,7 +322,18 @@ export const MOVIMENTACAO_TIPOS = {
   resultado_enviado:   { label: "Resultado enviado",          icon: "📊", color: "#7c3aed" },
   resultado_aprovado:  { label: "Resultado aprovado",         icon: "✅", color: "#15803d" },
   resultado_rejeitado: { label: "Resultado rejeitado",        icon: "❌", color: "#cc0000" },
+  taxa_calculada:      { label: "Taxa calculada",             icon: "💰", color: "#d97706" },
+  pagamento_anexado:   { label: "Comprovante anexado",        icon: "🧾", color: "#0066cc" },
+  pagamento_confirmado:{ label: "Pagamento confirmado",       icon: "✅", color: "#15803d" },
+  pagamento_cobrado:   { label: "Cobrança enviada",           icon: "📨", color: "#b45309" },
 };
+
+export const PAGAMENTO_STATUS = [
+  { value: "pendente",            label: "Pendente",            color: "#d97706", bg: "#fffbeb", icon: "⏳" },
+  { value: "comprovante_anexado", label: "Comprovante anexado", color: "#0066cc", bg: "#eff6ff", icon: "🧾" },
+  { value: "confirmado",         label: "Confirmado",          color: "#15803d", bg: "#f0fdf4", icon: "✅" },
+  { value: "isento",             label: "Isento",              color: "#6b7280", bg: "#f3f4f6", icon: "🔓" },
+];
 
 export const PORTAL_NAV = [
   { label: "Início",            icon: "🏠", path: "/portal" },

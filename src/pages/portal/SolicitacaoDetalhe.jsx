@@ -9,12 +9,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useOrganizer } from "../../context/OrganizerContext";
-import { SolicitacoesService, ArquivosService, MovimentacoesService } from "../../services/index";
+import { SolicitacoesService, ArquivosService, MovimentacoesService, TaxasConfigService, PagamentosService } from "../../services/index";
 import { uploadFile, deleteFile } from "../../services/storageService";
 import { COLORS, FONTS } from "../../styles/colors";
 import { SOLICITACAO_STATUS, SOLICITACAO_TIPOS, MOVIMENTACAO_TIPOS, ARQUIVO_CATEGORIAS } from "../../config/navigation";
 import { getFieldsBySection, initFormConfig } from "../../utils/formSchema";
 import { defaultCamposTecnicosPermit, defaultCamposTecnicosChancela, novaModalidadeId } from "../../utils/permitDefaults";
+import { formatarMoeda } from "../../utils/taxaCalculator";
+import { PAGAMENTO_STATUS } from "../../config/navigation";
 
 const statusMap     = Object.fromEntries(SOLICITACAO_STATUS.map(s => [s.value, s]));
 const tipoMap       = Object.fromEntries(SOLICITACAO_TIPOS.map(t => [t.value, t]));
@@ -34,6 +36,123 @@ function Lbl({ children, req }) {
 function Err({ msg }) { return <div style={{ fontFamily:FONTS.body, fontSize:11, color:"#dc2626", marginTop:3 }}>{msg}</div>; }
 function SecTitle({ children }) {
   return <h3 style={{ fontFamily:FONTS.heading, fontSize:12, fontWeight:800, textTransform:"uppercase", letterSpacing:2, color:COLORS.dark, margin:"0 0 16px", paddingBottom:10, borderBottom:`2px solid ${COLORS.grayLight}` }}>{children}</h3>;
+}
+
+const pagStatusMap = Object.fromEntries(PAGAMENTO_STATUS.map(s => [s.value, s]));
+
+// ─── TaxasPagamentoSection ───────────────────────────────────────────────────
+function TaxasPagamentoSection({ sol }) {
+  const taxas = sol.taxas || {};
+  const pagamento = sol.pagamento || {};
+  const ps = pagStatusMap[pagamento.status] || pagStatusMap.pendente;
+  const mods = taxas.modalidades || [];
+  const [pagamentos, setPagamentos] = useState([]);
+
+  useEffect(() => {
+    PagamentosService.listBySolicitacao(sol.id).then(r => setPagamentos(r.data || []));
+  }, [sol.id]);
+
+  const totalPago = pagamentos.filter(p => p.status === "confirmado").reduce((a, p) => a + (p.valor || 0), 0);
+  const tipoLabels = { taxa_solicitacao: "Solicitacao", taxa_arbitragem: "Arbitragem", complemento: "Complemento" };
+
+  return (
+    <div style={{ marginTop: 28 }}>
+      <div style={{ fontFamily:FONTS.heading, fontSize:10, fontWeight:800, textTransform:"uppercase", letterSpacing:1.5, color:COLORS.gray, marginBottom:12 }}>Taxas e Pagamento</div>
+
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+        {/* Resumo da taxa */}
+        <div style={{ padding:"14px 16px", background:COLORS.offWhite, borderRadius:10, border:`1px solid ${COLORS.grayLight}` }}>
+          <div style={{ fontFamily:FONTS.heading, fontSize:10, fontWeight:800, textTransform:"uppercase", letterSpacing:1, color:COLORS.gray, marginBottom:8 }}>Valor da taxa</div>
+          {mods.length > 0 && (
+            <div style={{ fontSize:12, fontFamily:FONTS.body, color:COLORS.grayDark, marginBottom:8 }}>
+              {mods.map(m => (
+                <div key={m.id} style={{ display:"flex", justifyContent:"space-between", marginBottom:2 }}>
+                  <span>{m.distancia} ({m.inscritos} inscritos)</span>
+                  <span style={{ fontWeight:600 }}>{formatarMoeda(m.valorFinal)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {taxas.urgencia > 0 && (
+            <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, color:"#92400e", marginBottom:2 }}>
+              <span>Taxa de urgencia</span><span>+{formatarMoeda(taxas.urgencia)}</span>
+            </div>
+          )}
+          {taxas.descontoValor > 0 && (
+            <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, color:"#15803d", marginBottom:2 }}>
+              <span>{taxas.descontoDescricao || "Desconto"}</span><span>-{formatarMoeda(taxas.descontoValor)}</span>
+            </div>
+          )}
+          <div style={{ display:"flex", justifyContent:"space-between", fontWeight:800, fontSize:16, marginTop:6, paddingTop:6, borderTop:`1px solid ${COLORS.grayLight}` }}>
+            <span>Total</span><span style={{ color:COLORS.primary }}>{formatarMoeda(taxas.total)}</span>
+          </div>
+          {taxas.ajustadoPorFMA && (
+            <div style={{ fontSize:11, color:"#7c3aed", marginTop:4, fontFamily:FONTS.body }}>
+              Valor ajustado pela FMA{taxas.observacaoAjuste ? `: ${taxas.observacaoAjuste}` : ""}
+            </div>
+          )}
+        </div>
+
+        {/* Status do pagamento */}
+        <div style={{ padding:"14px 16px", background:ps.bg || COLORS.offWhite, borderRadius:10, border:`1px solid ${ps.color}30` }}>
+          <div style={{ fontFamily:FONTS.heading, fontSize:10, fontWeight:800, textTransform:"uppercase", letterSpacing:1, color:COLORS.gray, marginBottom:8 }}>Pagamento</div>
+          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
+            <span style={{ fontSize:18 }}>{ps.icon}</span>
+            <span style={{ fontFamily:FONTS.heading, fontSize:15, fontWeight:800, color:ps.color }}>{ps.label}</span>
+          </div>
+          {totalPago > 0 && (
+            <div style={{ fontSize:12, fontFamily:FONTS.body, color:"#15803d", marginBottom:4 }}>
+              Total pago: {formatarMoeda(totalPago)}
+              {totalPago < (taxas.total || 0) && <span style={{ color:"#d97706" }}> (saldo: {formatarMoeda((taxas.total || 0) - totalPago)})</span>}
+            </div>
+          )}
+          {pagamento.status === "confirmado" && pagamento.confirmadoEm && (
+            <div style={{ fontSize:12, fontFamily:FONTS.body, color:COLORS.grayDark }}>
+              Confirmado em {fmtDT(pagamento.confirmadoEm)}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Lista de pagamentos e recibos */}
+      {pagamentos.length > 0 && (
+        <div style={{ marginTop:14 }}>
+          <div style={{ fontFamily:FONTS.heading, fontSize:10, fontWeight:800, textTransform:"uppercase", letterSpacing:1.5, color:COLORS.gray, marginBottom:8 }}>
+            Pagamentos realizados ({pagamentos.length})
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            {pagamentos.map((pag, i) => (
+              <div key={pag.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 14px", borderRadius:8, background:"#fff", border:`1px solid ${COLORS.grayLight}` }}>
+                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                  <span style={{ fontSize:13, fontWeight:800, color:COLORS.dark }}>#{i+1}</span>
+                  <span style={{ fontSize:12, color:COLORS.grayDark }}>
+                    {tipoLabels[pag.tipo] || pag.tipo} — {formatarMoeda(pag.valor)}
+                    {pag.natureza !== "total" && <span style={{ color:"#d97706" }}> ({pag.natureza})</span>}
+                  </span>
+                </div>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  {pag.reciboNumero && (
+                    <span style={{ fontSize:12, fontWeight:700, color:"#15803d", display:"flex", alignItems:"center", gap:4 }}>
+                      📄 {pag.reciboNumero}
+                      {pag.reciboArquivoId && (
+                        <button onClick={async () => {
+                          const r = await ArquivosService.get(pag.reciboArquivoId);
+                          if (r.data?.url) window.open(r.data.url, "_blank");
+                        }} style={{ background:"none", border:"none", color:"#0066cc", cursor:"pointer", fontSize:11, textDecoration:"underline", padding:0 }}>
+                          Baixar
+                        </button>
+                      )}
+                    </span>
+                  )}
+                  {pag.confirmadoEm && <span style={{ fontSize:11, color:COLORS.gray }}>{new Date(pag.confirmadoEm).toLocaleDateString("pt-BR")}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── StatusBadge ──────────────────────────────────────────────────────────────
@@ -66,7 +185,7 @@ function TimelineItem({ mov, isLast }) {
 }
 
 // ─── ArquivoUploader ─────────────────────────────────────────────────────────
-function ArquivoUploader({ solicitacaoId, organizerId, organizerName, onUploaded }) {
+function ArquivoUploader({ solicitacaoId, organizerId, organizerName, nomeEvento, dataEvento, onUploaded }) {
   const inputRef = useRef();
   const [uploading,setUploading]=useState(false);
   const [descricao,setDescricao]=useState("");
@@ -78,11 +197,18 @@ function ArquivoUploader({ solicitacaoId, organizerId, organizerName, onUploaded
   const handleUpload = async () => {
     if (!file) { setError("Selecione um arquivo."); return; }
     setUploading(true);
-    const { url, path, error: uploadError } = await uploadFile(file, `solicitacoes/${solicitacaoId}`);
+    const sanitize = (s) => (s || "sem-nome").replace(/[^a-zA-Z0-9\u00C0-\u024F\s-]/g, "").trim().replace(/\s+/g, "_");
+    const ano = (dataEvento || "").slice(0, 4) || String(new Date().getFullYear());
+    const folder = `solicitacoes/${ano}/${sanitize(organizerName)}/${sanitize(nomeEvento)}`;
+    const ext = file.name.includes(".") ? file.name.split(".").pop() : "pdf";
+    const descLabel = sanitize(descricao || file.name.replace(/\.[^.]+$/, ""));
+    const nomeRenomeado = `${descLabel}_${sanitize(nomeEvento)}.${ext}`;
+    const renamedFile = new File([file], nomeRenomeado, { type: file.type });
+    const { url, path, error: uploadError } = await uploadFile(renamedFile, folder);
     if (uploadError) { setError(uploadError); setUploading(false); return; }
-    const r = await ArquivosService.create({ solicitacaoId, nome:file.name, tamanho:file.size, tipo:file.type, descricao:descricao||file.name, categoria, enviadoPor:"organizador", enviadoById:organizerId, enviadoPorNome:organizerName, url, storagePath:path });
+    const r = await ArquivosService.create({ solicitacaoId, nome:nomeRenomeado, tamanho:file.size, tipo:file.type, descricao:descricao||file.name, categoria, enviadoPor:"organizador", enviadoById:organizerId, enviadoPorNome:organizerName, url, storagePath:path });
     if (r.error) { setError(r.error); setUploading(false); return; }
-    await MovimentacoesService.registrar({ solicitacaoId, tipoEvento:"arquivo_enviado", statusAnterior:"", statusNovo:"", descricao:`Arquivo enviado: ${file.name}`, autor:"organizador", autorNome:organizerName, autorId:organizerId, visivel:true });
+    await MovimentacoesService.registrar({ solicitacaoId, tipoEvento:"arquivo_enviado", statusAnterior:"", statusNovo:"", descricao:`Arquivo enviado: ${nomeRenomeado}`, autor:"organizador", autorNome:organizerName, autorId:organizerId, visivel:true });
     setFile(null); setDescricao(""); setCategoria("complementar");
     if (inputRef.current) inputRef.current.value="";
     setUploading(false); onUploaded();
@@ -573,13 +699,18 @@ export default function SolicitacaoDetalhe() {
                 ))}
               </div>
             </div>
+
+            {/* ── Taxas e Pagamento ── */}
+            {sol.taxas && sol.taxas.total > 0 && (
+              <TaxasPagamentoSection sol={sol} />
+            )}
           </div>
         )}
 
         {/* Aba: Arquivos */}
         {activeTab==="arquivos" && (
           <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-            {canUpload && <ArquivoUploader solicitacaoId={id} organizerId={organizerId} organizerName={organizerName} onUploaded={load}/>}
+            {canUpload && <ArquivoUploader solicitacaoId={id} organizerId={organizerId} organizerName={organizerName} nomeEvento={sol.nomeEvento} dataEvento={sol.dataEvento} onUploaded={load}/>}
             {arquivos.length===0 ? (
               <div style={{ background:"#fff", borderRadius:12, padding:"40px 24px", textAlign:"center", boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}>
                 <div style={{fontSize:40,marginBottom:10}}>📭</div>

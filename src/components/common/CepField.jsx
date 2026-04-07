@@ -88,8 +88,8 @@ export default function CepField({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
 
-      {/* Linha 1: CEP + Número */}
-      <div style={{ display: "grid", gridTemplateColumns: "180px 120px", gap: 12 }}>
+      {/* Linha 1: CEP + Número + Complemento */}
+      <div style={{ display: "grid", gridTemplateColumns: endereco ? "180px 120px 1fr" : "180px", gap: 12 }}>
         <div>
           {lbl("CEP", required)}
           <div style={{ position: "relative" }}>
@@ -121,6 +121,14 @@ export default function CepField({
             {lbl("Número", required)}
             <input value={numero || ""} onChange={e => handleNumero(e.target.value)}
               placeholder="Ex: 1200" style={inp()} autoFocus />
+          </div>
+        )}
+
+        {endereco && onComplemento && (
+          <div>
+            {lbl("Complemento")}
+            <input value={complemento || ""} onChange={e => handleComplemento(e.target.value)}
+              placeholder="Apto, sala, bloco..." style={inp()} />
           </div>
         )}
       </div>

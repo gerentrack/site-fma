@@ -94,6 +94,14 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAuth();
     }
+    match /pagamentos/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
+    match /counters/{docId} {
+      allow read: if true;
+      allow write: if isAuth();
+    }
 
     // ── Usuários (apenas autenticados) ──
     match /users/{docId} {

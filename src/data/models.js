@@ -459,6 +459,14 @@ export const organizerModel = {
   website: "",
   active: true,          // false → admin bloqueou; login retorna erro
   emailVerified: false,  // PENDENTE: token de verificação por e-mail
+
+  // ── parceria FMA ────────────────────────────────────────────────────────
+  parceiro: false,                // true = tem acordo/convênio com a FMA
+  parceiroDescricao: "",          // ex: "Convênio 2026 - apoio marketing"
+  parceiroTipo: "",               // "isencao" | "desconto" | "tabela_customizada"
+  parceiroDesconto: 0,            // percentual (0-100), usado se parceiroTipo="desconto"
+  tabelaTaxas: null,              // { faixas, minimo, maximo }, usado se parceiroTipo="tabela_customizada"
+
   createdAt: "",
   updatedAt: "",
 };
@@ -518,6 +526,38 @@ export const solicitacaoModel = {
   parecerFMA: "",        // PÚBLICO para o organizador
   protocoloFMA: "",      // ex: "FMA-2026-0042" — gerado ao mudar para em_analise
 
+  // ── taxas (Art. 7 — Regimento de Taxas 2026) ─────────────────────────────
+  taxas: {
+    modalidades: [],            // [{ id, distancia, inscritos, valorBruto, valorFinal }]
+    subtotal: 0,
+    urgencia: 0,
+    descontoTipo: "",           // "isencao" | "desconto" | "tabela_customizada" | ""
+    descontoValor: 0,
+    descontoDescricao: "",
+    total: 0,
+    calculadoEm: "",
+    ajustadoPorFMA: false,      // true se admin editou manualmente o valor
+    observacaoAjuste: "",       // justificativa do ajuste manual
+  },
+
+  // ── pagamento ───────────────────────────────────────────────────────────
+  pagamento: {
+    status: "pendente",         // "pendente" | "comprovante_anexado" | "confirmado" | "isento"
+    comprovanteArquivoId: "",   // FK → solicitacaoArquivo
+    confirmadoPor: "",          // nome do admin que confirmou
+    confirmadoEm: "",           // data da confirmação
+    observacao: "",
+
+    // ── terceiro pagador ──────────────────────────────────────────────
+    pagadorTerceiro: false,     // true = pagamento realizado por terceiro
+    pagadorNome: "",            // nome/razão social do pagador
+    pagadorCpfCnpj: "",        // CPF ou CNPJ do pagador
+    pagadorContato: "",         // e-mail ou telefone do pagador
+    pagadorEndereco: "",        // endereço completo do pagador
+    anuenciaAceita: false,      // declaração de responsabilidade aceita pelo organizador
+    anuenciaAceitaEm: "",       // data/hora do aceite
+  },
+
   // FK para o evento criado após aprovação
   eventoCalendarioId: "", // FK → EventoCalendario.id
 
@@ -556,7 +596,50 @@ export const solicitacaoArquivoModel = {
   uploadedAt: "",
 };
 
-// ─── 23. Movimentacao ─────────────────────────────────────────────────────────
+// ─── 23. Pagamento (registro individual) ─────────────────────────────────────
+/**
+ * Cada pagamento referente a uma solicitação gera um registro separado.
+ * Suporta pagamentos parciais, complementares e de arbitragem.
+ * Cada pagamento confirmado pode gerar um recibo PDF.
+ *
+ * Collection: pagamentos
+ */
+export const pagamentoRegistroModel = {
+  id: "",
+  solicitacaoId: "",         // FK → Solicitacao.id
+  organizerId: "",           // FK → Organizer.id
+
+  // valor
+  valor: 0,                  // valor deste pagamento
+  tipo: "taxa_solicitacao",    // "taxa_solicitacao" | "taxa_arbitragem" | "complemento"
+  natureza: "total",         // "total" | "parcial" | "complemento"
+
+  // comprovante
+  comprovanteArquivoId: "",  // FK → solicitacaoArquivo (comprovante enviado)
+  comprovanteNome: "",       // nome do arquivo
+
+  // dados do pagador (copiados no momento do pagamento)
+  pagadorNome: "",           // organizador ou terceiro
+  pagadorCpfCnpj: "",
+  pagadorEndereco: "",
+  pagadorContato: "",
+  terceiro: false,           // true = pagamento por terceiro
+
+  // conferência FMA
+  status: "pendente",        // "pendente" | "confirmado" | "rejeitado"
+  confirmadoPor: "",
+  confirmadoEm: "",
+  observacaoFMA: "",
+
+  // recibo
+  reciboNumero: "",          // ex: "REC-001/2026"
+  reciboArquivoId: "",       // FK → solicitacaoArquivo (PDF do recibo gerado)
+  reciboGeradoEm: "",
+
+  criadoEm: "",
+};
+
+// ─── 24. Movimentacao ─────────────────────────────────────────────────────────
 /**
  * Trilha de auditoria IMUTÁVEL de uma solicitação.
  * Todo evento significativo gera um registro — sem UPDATE ou DELETE.

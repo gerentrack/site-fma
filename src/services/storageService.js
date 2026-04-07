@@ -75,10 +75,13 @@ export async function uploadFile(file, folder = "uploads", onProgress = null) {
  * @param {string} urlOrPath — URL do Firebase ou path relativo (ex: "noticias/img_123.jpg")
  */
 export async function deleteFile(urlOrPath) {
+  if (!urlOrPath) return { error: null };
+  // Ignorar URLs que não são do Firebase Storage
+  if (urlOrPath.startsWith("http") && !urlOrPath.includes("firebasestorage.googleapis.com")) {
+    return { error: null };
+  }
   try {
-    const fileRef = urlOrPath.startsWith("http")
-      ? ref(storage, urlOrPath)
-      : ref(storage, urlOrPath);
+    const fileRef = ref(storage, urlOrPath);
     await deleteObject(fileRef);
     return { error: null };
   } catch (e) {
@@ -91,6 +94,28 @@ export async function deleteFile(urlOrPath) {
  * Mapeamento de pasta por contexto de uso.
  * Facilita chamar uploadFile sem lembrar o nome da pasta.
  */
+/**
+ * Move um arquivo no Storage: baixa da URL antiga e faz upload no novo path.
+ * Retorna { url, path } do novo local.
+ */
+export async function moveFile(oldUrl, newFolder, fileName) {
+  try {
+    const res = await fetch(oldUrl);
+    if (!res.ok) throw new Error("Falha ao baixar arquivo.");
+    const blob = await res.blob();
+    const path = `${newFolder}/${fileName}`;
+    const fileRef = ref(storage, path);
+    await uploadBytesResumable(fileRef, blob);
+    const url = await getDownloadURL(fileRef);
+    // Excluir o antigo
+    try { await deleteObject(ref(storage, oldUrl)); } catch (_) { /* ignora se não achar */ }
+    return { url, path, error: null };
+  } catch (e) {
+    console.error("storageService.moveFile:", e);
+    return { url: null, path: null, error: e.message };
+  }
+}
+
 export const STORAGE_FOLDERS = {
   logo:         "logos",
   favicon:      "logos",
@@ -105,5 +130,9 @@ export const STORAGE_FOLDERS = {
   pista:        "pistas",
   arbitro:      "arbitros",
   solicitacao:  (id) => `solicitacoes/${id}`,
+  solicitacaoOrganizada: (ano, organizador, nomeEvento) => {
+    const sanitize = (s) => (s || "sem-nome").replace(/[^a-zA-Z0-9\u00C0-\u024F\s-]/g, "").trim().replace(/\s+/g, "_");
+    return `solicitacoes/${ano}/${sanitize(organizador)}/${sanitize(nomeEvento)}`;
+  },
   redeSocial:   "redes-sociais",
 };

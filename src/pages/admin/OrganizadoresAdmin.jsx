@@ -23,6 +23,7 @@ import { COLORS, FONTS } from "../../styles/colors";
 import { SOLICITACAO_STATUS, SOLICITACAO_TIPOS } from "../../config/navigation";
 import { OrganizersService, SolicitacoesService, ArquivosService, MovimentacoesService } from "../../services/index";
 import { deleteFile } from "../../services/storageService";
+import { calcularTaxaModalidade, formatarMoeda, TABELA_PADRAO } from "../../utils/taxaCalculator";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const statusMap = Object.fromEntries(SOLICITACAO_STATUS.map(s => [s.value, s]));
@@ -366,6 +367,9 @@ export function OrganizadorEditor() {
           </div>
         </div>
 
+        {/* Parceria FMA */}
+        <ParceriaSection organizer={organizer} organizerId={id} onSaved={load} flash={flash} card={card} />
+
         {/* Solicitações do organizador */}
         <div style={card}>
           <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 16px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
@@ -488,5 +492,145 @@ export function OrganizadorEditor() {
         </div>
       )}
     </AdminLayout>
+  );
+}
+
+// ─── Seção Parceria FMA ──────────────────────────────────────────────────────
+
+function ParceriaSection({ organizer, organizerId, onSaved, flash, card }) {
+  const [parceiro, setParceiro] = useState(organizer.parceiro || false);
+  const [descricao, setDescricao] = useState(organizer.parceiroDescricao || "");
+  const [tipo, setTipo] = useState(organizer.parceiroTipo || "desconto");
+  const [percentual, setPercentual] = useState(organizer.parceiroDesconto || 0);
+  const [tabelaCustom, setTabelaCustom] = useState(organizer.tabelaTaxas || {
+    faixas: [{ ate: 500, valor: 1.50 }, { ate: 1000, valor: 2.00 }, { ate: Infinity, valor: 2.50 }],
+    minimo: 500, maximo: 4500,
+  });
+  const [saving, setSaving] = useState(false);
+  const [simInscritos, setSimInscritos] = useState(800);
+
+  const handleSave = async () => {
+    setSaving(true);
+    await OrganizersService.update(organizerId, {
+      parceiro,
+      parceiroDescricao: parceiro ? descricao : "",
+      parceiroTipo: parceiro ? tipo : "",
+      parceiroDesconto: parceiro && tipo === "desconto" ? percentual : 0,
+      tabelaTaxas: parceiro && tipo === "tabela_customizada" ? tabelaCustom : null,
+    });
+    flash("Dados de parceria atualizados!", "ok");
+    setSaving(false);
+    onSaved();
+  };
+
+  // Simulacao
+  const simTabela = tipo === "tabela_customizada" ? tabelaCustom : TABELA_PADRAO;
+  const simResult = calcularTaxaModalidade(simInscritos, simTabela);
+  let simFinal = simResult.valorFinal;
+  if (tipo === "isencao") simFinal = 0;
+  else if (tipo === "desconto") simFinal = Math.round(simResult.valorFinal * (1 - percentual / 100) * 100) / 100;
+
+  const inp = (extra = {}) => ({
+    width: "100%", padding: "10px 13px", borderRadius: 8, border: `1.5px solid ${COLORS.grayLight}`,
+    fontFamily: FONTS.body, fontSize: 14, outline: "none", boxSizing: "border-box", background: "#fff", ...extra,
+  });
+
+  return (
+    <div style={card}>
+      <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 16px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
+        🤝 Parceria FMA
+      </h3>
+
+      <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", fontFamily: FONTS.body, fontSize: 14, marginBottom: 16 }}>
+        <input type="checkbox" checked={parceiro} onChange={e => setParceiro(e.target.checked)}
+          style={{ width: 18, height: 18, accentColor: COLORS.primary }} />
+        <span style={{ fontWeight: 600 }}>Este organizador e parceiro da FMA</span>
+      </label>
+
+      {parceiro && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div>
+            <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, marginBottom: 4 }}>Descricao do acordo</div>
+            <input value={descricao} onChange={e => setDescricao(e.target.value)}
+              placeholder="Ex: Convenio 2026 - apoio marketing" style={inp()} />
+          </div>
+
+          <div>
+            <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, marginBottom: 4 }}>Tipo de beneficio</div>
+            <select value={tipo} onChange={e => setTipo(e.target.value)} style={inp({ cursor: "pointer" })}>
+              <option value="isencao">Isencao total</option>
+              <option value="desconto">Desconto percentual</option>
+              <option value="tabela_customizada">Tabela customizada</option>
+            </select>
+          </div>
+
+          {tipo === "desconto" && (
+            <div>
+              <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, marginBottom: 4 }}>Percentual de desconto</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input type="number" min="0" max="100" value={percentual} onChange={e => setPercentual(Number(e.target.value))}
+                  style={inp({ width: 100 })} />
+                <span style={{ fontSize: 14, fontWeight: 600 }}>%</span>
+              </div>
+            </div>
+          )}
+
+          {tipo === "tabela_customizada" && (
+            <div>
+              <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, marginBottom: 8 }}>Faixas customizadas</div>
+              {tabelaCustom.faixas.map((f, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, color: COLORS.gray, width: 60 }}>Ate {f.ate === Infinity ? "∞" : f.ate}</span>
+                  <span style={{ fontSize: 12, color: COLORS.gray }}>R$</span>
+                  <input type="number" min="0" step="0.01" value={f.valor}
+                    onChange={e => {
+                      const novas = [...tabelaCustom.faixas];
+                      novas[i] = { ...novas[i], valor: Number(e.target.value) };
+                      setTabelaCustom(t => ({ ...t, faixas: novas }));
+                    }}
+                    style={inp({ width: 100 })} />
+                  <span style={{ fontSize: 12, color: COLORS.gray }}>/inscrito</span>
+                </div>
+              ))}
+              <div style={{ display: "flex", gap: 12, marginTop: 8 }}>
+                <div>
+                  <span style={{ fontSize: 11, color: COLORS.gray }}>Minimo (R$)</span>
+                  <input type="number" min="0" value={tabelaCustom.minimo}
+                    onChange={e => setTabelaCustom(t => ({ ...t, minimo: Number(e.target.value) }))}
+                    style={inp({ width: 100 })} />
+                </div>
+                <div>
+                  <span style={{ fontSize: 11, color: COLORS.gray }}>Maximo (R$)</span>
+                  <input type="number" min="0" value={tabelaCustom.maximo}
+                    onChange={e => setTabelaCustom(t => ({ ...t, maximo: Number(e.target.value) }))}
+                    style={inp({ width: 100 })} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Simulador */}
+          <div style={{ padding: 12, background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0" }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#15803d" }}>Simulacao</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+              <input type="number" min="0" value={simInscritos} onChange={e => setSimInscritos(Number(e.target.value) || 0)}
+                style={inp({ width: 100 })} />
+              <span style={{ fontSize: 12 }}>inscritos =</span>
+              <strong style={{ fontSize: 14, color: "#15803d" }}>{formatarMoeda(simFinal)}</strong>
+              {tipo !== "isencao" && simFinal !== simResult.valorFinal && (
+                <span style={{ fontSize: 11, color: COLORS.gray }}>(tabela padrao: {formatarMoeda(calcularTaxaModalidade(simInscritos).valorFinal)})</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end" }}>
+        <button onClick={handleSave} disabled={saving}
+          style={{ padding: "10px 20px", borderRadius: 8, border: "none", background: COLORS.primary, color: "#fff", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: saving ? "wait" : "pointer", opacity: saving ? 0.7 : 1 }}>
+          {saving ? "Salvando..." : "Salvar parceria"}
+        </button>
+      </div>
+    </div>
   );
 }
