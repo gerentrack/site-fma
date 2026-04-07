@@ -14,7 +14,7 @@ export function AdminProvider({ children }) {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const profile = await authAPI.getUser();
-        setUser(profile && profile.role === "admin" ? profile : null);
+        setUser(profile || null); // authAPI.getUser() já retorna null se não for admin
       } else {
         setUser(null);
       }

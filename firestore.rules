@@ -4,108 +4,122 @@ service cloud.firestore {
 
     // ── Helpers ──
     function isAuth() { return request.auth != null; }
+    function getUserData() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    // Suporta roles (array) e role (string legado)
+    function isAdminRole() { return isAuth() && ("admin" in getUserData().roles || getUserData().role == "admin"); }
+    function isAdminLevel(levels) { return isAdminRole() && getUserData().level in levels; }
 
-    // ── Conteúdo público (leitura livre, escrita autenticada) ──
+    // ── Conteúdo público (leitura livre, escrita restrita a admin) ──
     match /calendar/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAdminRole();
     }
     match /news/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAdminRole();
     }
     match /gallery/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAdminRole();
     }
     match /banners/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAdminRole();
     }
     match /partners/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAdminRole();
     }
     match /documents/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAdminRole();
     }
     match /socialLinks/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAdminRole();
     }
     match /institutionalPages/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAdminRole();
     }
     match /institutionalSections/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAdminRole();
     }
     match /pistasHomologadas/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAdminRole();
     }
     match /resultados/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAdminRole();
     }
     match /equipes/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAdminRole();
     }
     match /config/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAdminRole();
     }
 
-    // ── Árbitros (leitura pública, escrita autenticada) ──
+    // ── Árbitros (leitura pública, escrita: admin ou referee) ──
     match /referees/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAuth() && (isAdminRole() || "referee" in getUserData().roles || getUserData().role == "referee");
     }
     match /refereeEvents/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAuth() && (isAdminRole() || "referee" in getUserData().roles || getUserData().role == "referee");
     }
     match /refereeAvailability/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAuth() && (isAdminRole() || "referee" in getUserData().roles || getUserData().role == "referee");
     }
     match /refereeAssignments/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAuth() && (isAdminRole() || "referee" in getUserData().roles || getUserData().role == "referee");
     }
 
-    // ── Organizadores e solicitações (leitura livre para suportar login do portal, escrita autenticada) ──
+    // ── Organizadores e solicitações (leitura livre para login, escrita: admin ou organizer) ──
     match /organizers/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAuth() && (isAdminRole() || "organizer" in getUserData().roles || getUserData().role == "organizer");
     }
     match /solicitacoes/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAuth() && (isAdminRole() || "organizer" in getUserData().roles || getUserData().role == "organizer");
     }
     match /solicitacaoArquivos/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAuth() && (isAdminRole() || "organizer" in getUserData().roles || getUserData().role == "organizer");
     }
     match /movimentacoes/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAuth() && (isAdminRole() || "organizer" in getUserData().roles || getUserData().role == "organizer");
     }
     match /pagamentos/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAuth() && (isAdminRole() || "organizer" in getUserData().roles || getUserData().role == "organizer");
     }
     match /counters/{docId} {
       allow read: if true;
       allow write: if isAuth();
     }
 
-    // ── Usuários (apenas autenticados) ──
+    // ── Usuários (leitura: autenticado; escrita: master/admin) ──
     match /users/{docId} {
-      allow read, write: if isAuth();
+      allow read: if isAuth();
+      allow write: if isAuth() && isAdminLevel(["master", "admin"]);
+    }
+
+    // ── Mail (extensão Trigger Email from Firestore) ──
+    // Escrita livre (formulários públicos: contato, ouvidoria)
+    // Leitura bloqueada — só a extensão (service account) lê
+    match /mail/{docId} {
+      allow read: if false;
+      allow create: if true;
+      allow update, delete: if false;
     }
   }
 }

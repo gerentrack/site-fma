@@ -117,29 +117,57 @@ export const PUBLIC_NAV = [
   { label: "Contato", link: "/contato" },
 ];
 
+/**
+ * ADMIN_NAV — Navegação do painel admin.
+ *
+ * minLevel: nível mínimo para ver o item (master > admin > editor > viewer)
+ * section:  para editors, item só aparece se section estiver em user.permissions[]
+ *           admins e masters veem tudo independentemente de section.
+ */
+/**
+ * ADMIN_NAV — Navegação do painel admin.
+ *
+ * minLevel: nível mínimo para ver o item (master > admin > editor > viewer)
+ * section:  para editors, item só aparece se section estiver em user.permissions[]
+ * group:    label de separação visual no sidebar (exibido antes do primeiro item do grupo)
+ */
 export const ADMIN_NAV = [
-  { label: "Dashboard",             icon: "📊", path: "/admin" },
-  { label: "Banners",               icon: "🖼️", path: "/admin/banners" },
-  { label: "Notícias",              icon: "📰", path: "/admin/noticias" },
-  { label: "Páginas Institucionais",icon: "🏛️", path: "/admin/institucional" },
-  { label: "Galeria",               icon: "📷", path: "/admin/galeria" },
-  { label: "Resultados",            icon: "🏆", path: "/admin/resultados" },
-  { label: "Calendário",            icon: "🗓️", path: "/admin/calendario" },
-  { label: "Pistas Homologadas",     icon: "🔵", path: "/admin/pistas" },
-  { label: "Importar Calendário",    icon: "📥", path: "/admin/importar" },
-  { label: "Conteúdo de Árbitros",   icon: "⚖️", path: "/admin/arbitros-conteudo" },
-  { label: "Conteúdo de Atletas",   icon: "👟", path: "/admin/atletas" },
-  { label: "Documentos",            icon: "📄", path: "/admin/documentos" },
-  { label: "Parceiros",             icon: "🤝", path: "/admin/parceiros" },
-  { label: "Redes Sociais",         icon: "📱", path: "/admin/redes-sociais" },
-  { label: "Rodapé",                icon: "⚙️", path: "/admin/rodape" },
-  { label: "Solicitações",          icon: "📋", path: "/admin/solicitacoes" },
-  { label: "Organizadores",         icon: "🏢", path: "/admin/organizadores" },
-  { label: "Equipes",              icon: "🏃", path: "/admin/equipes" },
-  { label: "Formulários",           icon: "🔧", path: "/admin/formularios" },
-  { label: "Taxas",                icon: "💰", path: "/admin/taxas" },
-  { label: "Financeiro",           icon: "📊", path: "/admin/financeiro" },
-  { label: "Limpeza do Storage",   icon: "🧹", path: "/admin/storage-cleanup" },
+  // ── Visão geral ──
+  { label: "Dashboard",              icon: "📊", path: "/admin",                   minLevel: "viewer" },
+
+  // ── Conteúdo editorial ──
+  { label: "Notícias",               icon: "📰", path: "/admin/noticias",          minLevel: "editor", section: "noticias",       group: "Conteúdo" },
+  { label: "Calendário",             icon: "🗓️", path: "/admin/calendario",        minLevel: "editor", section: "calendario" },
+  { label: "Resultados",             icon: "🏆", path: "/admin/resultados",        minLevel: "editor", section: "resultados" },
+  { label: "Galeria",                icon: "📷", path: "/admin/galeria",           minLevel: "editor", section: "galeria" },
+  { label: "Documentos",             icon: "📄", path: "/admin/documentos",        minLevel: "editor", section: "documentos" },
+  { label: "Páginas Institucionais", icon: "🏛️", path: "/admin/institucional",     minLevel: "editor", section: "institucional" },
+  { label: "Equipes",                icon: "🏃", path: "/admin/equipes",           minLevel: "editor", section: "equipes" },
+  { label: "Banners",                icon: "🖼️", path: "/admin/banners",           minLevel: "editor", section: "banners" },
+  { label: "Pistas Homologadas",     icon: "🔵", path: "/admin/pistas",            minLevel: "editor", section: "pistas" },
+  { label: "Conteúdo de Atletas",    icon: "👟", path: "/admin/atletas",           minLevel: "editor", section: "atletas" },
+  { label: "Conteúdo de Árbitros",   icon: "⚖️", path: "/admin/arbitros-conteudo", minLevel: "editor", section: "arbitros" },
+
+  // ── Site ──
+  { label: "Parceiros",              icon: "🤝", path: "/admin/parceiros",         minLevel: "editor", section: "parceiros",      group: "Site" },
+  { label: "Redes Sociais",          icon: "📱", path: "/admin/redes-sociais",     minLevel: "editor", section: "redes" },
+  { label: "Rodapé",                 icon: "⚙️", path: "/admin/rodape",            minLevel: "editor", section: "rodape" },
+  { label: "Importar Calendário",    icon: "📥", path: "/admin/importar",          minLevel: "editor", section: "calendario" },
+
+  // ── Portal (solicitações / organizadores) ──
+  { label: "Solicitações",           icon: "📋", path: "/admin/solicitacoes",      minLevel: "admin",                             group: "Portal" },
+  { label: "Organizadores",          icon: "🏢", path: "/admin/organizadores",     minLevel: "admin" },
+  { label: "Financeiro",             icon: "💰", path: "/admin/financeiro",        minLevel: "admin" },
+
+  // ── Intranet ──
+  { label: "Árbitros",               icon: "⚖️", path: "/admin/arbitros",          minLevel: "admin",                             group: "Intranet" },
+  { label: "Escalas",                icon: "📅", path: "/admin/escalas",           minLevel: "admin" },
+
+  // ── Gestão ──
+  { label: "Usuários",               icon: "👤", path: "/admin/usuarios",          minLevel: "admin",                             group: "Gestão" },
+  { label: "Formulários",            icon: "🔧", path: "/admin/formularios",       minLevel: "master" },
+  { label: "Taxas",                  icon: "💲", path: "/admin/taxas",             minLevel: "master" },
+  { label: "Limpeza do Storage",     icon: "🧹", path: "/admin/storage-cleanup",   minLevel: "master" },
 ];
 
 export const QUICK_ACCESS = [

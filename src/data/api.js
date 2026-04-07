@@ -37,6 +37,13 @@ function err(msg)  { return { data: null, error: msg }; }
 function generateId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function now() { return new Date().toISOString(); }
 
+/** Verifica se o users doc possui um role. Compatível com role (string legado) e roles (array). */
+function hasRole(profile, role) {
+  if (!profile) return false;
+  if (Array.isArray(profile.roles)) return profile.roles.includes(role);
+  return profile.role === role; // backward-compat com docs antigos
+}
+
 async function readCol(colName) {
   const snap = await getDocs(collection(db, colName));
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -141,10 +148,11 @@ export async function initializeData() {
     seedSingleDoc("config", "athleteContent", Array.isArray(SEED_ATHLETE_CONTENT) ? { items: SEED_ATHLETE_CONTENT } : SEED_ATHLETE_CONTENT),
     seedSingleDoc("config", "refereeContent", Array.isArray(SEED_REFEREE_CONTENT) ? { items: SEED_REFEREE_CONTENT } : SEED_REFEREE_CONTENT),
   ]);
-  await seedAuthUser(SEED_ADMIN_USER.email, SEED_ADMIN_USER.password, { role: "admin", name: SEED_ADMIN_USER.name, refId: SEED_ADMIN_USER.id });
-  for (const r of SEED_REFEREES) await seedAuthUser(r.email, r.password, { role: "referee", name: r.name, refId: r.id });
-  for (const o of SEED_ORGANIZERS) await seedAuthUser(o.email, o.password, { role: "organizer", name: o.name, refId: o.id });
+  await seedAuthUser(SEED_ADMIN_USER.email, SEED_ADMIN_USER.password, { roles: ["admin"], level: SEED_ADMIN_USER.level || "master", name: SEED_ADMIN_USER.name, refId: SEED_ADMIN_USER.id, permissions: [], createdBy: null });
+  for (const r of SEED_REFEREES) await seedAuthUser(r.email, r.password, { roles: ["referee"], name: r.name, refId: r.id });
+  for (const o of SEED_ORGANIZERS) await seedAuthUser(o.email, o.password, { roles: ["organizer"], name: o.name, refId: o.id });
 }
+
 
 export const authAPI = {
   login: async ({ email, password }) => {
@@ -152,8 +160,13 @@ export const authAPI = {
       const cred    = await signInWithEmailAndPassword(auth, email, password);
       const profile = await readDoc("users", cred.user.uid);
       if (!profile) return err("Perfil não encontrado.");
-      if (profile.role !== "admin") { await signOut(auth); return err("Acesso restrito ao painel admin."); }
-      return ok({ user: { id: profile.refId, uid: cred.user.uid, name: profile.name, email: profile.email, role: profile.role } });
+      if (!hasRole(profile, "admin")) { await signOut(auth); return err("Acesso restrito ao painel admin."); }
+      if (profile.active === false) { await signOut(auth); return err("Conta desativada. Contate o administrador."); }
+      return ok({ user: {
+        id: profile.refId, uid: cred.user.uid, name: profile.name, email: profile.email,
+        role: "admin", roles: profile.roles || [profile.role], level: profile.level || "admin",
+        permissions: profile.permissions || [], createdBy: profile.createdBy || null,
+      }});
     } catch (e) {
       if (["auth/invalid-credential","auth/wrong-password","auth/user-not-found"].includes(e.code)) return err("Credenciais inválidas.");
       return err(e.message);
@@ -165,7 +178,12 @@ export const authAPI = {
     const u = auth.currentUser;
     if (!u) return null;
     const profile = await readDoc("users", u.uid);
-    return profile ? { id: profile.refId, uid: u.uid, name: profile.name, email: profile.email, role: profile.role } : null;
+    if (!profile || !hasRole(profile, "admin")) return null;
+    return {
+      id: profile.refId, uid: u.uid, name: profile.name, email: profile.email,
+      role: "admin", roles: profile.roles || [profile.role], level: profile.level || "admin",
+      permissions: profile.permissions || [], createdBy: profile.createdBy || null,
+    };
   },
   onAuthStateChange: (callback) => onAuthStateChanged(auth, callback),
   updatePassword: async (currentPassword, newPassword) => {
@@ -177,6 +195,100 @@ export const authAPI = {
       await fbUpdatePassword(u, newPassword);
       return ok(true);
     } catch (e) { return err(e.message); }
+  },
+};
+
+// ── Gestão de Usuários Admin ─────────────────────────────────────────────────
+export const adminUsersAPI = {
+  /** Lista todos os users que possuem role admin */
+  list: async () => {
+    const all = await readCol("users");
+    const admins = all
+      .filter(u => hasRole(u, "admin"))
+      .map(({ password, ...safe }) => safe);
+    admins.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    return ok(admins);
+  },
+
+  /** Busca um user admin pelo uid */
+  get: async (uid) => {
+    const item = await readDoc("users", uid);
+    if (!item || !hasRole(item, "admin")) return err("Usuário não encontrado.");
+    const { password, ...safe } = item;
+    return ok(safe);
+  },
+
+  /** Cria um novo usuário admin (Firebase Auth + Firestore users doc).
+   *  Se o email já existe no Firebase Auth (ex: árbitro/organizador), adiciona "admin" ao roles[].
+   *  Se não existe, cria conta nova. */
+  create: async (data, creatorUid) => {
+    const all = await readCol("users");
+    const existing = all.find(u => u.email === data.email);
+
+    // Caso 1: email já tem users doc — adicionar role admin
+    if (existing) {
+      if (hasRole(existing, "admin")) return err("Este e-mail já possui acesso admin.");
+      const currentRoles = existing.roles || (existing.role ? [existing.role] : []);
+      const newRoles = [...new Set([...currentRoles, "admin"])];
+      await updateDoc(doc(db, "users", existing.uid), {
+        roles: newRoles, level: data.level || "editor",
+        permissions: data.permissions || [], active: true,
+        createdBy: creatorUid, updatedAt: now(),
+      });
+      const updated = await readDoc("users", existing.uid);
+      const { password: _, ...safe } = updated;
+      return ok(safe);
+    }
+
+    // Caso 2: email novo — criar Firebase Auth + users doc
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      const userDoc = {
+        uid: cred.user.uid, email: data.email, name: data.name,
+        roles: ["admin"], level: data.level || "editor",
+        permissions: data.permissions || [], active: true,
+        createdBy: creatorUid, createdAt: now(),
+      };
+      await setDoc(doc(db, "users", cred.user.uid), userDoc);
+      await signOut(auth);
+      const { password: _, ...safe } = userDoc;
+      return ok(safe);
+    } catch (e) {
+      if (e.code === "auth/email-already-in-use") return err("E-mail já possui conta de autenticação mas não foi encontrado no sistema. Contate o suporte.");
+      return err(e.message);
+    }
+  },
+
+  /** Atualiza dados do user (name, level, permissions, active) */
+  update: async (uid, data) => {
+    const existing = await readDoc("users", uid);
+    if (!existing || !hasRole(existing, "admin")) return err("Usuário não encontrado.");
+    const allowed = {};
+    if (data.name !== undefined)        allowed.name = data.name;
+    if (data.level !== undefined)       allowed.level = data.level;
+    if (data.permissions !== undefined) allowed.permissions = data.permissions;
+    if (data.active !== undefined)      allowed.active = data.active;
+    allowed.updatedAt = now();
+    await updateDoc(doc(db, "users", uid), allowed);
+    const updated = await readDoc("users", uid);
+    const { password, ...safe } = updated;
+    return ok(safe);
+  },
+
+  /** Desativa um user admin (soft delete) */
+  deactivate: async (uid) => {
+    const existing = await readDoc("users", uid);
+    if (!existing || !hasRole(existing, "admin")) return err("Usuário não encontrado.");
+    await updateDoc(doc(db, "users", uid), { active: false, updatedAt: now() });
+    return ok(true);
+  },
+
+  /** Reativa um user admin */
+  activate: async (uid) => {
+    const existing = await readDoc("users", uid);
+    if (!existing || !hasRole(existing, "admin")) return err("Usuário não encontrado.");
+    await updateDoc(doc(db, "users", uid), { active: true, updatedAt: now() });
+    return ok(true);
   },
 };
 
@@ -491,7 +603,7 @@ export const intranetAuthAPI = {
     try {
       const cred    = await signInWithEmailAndPassword(auth, email, password);
       const profile = await readDoc("users", cred.user.uid);
-      if (!profile || profile.role !== "referee") { await signOut(auth); return err("Acesso restrito à intranet de árbitros."); }
+      if (!profile || !hasRole(profile, "referee")) { await signOut(auth); return err("Acesso restrito à intranet de árbitros."); }
       const referee = await readDoc("referees", profile.refId);
       if (!referee || referee.status !== "ativo") { await signOut(auth); return err("Árbitro inativo ou não encontrado."); }
       const session = { refereeId: referee.id, uid: cred.user.uid, email: referee.email, name: referee.name, role: referee.role, loginAt: now() };
@@ -508,7 +620,7 @@ export const intranetAuthAPI = {
     const u = auth.currentUser;
     if (!u) return null;
     const profile = await readDoc("users", u.uid);
-    if (!profile || profile.role !== "referee") return null;
+    if (!profile || !hasRole(profile, "referee")) return null;
     const referee = await readDoc("referees", profile.refId);
     if (!referee) return null;
     return { refereeId: referee.id, uid: u.uid, email: referee.email, name: referee.name, role: referee.role };
@@ -663,7 +775,7 @@ export const organizerAuthAPI = {
     try {
       const cred    = await signInWithEmailAndPassword(auth, email, password);
       const profile = await readDoc("users", cred.user.uid);
-      if (!profile || profile.role !== "organizer") { await signOut(auth); return err("Acesso restrito ao portal de organizadores."); }
+      if (!profile || !hasRole(profile, "organizer")) { await signOut(auth); return err("Acesso restrito ao portal de organizadores."); }
       const org = await readDoc("organizers", profile.refId);
       if (!org) { await signOut(auth); return err("Conta não encontrada."); }
       const orgAtivo = org.status === "ativo" || org.active === true;
@@ -681,7 +793,7 @@ export const organizerAuthAPI = {
     const u = auth.currentUser;
     if (!u) return null;
     const profile = await readDoc("users", u.uid);
-    if (!profile || profile.role !== "organizer") return null;
+    if (!profile || !hasRole(profile, "organizer")) return null;
     const org = await readDoc("organizers", profile.refId);
     if (!org) return null;
     const orgAtivo = org.status === "ativo" || org.active === true;
@@ -697,7 +809,7 @@ export const organizerAuthAPI = {
       const item = await createDoc("organizers", { ...data, status: "ativo", active: true });
       await setDoc(doc(db, "users", cred.user.uid), {
         uid: cred.user.uid, email: data.email,
-        role: "organizer", name: data.name, refId: item.id, createdAt: now(),
+        roles: ["organizer"], name: data.name, refId: item.id, createdAt: now(),
       });
       await signOut(auth);
       const { password: _, ...safe } = item;
@@ -755,7 +867,7 @@ export const organizersAPI = {
       await patchDoc("organizers", id, { email: newEmail });
       // Atualizar no Firestore — users
       const usersSnap = await getDocs(collection(db, "users"));
-      const userDoc = usersSnap.docs.find(d => d.data().refId === id && d.data().role === "organizer");
+      const userDoc = usersSnap.docs.find(d => { const dt = d.data(); return dt.refId === id && hasRole(dt, "organizer"); });
       if (userDoc) await updateDoc(doc(db, "users", userDoc.id), { email: newEmail });
       return ok(true);
     } catch (e) {

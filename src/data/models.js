@@ -16,23 +16,28 @@
 /**
  * Usuário com acesso ao painel /admin.
  *
- * Roles:
- *   super  → acesso total: cria admins, configura rodapé, parceiros, tudo
- *   editor → notícias, calendário, documentos, páginas, análise de solicitações
+ * Levels (hierarquia):
+ *   master → produtor/dev: acesso total, cria admins, config técnica
+ *   admin  → gestor da entidade: conteúdo + solicitações + cria funcionários
+ *   editor → funcionário: edita somente seções atribuídas via permissions[]
  *   viewer → somente leitura (relatórios e listagens)
  *
- * No demo existe um único admin (singleton). Em produção: tabela de usuários.
+ * O campo role permanece "admin" para todos os níveis — diferencia-se pelo level.
+ * Intranet e portal não enxergam esses campos.
  */
 export const adminUserModel = {
   id: "",
   name: "",
-  email: "",           // único no sistema admin
-  password: "",        // bcrypt em produção
-  role: "editor",      // "super" | "editor" | "viewer"
-  active: true,        // false → login bloqueado
+  email: "",              // único no sistema admin
+  password: "",           // bcrypt em produção
+  role: "admin",          // sempre "admin" — diferenciado por level
+  level: "editor",        // "master" | "admin" | "editor" | "viewer"
+  active: true,           // false → login bloqueado
+  permissions: [],        // só para editor: ["noticias","calendario","galeria",...]
+  createdBy: "",          // uid de quem criou (null para master)
   createdAt: "",
   updatedAt: "",
-  lastLoginAt: "",     // auditoria de acesso
+  lastLoginAt: "",        // auditoria de acesso
 };
 
 // ─── 2. Noticia ───────────────────────────────────────────────────────────────

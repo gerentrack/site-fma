@@ -76,6 +76,9 @@ import MapaPage from "../pages/public/MapaPage";
 import { PistasList, PistasEditor } from "../pages/admin/PistasAdmin";
 import ImportarAdmin from "../pages/admin/ImportarAdmin";
 import StorageCleanup from "../pages/admin/StorageCleanup";
+import { UsuariosList, UsuariosEditor } from "../pages/admin/UsuariosAdmin";
+import ArbitrosVisaoAdmin from "../pages/admin/ArbitrosVisaoAdmin";
+import EscalasVisaoAdmin from "../pages/admin/EscalasVisaoAdmin";
 
 // ── Layout público ────────────────────────────────────────────────────────────
 function PublicLayout({ children }) {
@@ -218,6 +221,14 @@ export default function AppRouter() {
 
       <Route path="/admin/importar"         element={<ImportarAdmin />} />
       <Route path="/admin/storage-cleanup"  element={<StorageCleanup />} />
+
+      {/* Gestão de usuários */}
+      <Route path="/admin/usuarios"      element={<UsuariosList />} />
+      <Route path="/admin/usuarios/:uid" element={<UsuariosEditor />} />
+
+      {/* Visão da intranet no admin */}
+      <Route path="/admin/arbitros"  element={<ArbitrosVisaoAdmin />} />
+      <Route path="/admin/escalas"   element={<EscalasVisaoAdmin />} />
       <Route path="/admin/pistas"        element={<PistasList />} />
       <Route path="/admin/pistas/novo"  element={<PistasEditor />} />
       <Route path="/admin/pistas/:id"   element={<PistasEditor />} />

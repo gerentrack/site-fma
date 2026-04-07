@@ -653,8 +653,11 @@ export const SEED_ADMIN_USER = {
   id: "u1",
   name: "Administrador FMA",
   email: "admin@fma.org.br",
-  password: "FMA16681",
-  role: "super",
+  password: "",
+  role: "admin",
+  level: "master",
+  permissions: [],
+  createdBy: null,
 };
 
 export const SEED_INSTITUTIONAL_PAGES = [

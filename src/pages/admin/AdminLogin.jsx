@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAdmin } from "../../context/AdminContext";
 import { COLORS, FONTS } from "../../styles/colors";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "../../firebase";
 
 export default function AdminLogin() {
   const { login, isAuthenticated } = useAdmin();
@@ -9,6 +11,8 @@ export default function AdminLogin() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetMsg, setResetMsg] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) navigate("/admin");
@@ -21,6 +25,19 @@ export default function AdminLogin() {
     setLoading(false);
     if (err) { setError(err); return; }
     navigate("/admin");
+  };
+
+  const handleResetPassword = async () => {
+    setResetMsg(""); setError("");
+    if (!form.email.trim()) { setError("Digite seu e-mail acima para recuperar a senha."); return; }
+    setResetLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, form.email.trim());
+      setResetMsg("E-mail de recuperação enviado! Verifique sua caixa de entrada.");
+    } catch {
+      setResetMsg("Se este e-mail estiver cadastrado, você receberá as instruções de recuperação.");
+    }
+    setResetLoading(false);
   };
 
   const inputStyle = {
@@ -53,7 +70,7 @@ export default function AdminLogin() {
             value={form.email}
             onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
             onKeyDown={e => e.key === "Enter" && handleSubmit()}
-            placeholder="admin@fma.org.br"
+            placeholder="seu@email.com"
             style={inputStyle}
             onFocus={e => e.currentTarget.style.borderColor = COLORS.primary}
             onBlur={e => e.currentTarget.style.borderColor = COLORS.grayLight}
@@ -94,8 +111,20 @@ export default function AdminLogin() {
           {loading ? "Entrando..." : "Entrar"}
         </button>
 
-        <p style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, textAlign: "center", marginTop: 20 }}>
-          Credenciais padrão: admin@fma.org.br / fma2026
+        <div style={{ marginTop: 16, textAlign: "center" }}>
+          <button type="button" onClick={handleResetPassword} disabled={resetLoading}
+            style={{ background: "none", border: "none", padding: 0, fontFamily: FONTS.body, fontSize: 13, color: COLORS.primary, cursor: resetLoading ? "not-allowed" : "pointer", textDecoration: "underline" }}>
+            {resetLoading ? "Enviando..." : "Esqueci minha senha"}
+          </button>
+          {resetMsg && (
+            <div style={{ marginTop: 10, padding: "10px 14px", borderRadius: 8, background: "#f0fdf4", border: "1px solid #86efac", fontFamily: FONTS.body, fontSize: 12, color: "#15803d" }}>
+              {resetMsg}
+            </div>
+          )}
+        </div>
+
+        <p style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, textAlign: "center", marginTop: 16 }}>
+          Acesso restrito a usuários autorizados.
         </p>
       </div>
     </div>
