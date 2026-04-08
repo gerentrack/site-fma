@@ -11,9 +11,9 @@ import { db } from "../firebase";
 const COLLECTION = "counters";
 const docId = (ano) => `recibo_${ano}`;
 
-/** Formata número → "REC-001/2026" */
+/** Formata número → "RECIBO - 001/2026" */
 export function formatarNumeroRecibo(num, ano) {
-  return `REC-${String(num).padStart(3, "0")}/${ano}`;
+  return `RECIBO - ${String(num).padStart(3, "0")}/${ano}`;
 }
 
 /** Reserva 1 número via transação atômica. Retorna o número reservado. */
