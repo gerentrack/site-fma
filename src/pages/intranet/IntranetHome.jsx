@@ -108,7 +108,23 @@ export default function IntranetHome() {
       });
     } else {
       RefereeAvailabilityService.list({ refereeId }).then(r => { if (r.data) setMyAvail(r.data); });
-      RefereeAssignmentsService.getByReferee(refereeId).then(r => { if (r.data) setMyAssignments(r.data.filter(a => a.event?.date >= new Date().toISOString().slice(0, 10))); });
+      RefereeAssignmentsService.getByReferee(refereeId).then(r => {
+        if (r.data) {
+          const today = new Date().toISOString().slice(0, 10);
+          setMyAssignments(r.data.filter(a => a.event?.date >= today));
+          // Verificar relatórios pendentes (chefe/coordenador, evento passado ou hoje)
+          const elegíveis = r.data.filter(a => a.event?.date <= today && (a.refereeFunction === "chefe" || a.refereeFunction === "coordenador_ev"));
+          if (elegíveis.length > 0) {
+            RelatoriosService.list().then(relRes => {
+              const relEventIds = new Set((relRes.data || []).filter(rl => rl.status === "enviado").map(rl => rl.eventId));
+              const pendentes = elegíveis.filter(a => !relEventIds.has(a.eventId));
+              if (pendentes.length > 0) {
+                setPendencias({ relatóriosPendentes: pendentes });
+              }
+            });
+          }
+        }
+      });
       AnuidadesService.getByRefereeAno(refereeId, anoAtual).then(r => { if (r.data) setAnuidade(r.data); });
       RefereesService.get(refereeId).then(rRef => {
         const nv = rRef.data?.nivel || "";
@@ -207,6 +223,27 @@ export default function IntranetHome() {
             <StatCard label="Disponibilidades registradas" value={myAvail.length} icon="📅" color="#0066cc" to="/intranet/disponibilidade" />
             <StatCard label="Próximas escalas" value={myAssignments.length} icon="📋" color="#007733" to="/intranet/escalas" />
           </div>
+        )}
+
+        {/* Lembrete de relatório pendente — árbitro chefe/coordenador */}
+        {!canManage && pendencias?.relatóriosPendentes?.length > 0 && (
+          <Link to="/intranet/escalas" style={{ textDecoration: "none", display: "block", marginBottom: 16 }}>
+            <div style={{
+              background: "#fff", borderRadius: 12, padding: "14px 20px",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.06)", borderLeft: "4px solid #d97706",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+            }}>
+              <div>
+                <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: "#d97706" }}>
+                  {pendencias.relatóriosPendentes.length === 1 ? "Voce tem 1 relatorio pendente" : `Voce tem ${pendencias.relatóriosPendentes.length} relatorios pendentes`}
+                </div>
+                <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 2 }}>
+                  Acesse Minhas Escalas para preencher.
+                </div>
+              </div>
+              <span style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, color: COLORS.primary }}>Ver escalas →</span>
+            </div>
+          </Link>
         )}
 
         {/* Card anuidade — árbitro */}
