@@ -17,6 +17,8 @@ import {
   REFEREE_ROLES,
 } from "../../config/navigation";
 import { EnvioDocumentosService, AnuidadesService, RefereeAssignmentsService, RefereesService } from "../../services/index";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "../../firebase";
 
 const roleMap = Object.fromEntries(REFEREE_ROLES.map(r => [r.value, r]));
 
@@ -82,36 +84,42 @@ export default function IntranetLayout({ children, requireRole = null }) {
     }
   }, [isAuthenticated, loading, role]);
 
-  // Notificações (atualiza a cada 60s)
+  // Notificações em tempo real (onSnapshot)
   useEffect(() => {
     if (!isAuthenticated || !refereeId || loading) return;
-    const fetchNotifs = () => {
+    const unsubs = [];
+
+    const recalcular = async () => {
       const items = [];
       const ano = new Date().getFullYear();
-      Promise.all([
-        RefereesService.get(refereeId).then(r => {
-          const nv = r.data?.nivel || "";
-          return EnvioDocumentosService.listByReferee(refereeId, nv);
-        }),
-        AnuidadesService.getByRefereeAno(refereeId, ano),
-        RefereeAssignmentsService.getByReferee ? RefereeAssignmentsService.getByReferee(refereeId) : Promise.resolve({ data: [] }),
-      ]).then(([msgRes, anRes, asRes]) => {
+      try {
+        const [refRes, anRes, asRes] = await Promise.all([
+          RefereesService.get(refereeId),
+          AnuidadesService.getByRefereeAno(refereeId, ano),
+          RefereeAssignmentsService.getByReferee(refereeId),
+        ]);
+        const nv = refRes.data?.nivel || "";
+        const msgRes = await EnvioDocumentosService.listByReferee(refereeId, nv);
         const msgs = (msgRes.data || []).filter(d => d.remetenteId !== refereeId && !(d.leituras || {})[refereeId]);
         if (msgs.length) items.push({ text: `${msgs.length} mensagem(ns) nao lida(s)`, to: "/intranet/mensagens", color: "#d97706" });
         const an = anRes.data;
         if (an && (an.status === "pendente" || an.status === "vencido")) items.push({ text: `Anuidade ${ano} ${an.status}`, to: "/intranet/anuidade", color: "#dc2626" });
         const futuras = (asRes.data || []).filter(a => a.event?.date >= new Date().toISOString().slice(0, 10));
         if (futuras.length) items.push({ text: `${futuras.length} escala(s) futura(s)`, to: "/intranet/escalas", color: "#0066cc" });
-        setNotifs(prev => {
-          const changed = prev.map(n => n.text).join("|") !== items.map(n => n.text).join("|");
-          if (changed) setNotifsVistas(false);
-          return items;
-        });
-      }).catch(() => {});
+      } catch {}
+      setNotifs(prev => {
+        const changed = prev.map(n => n.text).join("|") !== items.map(n => n.text).join("|");
+        if (changed) setNotifsVistas(false);
+        return items;
+      });
     };
-    fetchNotifs();
-    const interval = setInterval(fetchNotifs, 60000);
-    return () => clearInterval(interval);
+
+    // Listener em tempo real nas coleções que afetam notificações
+    unsubs.push(onSnapshot(collection(db, "envioDocumentos"), () => recalcular()));
+    unsubs.push(onSnapshot(collection(db, "anuidades"), () => recalcular()));
+    unsubs.push(onSnapshot(collection(db, "refereeAssignments"), () => recalcular()));
+
+    return () => unsubs.forEach(u => u());
   }, [isAuthenticated, refereeId, loading]);
 
   if (loading || !isAuthenticated) {
