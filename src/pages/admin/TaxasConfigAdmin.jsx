@@ -14,6 +14,7 @@ import { COLORS, FONTS } from "../../styles/colors";
 import { TaxasConfigService } from "../../services";
 import { TABELA_PADRAO, PRAZOS, TABELA_ARBITRAGEM, formatarMoeda, calcularTaxaModalidade } from "../../utils/taxaCalculator";
 import { uploadFile } from "../../services/storageService";
+import ImageCropper from "../../components/ui/ImageCropper";
 
 export default function TaxasConfigAdmin() {
   const [config, setConfig] = useState(null);
@@ -22,6 +23,7 @@ export default function TaxasConfigAdmin() {
   const [saved, setSaved] = useState(false);
   const [simInscritos, setSimInscritos] = useState(500);
   const [uploadingAssinatura, setUploadingAssinatura] = useState(false);
+  const [cropSrc, setCropSrc] = useState(null);
   const assinaturaRef = useRef(null);
 
   useEffect(() => {
@@ -343,28 +345,35 @@ export default function TaxasConfigAdmin() {
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <input type="file" ref={assinaturaRef} accept="image/png,image/jpeg" style={{ fontSize: 13 }} />
-            <button
-              disabled={uploadingAssinatura}
-              onClick={async () => {
-                const file = assinaturaRef.current?.files?.[0];
-                if (!file) return;
+          {cropSrc && (
+            <ImageCropper
+              imageSrc={cropSrc}
+              aspect={5 / 2}
+              onCancel={() => setCropSrc(null)}
+              onCropDone={async (blob) => {
+                setCropSrc(null);
                 setUploadingAssinatura(true);
+                const file = new File([blob], "assinatura.png", { type: "image/png" });
                 const r = await uploadFile(file, "config/assinatura");
                 setUploadingAssinatura(false);
                 if (r.url) {
                   updateConfig({ assinaturaPresidenteUrl: r.url, assinaturaPresidentePath: r.path });
                 }
-                assinaturaRef.current.value = "";
               }}
-              style={{
-                padding: "8px 18px", borderRadius: 8, border: "none",
-                background: COLORS.primary, color: "#fff", fontSize: 13, fontWeight: 600,
-                cursor: uploadingAssinatura ? "not-allowed" : "pointer",
-              }}>
-              {uploadingAssinatura ? "Enviando..." : "Enviar Assinatura"}
-            </button>
+            />
+          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <label style={{ padding: "8px 18px", borderRadius: 8, border: `1px solid ${COLORS.primary}`, background: "transparent", color: COLORS.primary, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+              {uploadingAssinatura ? "Enviando..." : "Selecionar imagem"}
+              <input type="file" accept="image/png,image/jpeg" style={{ display: "none" }} onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => setCropSrc(reader.result);
+                reader.readAsDataURL(file);
+                e.target.value = "";
+              }} />
+            </label>
           </div>
         </div>
 
