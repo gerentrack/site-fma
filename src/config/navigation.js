@@ -268,36 +268,49 @@ export const REFEREE_FUNCTIONS = [
 ];
 
 export const INTRANET_NAV_ARBITRO = [
-  { label: "Início",              icon: "🏠", path: "/intranet" },
-  { label: "Minha Disponibilidade", icon: "📅", path: "/intranet/disponibilidade" },
-  { label: "Minhas Escalas",      icon: "📋", path: "/intranet/escalas" },
-  { label: "Calendario",          icon: "🗓️", path: "/intranet/calendario" },
-  { label: "Mensagens",           icon: "📨", path: "/intranet/mensagens" },
-  { label: "Meus Reembolsos",     icon: "🧾", path: "/intranet/reembolsos" },
-  { label: "Minha Anuidade",      icon: "💳", path: "/intranet/anuidade" },
-  { label: "Meus Dados",          icon: "👤", path: "/intranet/perfil" },
-  { label: "Documentos",          icon: "📄", path: "/intranet/documentos" },
+  // ── Início ──
+  { label: "Inicio",                icon: "🏠", path: "/intranet" },
+  // ── Minha Arbitragem ──
+  { label: "Disponibilidade",       icon: "📅", path: "/intranet/disponibilidade",  group: "Minha Arbitragem" },
+  { label: "Minhas Escalas",        icon: "📋", path: "/intranet/escalas" },
+  { label: "Calendario",            icon: "🗓️", path: "/intranet/calendario" },
+  { label: "Meus Reembolsos",       icon: "🧾", path: "/intranet/reembolsos" },
+  // ── Comunicacao ──
+  { label: "Mensagens",             icon: "📨", path: "/intranet/mensagens",        group: "Comunicacao" },
+  { label: "Documentos",            icon: "📄", path: "/intranet/documentos" },
+  // ── Minha Conta ──
+  { label: "Meus Dados",            icon: "👤", path: "/intranet/perfil",           group: "Minha Conta" },
+  { label: "Minha Anuidade",        icon: "💳", path: "/intranet/anuidade" },
 ];
 
 export const INTRANET_NAV_ADMIN = [
-  { label: "Início",              icon: "🏠", path: "/intranet" },
-  { label: "Minha Disponibilidade", icon: "📅", path: "/intranet/disponibilidade" },
-  { label: "Minhas Escalas",      icon: "📋", path: "/intranet/escalas" },
-  { label: "Árbitros",            icon: "👥", path: "/intranet/admin/arbitros" },
-  { label: "Eventos",             icon: "🗓️", path: "/intranet/admin/eventos" },
-  { label: "Escalação",           icon: "📋", path: "/intranet/admin/escalacao" },
-  { label: "Historico",           icon: "📊", path: "/intranet/admin/historico" },
-  { label: "Avaliacoes",          icon: "⭐", path: "/intranet/admin/avaliacoes" },
-  { label: "Diarias",             icon: "💰", path: "/intranet/admin/diarias" },
-  { label: "Meus Reembolsos",     icon: "🧾", path: "/intranet/reembolsos" },
-  { label: "Reembolsos",          icon: "🧾", path: "/intranet/admin/reembolsos" },
-  { label: "Relatorios",          icon: "📝", path: "/intranet/admin/relatorios-arbitragem" },
-  { label: "Indicadores",         icon: "📈", path: "/intranet/admin/indicadores" },
-  { label: "Relatorio",           icon: "📑", path: "/intranet/admin/relatorio" },
-  { label: "Mural de Avisos",     icon: "📌", path: "/intranet/admin/mural" },
-  { label: "Mensagens",           icon: "📨", path: "/intranet/mensagens" },
-  { label: "Meus Dados",          icon: "👤", path: "/intranet/perfil" },
-  { label: "Documentos",          icon: "📄", path: "/intranet/documentos" },
+  // ── Início ──
+  { label: "Inicio",                icon: "🏠", path: "/intranet" },
+  // ── Minha Arbitragem ──
+  { label: "Disponibilidade",       icon: "📅", path: "/intranet/disponibilidade",  group: "Minha Arbitragem" },
+  { label: "Minhas Escalas",        icon: "📋", path: "/intranet/escalas" },
+  { label: "Meus Reembolsos",       icon: "🧾", path: "/intranet/reembolsos" },
+  // ── Gestao de Eventos ──
+  { label: "Eventos",               icon: "🗓️", path: "/intranet/admin/eventos",    group: "Gestao" },
+  { label: "Escalacao",             icon: "📋", path: "/intranet/admin/escalacao" },
+  { label: "Historico",             icon: "📊", path: "/intranet/admin/historico" },
+  // ── Gestao de Arbitros ──
+  { label: "Arbitros",              icon: "👥", path: "/intranet/admin/arbitros",    group: "Arbitros" },
+  { label: "Avaliacoes",            icon: "⭐", path: "/intranet/admin/avaliacoes" },
+  // ── Financeiro ──
+  { label: "Diarias",               icon: "💰", path: "/intranet/admin/diarias",    group: "Financeiro" },
+  { label: "Aprovar Reembolsos",    icon: "🧾", path: "/intranet/admin/reembolsos" },
+  // ── Relatorios ──
+  { label: "Relatorios Arbitragem", icon: "📝", path: "/intranet/admin/relatorios-arbitragem", group: "Relatorios" },
+  { label: "Relatorio Arbitros",    icon: "📑", path: "/intranet/admin/relatorio" },
+  { label: "Indicadores",           icon: "📈", path: "/intranet/admin/indicadores" },
+  // ── Comunicacao ──
+  { label: "Mensagens",             icon: "📨", path: "/intranet/mensagens",        group: "Comunicacao" },
+  { label: "Mural de Avisos",       icon: "📌", path: "/intranet/admin/mural" },
+  { label: "Documentos",            icon: "📄", path: "/intranet/documentos" },
+  // ── Minha Conta ──
+  { label: "Meus Dados",            icon: "👤", path: "/intranet/perfil",           group: "Minha Conta" },
+  { label: "Minha Anuidade",        icon: "💳", path: "/intranet/anuidade" },
 ];
 
 export const ATHLETE_CONTENT_CATEGORIES = [

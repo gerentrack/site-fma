@@ -173,8 +173,19 @@ export default function IntranetLayout({ children, requireRole = null }) {
         </div>
 
         {/* Nav */}
-        <nav style={{ flex: 1, padding: "12px 8px", display: "flex", flexDirection: "column", gap: 2 }}>
-          {nav.map(item => <NavLink key={item.path} item={item} />)}
+        <nav style={{ flex: 1, padding: "12px 8px", display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
+          {nav.map((item, i) => (
+            <div key={item.path}>
+              {item.group && (
+                <div style={{
+                  fontFamily: FONTS.heading, fontSize: 9, fontWeight: 700, textTransform: "uppercase",
+                  letterSpacing: 2, color: "rgba(255,255,255,0.3)", padding: "10px 16px 4px",
+                  marginTop: i > 0 ? 6 : 0,
+                }}>{item.group}</div>
+              )}
+              <NavLink item={item} />
+            </div>
+          ))}
         </nav>
 
         {/* Aviso de sigilo */}
