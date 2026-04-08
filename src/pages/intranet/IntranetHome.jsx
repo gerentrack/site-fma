@@ -96,9 +96,10 @@ export default function IntranetHome() {
         setStats(s => ({ ...s, assigned: ativas.length }));
 
         const today = new Date().toISOString().slice(0, 10);
-        const passadas = allAsgn.filter(a => a.event?.date < today);
-        const relatorioIds = new Set((relRes.data || []).map(r => r.assignmentId));
-        const semRelatorio = passadas.filter(a => !relatorioIds.has(a.id)).length;
+        const passadas = allAsgn.filter(a => a.event?.date <= today);
+        const relatorioEventIds = new Set((relRes.data || []).filter(r => r.status === "enviado").map(r => r.eventId));
+        const eventosPassadosIds = [...new Set(passadas.map(a => a.eventId))];
+        const semRelatorio = eventosPassadosIds.filter(eid => !relatorioEventIds.has(eid)).length;
         const anuidadesVencidas = (anRes.data || []).filter(a => a.status === "vencido").length;
         const anuidadesPendentes = (anRes.data || []).filter(a => a.status === "pendente").length;
         const reembolsosPendentes = (reembRes.data || []).length;
@@ -166,7 +167,7 @@ export default function IntranetHome() {
               )}
               {pendencias.semRelatorio > 0 && (
                 <Link to="/intranet/admin/relatorios-arbitragem" style={{ fontSize: 13, color: COLORS.dark, textDecoration: "none", fontFamily: FONTS.body }}>
-                  <strong style={{ color: "#d97706" }}>{pendencias.semRelatorio}</strong> escalacao(oes) sem relatorio preenchido
+                  <strong style={{ color: "#d97706" }}>{pendencias.semRelatorio}</strong> evento(s) sem relatorio preenchido
                 </Link>
               )}
               {pendencias.diariasPendentes > 0 && (
