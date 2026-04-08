@@ -11,6 +11,8 @@ import {
   RefereeAvailabilityService,
   RefereeAssignmentsService,
   RefereesService,
+  ReembolsosService,
+  AvaliacoesService,
 } from "../../../services/index";
 import { COLORS, FONTS } from "../../../styles/colors";
 import { notificarEscalacaoArbitro, notificarRemocaoEscalacao } from "../../../services/emailService";
@@ -278,6 +280,15 @@ export function AssignmentEditor() {
     if (!confirm("Remover este árbitro da escalação?")) return;
     setSaving(assignmentId);
     const asgn = assignments.find(a => a.id === assignmentId);
+    // Remover reembolsos e avaliações vinculados
+    const [reembRes, avalRes] = await Promise.all([
+      ReembolsosService.list({ assignmentId }),
+      AvaliacoesService.list({ assignmentId }),
+    ]);
+    await Promise.all([
+      ...(reembRes.data || []).map(r => ReembolsosService.delete(r.id)),
+      ...(avalRes.data || []).map(a => AvaliacoesService.delete(a.id)),
+    ]);
     await RefereeAssignmentsService.remove(assignmentId);
     if (asgn?.referee?.email && event) {
       const dataFormatada = event.date ? new Date(event.date + "T12:00:00").toLocaleDateString("pt-BR") : "A confirmar";

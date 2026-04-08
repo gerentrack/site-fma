@@ -1136,6 +1136,7 @@ export const avaliacoesAPI = {
     let items = await readCol("avaliacoes");
     if (filtros.refereeId) items = items.filter(a => a.refereeId === filtros.refereeId);
     if (filtros.eventId) items = items.filter(a => a.eventId === filtros.eventId);
+    if (filtros.assignmentId) items = items.filter(a => a.assignmentId === filtros.assignmentId);
     items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     return ok(items);
   },
