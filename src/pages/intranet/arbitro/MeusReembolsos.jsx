@@ -47,8 +47,8 @@ export default function MeusReembolsos() {
       RefereeAssignmentsService.getByReferee(refereeId),
     ]);
     setReembolsos(rRes.data || []);
-    // Apenas escalações passadas com diária
-    const passadas = (aRes.data || []).filter(a => a.event?.date < new Date().toISOString().slice(0, 10));
+    // Apenas escalações de hoje ou passadas (com evento válido)
+    const passadas = (aRes.data || []).filter(a => a.event && a.event.date <= new Date().toISOString().slice(0, 10));
     setEscalacoes(passadas);
     setLoading(false);
   };
