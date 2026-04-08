@@ -6,8 +6,8 @@
 import { jsPDF } from "jspdf";
 import { fmaLogo } from "../assets/permits";
 
-const CW = 85.6; // largura do cartão (mm)
-const CH = 54;    // altura do cartão (mm)
+const CW = 89;  // largura do cartão (mm) — ligeiramente maior para compensar margem de impressão
+const CH = 56;   // altura do cartão (mm)
 const GAP = 2;    // espaço para linha de dobra
 
 const _cache = {};
@@ -43,7 +43,7 @@ export async function gerarCredencialPdf(dados) {
 
   // Instrução
   pdf.setFontSize(8); pdf.setTextColor(150);
-  pdf.text("Imprima em tamanho real (100%). Recorte pela borda, dobre na linha tracejada e plastifique.", A4W / 2, oy - 8, { align: "center" });
+  pdf.text("Imprima em tamanho real (100%), sem ajustar a pagina. Recorte, dobre e plastifique.", A4W / 2, oy - 8, { align: "center" });
 
   // Bordas de corte
   pdf.setDrawColor(200); pdf.setLineWidth(0.2);
