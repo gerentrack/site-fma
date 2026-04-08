@@ -290,6 +290,7 @@ export const INTRANET_NAV_ADMIN = [
   { label: "Avaliacoes",          icon: "⭐", path: "/intranet/admin/avaliacoes" },
   { label: "Diarias",             icon: "💰", path: "/intranet/admin/diarias" },
   { label: "Reembolsos",          icon: "🧾", path: "/intranet/admin/reembolsos" },
+  { label: "Relatorios",          icon: "📝", path: "/intranet/admin/relatorios-arbitragem" },
   { label: "Indicadores",         icon: "📈", path: "/intranet/admin/indicadores" },
   { label: "Relatorio",           icon: "📑", path: "/intranet/admin/relatorio" },
   { label: "Mural de Avisos",     icon: "📌", path: "/intranet/admin/mural" },

@@ -1084,6 +1084,26 @@ export const envioDocumentosAPI = {
   },
 };
 
+// ─── Relatórios de Arbitragem ────────────────────────────────────────────────
+export const relatoriosAPI = {
+  list: async (filtros = {}) => {
+    let items = await readCol("relatoriosArbitragem");
+    if (filtros.refereeId) items = items.filter(r => r.refereeId === filtros.refereeId);
+    if (filtros.eventId) items = items.filter(r => r.eventId === filtros.eventId);
+    if (filtros.status) items = items.filter(r => r.status === filtros.status);
+    items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return ok(items);
+  },
+  get: async (id) => { const item = await readDoc("relatoriosArbitragem", id); return item ? ok(item) : err("Nao encontrado."); },
+  getByAssignment: async (assignmentId) => {
+    const items = await readCol("relatoriosArbitragem");
+    return ok(items.find(r => r.assignmentId === assignmentId) || null);
+  },
+  create: async (data) => { const item = await createDoc("relatoriosArbitragem", { ...data, createdAt: now() }); return ok(item); },
+  update: async (id, data) => { const item = await patchDoc("relatoriosArbitragem", id, data); return item ? ok(item) : err("Nao encontrado."); },
+  delete: async (id) => { await removeDoc("relatoriosArbitragem", id); return ok(true); },
+};
+
 // ─── Reembolsos ─────────────────────────────────────────────────────────────
 export const reembolsosAPI = {
   list: async (filtros = {}) => {

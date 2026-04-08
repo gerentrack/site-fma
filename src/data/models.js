@@ -562,7 +562,86 @@ export const refereeAssignmentModel = {
   updatedAt: "",
 };
 
-// ─── 19b. Reembolso de Despesa ────────────────────────────────────────────────
+// ─── 19b. Relatório de Arbitragem — Corrida de Rua ───────────────────────────
+/**
+ * Relatório pós-evento preenchido pelo árbitro chefe/coordenador.
+ * Coleção: relatoriosArbitragem
+ */
+export const relatorioArbitragemModel = {
+  id: "",
+  assignmentId: "",       // FK → refereeAssignment.id
+  eventId: "",            // FK → refereeEvent.id
+  refereeId: "",          // quem preencheu
+  refereeName: "",
+  eventTitle: "",         // snapshot
+  eventDate: "",          // snapshot
+  eventCity: "",          // snapshot
+  status: "rascunho",    // "rascunho" | "enviado"
+
+  // ── 1. Identificação (pré-preenchido) ──
+  // email, data, nome, evento, local — vêm do sistema
+
+  // ── 2. Equipe ──
+  arbitrosPresentes: [],  // IDs dos árbitros que compareceram
+  horariosChegada: "",    // texto livre
+
+  // ── 3. Evento ──
+  tipoEvento: [],         // ["social","participativo","competicao"]
+  inscritosConcluintes: "", // texto livre por modalidade
+
+  // ── 4. Arena ──
+  arena: [],              // checkboxes
+  sinalizacaoArena: [],
+  sinalizacaoArenaFotos: [], // URLs
+  sonorizacao: [],
+
+  // ── 5. Estrutura ──
+  postoMedico: [],
+  postoMedicoFotos: [],
+  zonaLargadaChegadaFotos: [],
+  numeroPeitoFotos: [],
+  guardaVolumes: "",      // radio (uma opção)
+  guardaVolumesFotos: [],
+  banheirosFotos: [],
+
+  // ── 6. Percurso ──
+  marcacaoPercursoFotos: [],
+  comentariosLargadaChegada: [],
+  setorLargadaFotos: [],
+  divisaoElite: [],
+  cronometragemEletronica: "", // texto
+  cronometragemFotos: [],
+  medicaoPercurso: "",    // radio
+  trajetoPercurso: [],
+  sinalizacaoPercurso: [],
+  linkResultados: "",
+
+  // ── 7. Hidratação ──
+  hidratacao: [],
+  hidratacaoFotos: [],
+
+  // ── 8. Premiação ──
+  podioBackdrop: [],
+  podioFotos: [],
+  premiacao: [],
+  classificacao: [],
+  fotoEquipeArbitragem: [],
+  fotosAnotacao: [],
+
+  // ── 9. Geral ──
+  diferencaNumerosPeito: "",
+  cumprimentoRegulamento: "",
+  organizacaoEquipe: [],
+  segurancaAtletas: "",
+  detalhesPercurso: "",
+  comentariosAdicionais: "",
+  homologacaoResultados: "",
+
+  createdAt: "",
+  updatedAt: "",
+};
+
+// ─── 19c. Reembolso de Despesa ───────────────────────────────────────────────
 /**
  * Nota fiscal enviada pelo árbitro para reembolso.
  * Coleção: reembolsos

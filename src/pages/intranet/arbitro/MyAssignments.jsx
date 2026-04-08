@@ -3,9 +3,10 @@
  * Rota: /intranet/escalas
  */
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import IntranetLayout from "../IntranetLayout";
 import { useIntranet } from "../../../context/IntranetContext";
-import { RefereeAssignmentsService, RefereesService } from "../../../services/index";
+import { RefereeAssignmentsService, RefereesService, RelatoriosService } from "../../../services/index";
 import { COLORS, FONTS } from "../../../styles/colors";
 import { CALENDAR_CATEGORIES, REFEREE_FUNCTIONS } from "../../../config/navigation";
 
@@ -23,6 +24,7 @@ export default function MyAssignments() {
   const [assignments, setAssignments] = useState([]);
   const [allAssignments, setAllAssignments] = useState([]);
   const [referees, setReferees] = useState({});
+  const [relatorios, setRelatorios] = useState({});
   const [loading, setLoading] = useState(true);
   const [showPast, setShowPast] = useState(false);
 
@@ -31,10 +33,12 @@ export default function MyAssignments() {
       RefereeAssignmentsService.getByReferee(refereeId),
       RefereeAssignmentsService.list(),
       RefereesService.list(),
-    ]).then(([myR, allR, refR]) => {
+      RelatoriosService.list({ refereeId }),
+    ]).then(([myR, allR, refR, relR]) => {
       if (myR.data) setAssignments(myR.data);
       if (allR.data) setAllAssignments(allR.data);
       if (refR.data) setReferees(Object.fromEntries(refR.data.map(r => [r.id, r])));
+      if (relR.data) setRelatorios(Object.fromEntries(relR.data.map(r => [r.assignmentId, r])));
       setLoading(false);
     });
   }, [refereeId]);
@@ -160,6 +164,25 @@ export default function MyAssignments() {
                         </div>
                       )}
                       {asgn.notes && <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 6, fontStyle: "italic" }}>Obs: {asgn.notes}</div>}
+                      {/* Relatório (eventos passados) */}
+                      {evt.date < today && (
+                        <div style={{ marginTop: 8 }}>
+                          {relatorios[asgn.id] ? (
+                            <Link to={`/intranet/relatorio/${asgn.id}`} style={{
+                              padding: "5px 14px", borderRadius: 6, fontSize: 12, fontWeight: 600, textDecoration: "none",
+                              background: relatorios[asgn.id].status === "enviado" ? "#f0fdf4" : "#fffbeb",
+                              color: relatorios[asgn.id].status === "enviado" ? "#15803d" : "#d97706",
+                            }}>
+                              {relatorios[asgn.id].status === "enviado" ? "Relatorio enviado" : "Continuar relatorio (rascunho)"}
+                            </Link>
+                          ) : (
+                            <Link to={`/intranet/relatorio/${asgn.id}`} style={{
+                              padding: "5px 14px", borderRadius: 6, fontSize: 12, fontWeight: 600, textDecoration: "none",
+                              background: COLORS.primary, color: "#fff",
+                            }}>Preencher Relatorio</Link>
+                          )}
+                        </div>
+                      )}
                       {/* Colegas escalados */}
                       {(() => {
                         const colegas = allAssignments.filter(a => a.eventId === asgn.eventId && a.refereeId !== refereeId);
