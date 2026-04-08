@@ -33,7 +33,43 @@ function uniqueName(file) {
 }
 
 /**
+ * Comprime uma imagem no browser antes do upload.
+ * Redimensiona para maxSize e converte para JPEG com qualidade 0.7.
+ * Retorna o File original se não for imagem.
+ */
+async function compressImage(file, maxSize = 1200, quality = 0.7) {
+  if (!file.type.startsWith("image/") || file.type === "image/svg+xml") return file;
+  // Não comprimir PNGs pequenos (podem ser ícones/assinaturas com transparência)
+  if (file.type === "image/png" && file.size < 200 * 1024) return file;
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxSize || h > maxSize) {
+        const scale = maxSize / Math.max(w, h);
+        w = Math.round(w * scale);
+        h = Math.round(h * scale);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      canvas.toBlob((blob) => {
+        if (blob && blob.size < file.size) {
+          resolve(new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" }));
+        } else {
+          resolve(file); // Original é menor, manter
+        }
+      }, "image/jpeg", quality);
+    };
+    img.onerror = () => resolve(file);
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+/**
  * Faz upload de um arquivo para o Firebase Storage.
+ * Imagens são comprimidas automaticamente antes do envio.
  *
  * @param {File}     file        — arquivo a enviar
  * @param {string}   folder      — pasta no Storage (ex: "noticias", "solicitacoes/sol123")
@@ -42,10 +78,11 @@ function uniqueName(file) {
  */
 export async function uploadFile(file, folder = "uploads", onProgress = null) {
   try {
-    const name     = uniqueName(file);
+    const processedFile = await compressImage(file);
+    const name     = uniqueName(processedFile);
     const path     = `${folder}/${name}`;
     const fileRef  = ref(storage, path);
-    const task     = uploadBytesResumable(fileRef, file);
+    const task     = uploadBytesResumable(fileRef, processedFile);
 
     await new Promise((resolve, reject) => {
       task.on(
