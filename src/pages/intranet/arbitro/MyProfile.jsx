@@ -141,7 +141,7 @@ export default function MyProfile() {
             setMsg("Gerando credencial...");
             const cRes = await TaxasConfigService.get();
             const cfg = cRes.data || {};
-            const blob = await gerarCredencialPdf({
+            const result = await gerarCredencialPdf({
               nome: data.name, cpf: data.cpf, rg: data.rg, nivel: data.nivel,
               registroCbat: data.registroCbat, fotoUrl: data.foto || "",
               refereeId, siteUrl: window.location.origin,
@@ -149,7 +149,7 @@ export default function MyProfile() {
               assinaturaUrl: cfg.assinaturaPresidenteUrl || "",
               presidenteNome: cfg.presidenteNome || "",
             });
-            setCredencialUrl(URL.createObjectURL(blob));
+            setCredencialUrl(URL.createObjectURL(result.blob));
             setMsg("");
           }} style={{ padding: "4px 12px", borderRadius: 20, border: `1px solid ${COLORS.primary}`, background: "transparent", color: COLORS.primary, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FONTS.heading }}>
             Minha Credencial
@@ -160,15 +160,18 @@ export default function MyProfile() {
         {credencialUrl && (
           <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}
             onClick={() => { URL.revokeObjectURL(credencialUrl); setCredencialUrl(null); }}>
-            <div style={{ background: "#fff", borderRadius: 14, padding: 20, maxWidth: 500, width: "95%", maxHeight: "90vh", display: "flex", flexDirection: "column" }}
+            <div style={{ background: "#fff", borderRadius: 14, padding: 24, maxWidth: 720, width: "95%", maxHeight: "90vh", overflow: "auto" }}
               onClick={e => e.stopPropagation()}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <span style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 800, color: COLORS.dark }}>Minha Credencial</span>
                 <button onClick={() => { URL.revokeObjectURL(credencialUrl); setCredencialUrl(null); }}
                   style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: COLORS.gray }}>X</button>
               </div>
-              <iframe src={credencialUrl} style={{ width: "100%", height: 340, border: "none", borderRadius: 8 }} />
-              <div style={{ display: "flex", gap: 8, marginTop: 12, justifyContent: "flex-end" }}>
+              <iframe src={`${credencialUrl}#zoom=page-width`} style={{ width: "100%", height: 220, border: `1px solid ${COLORS.grayLight}`, borderRadius: 8, background: "#f4f4f4" }} />
+              <p style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, textAlign: "center", margin: "10px 0 14px" }}>
+                Imprima, recorte pela borda, dobre na linha tracejada e plastifique.
+              </p>
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                 <button onClick={() => { URL.revokeObjectURL(credencialUrl); setCredencialUrl(null); }}
                   style={{ padding: "8px 18px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", fontSize: 13, cursor: "pointer" }}>Fechar</button>
                 <a href={credencialUrl} download={`Credencial_${data.name?.replace(/\s+/g, "_")}.pdf`}

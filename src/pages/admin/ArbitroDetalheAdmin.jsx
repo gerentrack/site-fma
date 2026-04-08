@@ -95,7 +95,7 @@ export default function ArbitroDetalheAdmin() {
             onClick={async () => {
               const cRes = await TaxasConfigService.get();
               const cfg = cRes.data || {};
-              const blob = await gerarCredencialPdf({
+              const result = await gerarCredencialPdf({
                 nome: data.name,
                 cpf: data.cpf,
                 rg: data.rg,
@@ -108,7 +108,7 @@ export default function ArbitroDetalheAdmin() {
                 assinaturaUrl: cfg.assinaturaPresidenteUrl || "",
                 presidenteNome: cfg.presidenteNome || "",
               });
-              const url = URL.createObjectURL(blob);
+              const url = URL.createObjectURL(result.blob);
               const a = document.createElement("a");
               a.href = url;
               a.download = `Credencial_${data.name.replace(/\s+/g, "_")}.pdf`;
