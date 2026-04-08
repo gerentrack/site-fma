@@ -198,7 +198,6 @@ export function AssignmentEditor() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(null);
   const [tab, setTab] = useState("available"); // available | all | assigned
-  const [notifyEmail, setNotifyEmail] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -237,27 +236,35 @@ export function AssignmentEditor() {
       alimentacao: diariaData.alimentacao || 0,
       diariaPaga: false,
     });
-    // Notificar árbitro por email
-    const referee = [...available, ...allRefs].find(r => r.id === refereeId);
-    if (notifyEmail && referee?.email && event) {
-      const dataFormatada = event.date
-        ? new Date(event.date + "T12:00:00").toLocaleDateString("pt-BR")
-        : "A confirmar";
-      const fnLabel = fnOpts.find(f => f.value === refFn)?.label || refFn;
-      const fnExtraLabel = funcaoExtra ? fnOpts.find(f => f.value === funcaoExtra)?.label : "";
-      const funcaoTexto = fnExtraLabel ? `${fnLabel} / ${fnExtraLabel}` : fnLabel;
-      notificarEscalacaoArbitro({
-        arbitroEmail: referee.email,
-        arbitroNome:  referee.name,
-        evento:       event.title,
-        data:         dataFormatada,
-        local:        event.city || event.location || "A confirmar",
-        funcao:       funcaoTexto,
-        observacao:   event.description || "",
-      }).catch(e => console.warn("Email escalação:", e));
-    }
     await load();
     setSaving(null);
+  };
+
+  const [notificando, setNotificando] = useState(false);
+  const [notificadoMsg, setNotificadoMsg] = useState("");
+
+  const notificarTodos = async () => {
+    if (assignments.length === 0) return;
+    setNotificando(true); setNotificadoMsg("");
+    const dataFormatada = event.date ? new Date(event.date + "T12:00:00").toLocaleDateString("pt-BR") : "A confirmar";
+    let enviados = 0;
+    for (const asgn of assignments) {
+      const ref = asgn.referee;
+      if (!ref?.email) continue;
+      const fnLabel = fnOpts.find(f => f.value === asgn.refereeFunction)?.label || asgn.refereeFunction;
+      const fnExtraLabel = asgn.funcaoExtra ? fnOpts.find(f => f.value === asgn.funcaoExtra)?.label : "";
+      const funcaoTexto = fnExtraLabel ? `${fnLabel} / ${fnExtraLabel}` : fnLabel;
+      await notificarEscalacaoArbitro({
+        arbitroEmail: ref.email, arbitroNome: ref.name,
+        evento: event.title, data: dataFormatada,
+        local: event.city || event.location || "A confirmar",
+        funcao: funcaoTexto, observacao: event.description || "",
+      }).catch(() => {});
+      enviados++;
+    }
+    setNotificando(false);
+    setNotificadoMsg(`${enviados} email(s) enviado(s).`);
+    setTimeout(() => setNotificadoMsg(""), 5000);
   };
 
   const updateFunction = async (assignmentId, refFn) => {
@@ -272,7 +279,7 @@ export function AssignmentEditor() {
     setSaving(assignmentId);
     const asgn = assignments.find(a => a.id === assignmentId);
     await RefereeAssignmentsService.remove(assignmentId);
-    if (notifyEmail && asgn?.referee?.email && event) {
+    if (asgn?.referee?.email && event) {
       const dataFormatada = event.date ? new Date(event.date + "T12:00:00").toLocaleDateString("pt-BR") : "A confirmar";
       notificarRemocaoEscalacao({
         arbitroEmail: asgn.referee.email,
@@ -316,10 +323,6 @@ export function AssignmentEditor() {
               <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>de {event.refereesNeeded || "?"} escalados</div>
             </div>
           </div>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, fontFamily: FONTS.body, color: COLORS.gray, marginTop: 12 }}>
-            <input type="checkbox" checked={notifyEmail} onChange={e => setNotifyEmail(e.target.checked)} style={{ accentColor: COLORS.primary, width: 16, height: 16 }} />
-            Notificar arbitro por e-mail ao escalar
-          </label>
         </div>
 
         {/* Tabs */}
@@ -347,6 +350,15 @@ export function AssignmentEditor() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {/* Escalados */}
+            {tab === "assigned" && assignments.length > 0 && (
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12, padding: "10px 14px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0" }}>
+                <button onClick={notificarTodos} disabled={notificando}
+                  style={{ padding: "8px 18px", borderRadius: 7, border: "none", background: "#007733", color: "#fff", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: notificando ? "not-allowed" : "pointer" }}>
+                  {notificando ? "Enviando..." : `Notificar ${assignments.length} escalado(s) por e-mail`}
+                </button>
+                {notificadoMsg && <span style={{ fontSize: 12, color: "#15803d", fontFamily: FONTS.body }}>{notificadoMsg}</span>}
+              </div>
+            )}
             {tab === "assigned" && assignments.map(asgn => {
               const ref = asgn.referee || {};
               const totalDiaria = (asgn.valorDiaria || 0) + (asgn.transporte || 0) + (asgn.hospedagem || 0) + (asgn.alimentacao || 0);
