@@ -20,6 +20,7 @@ const CATEGORIAS = [
 const STATUS_STYLE = {
   pendente: { label: "Pendente", color: "#d97706", bg: "#fffbeb" },
   aprovado: { label: "Aprovado", color: "#15803d", bg: "#f0fdf4" },
+  aprovado_parcial: { label: "Aprovado parcial", color: "#0066cc", bg: "#eff6ff" },
   rejeitado: { label: "Rejeitado", color: "#dc2626", bg: "#fef2f2" },
 };
 
@@ -88,7 +89,7 @@ export default function MeusReembolsos() {
     fetchData();
   };
 
-  const totalAprovado = reembolsos.filter(r => r.status === "aprovado").reduce((s, r) => s + (r.valor || 0), 0);
+  const totalAprovado = reembolsos.filter(r => r.status === "aprovado" || r.status === "aprovado_parcial").reduce((s, r) => s + (r.valorAprovado ?? r.valor || 0), 0);
   const totalPendente = reembolsos.filter(r => r.status === "pendente").reduce((s, r) => s + (r.valor || 0), 0);
 
   const card = { background: "#fff", borderRadius: 12, padding: "18px 22px", marginBottom: 12, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" };
@@ -189,6 +190,11 @@ export default function MeusReembolsos() {
                   <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, marginTop: 4 }}>
                     {r.eventTitle} — {r.eventDate ? new Date(r.eventDate + "T12:00:00").toLocaleDateString("pt-BR") : ""}
                   </div>
+                  {r.status === "aprovado_parcial" && r.valorAprovado != null && (
+                    <div style={{ marginTop: 6, padding: "6px 10px", borderRadius: 6, background: "#eff6ff", fontSize: 12, color: "#0066cc" }}>
+                      Valor aprovado: {fmt(r.valorAprovado)} (solicitado: {fmt(r.valor)})
+                    </div>
+                  )}
                   {r.status === "rejeitado" && r.motivoRejeicao && (
                     <div style={{ marginTop: 6, padding: "6px 10px", borderRadius: 6, background: "#fef2f2", fontSize: 12, color: "#dc2626" }}>
                       Motivo: {r.motivoRejeicao}

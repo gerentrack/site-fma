@@ -11,6 +11,7 @@ const CATEGORIAS = { transporte: "Transporte", hospedagem: "Hospedagem", aliment
 const STATUS_STYLE = {
   pendente: { label: "Pendente", color: "#d97706", bg: "#fffbeb" },
   aprovado: { label: "Aprovado", color: "#15803d", bg: "#f0fdf4" },
+  aprovado_parcial: { label: "Aprovado parcial", color: "#0066cc", bg: "#eff6ff" },
   rejeitado: { label: "Rejeitado", color: "#dc2626", bg: "#fef2f2" },
 };
 
@@ -31,9 +32,19 @@ export default function ReembolsosAdmin() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const handleAprovar = async (id) => {
+  const handleAprovar = async (id, valorOriginal) => {
+    const input = prompt(`Valor aprovado (deixe vazio para aprovar integral R$ ${(valorOriginal || 0).toFixed(2)}):`, valorOriginal);
+    if (input === null) return;
+    const valorAprovado = input.trim() === "" ? valorOriginal : Number(input);
+    if (isNaN(valorAprovado) || valorAprovado < 0) return;
     setActionLoading(id);
-    await ReembolsosService.update(id, { status: "aprovado", aprovadoPor: "Admin", aprovadoEm: new Date().toISOString() });
+    const parcial = valorAprovado < valorOriginal;
+    await ReembolsosService.update(id, {
+      status: parcial ? "aprovado_parcial" : "aprovado",
+      valorAprovado,
+      aprovadoPor: "Admin",
+      aprovadoEm: new Date().toISOString(),
+    });
     setActionLoading(null);
     fetchData();
   };
@@ -50,7 +61,7 @@ export default function ReembolsosAdmin() {
   const filtered = reembolsos.filter(r => !filtroStatus || r.status === filtroStatus);
 
   const pendentes = reembolsos.filter(r => r.status === "pendente");
-  const totalAprovado = reembolsos.filter(r => r.status === "aprovado").reduce((s, r) => s + (r.valor || 0), 0);
+  const totalAprovado = reembolsos.filter(r => r.status === "aprovado" || r.status === "aprovado_parcial").reduce((s, r) => s + (r.valorAprovado ?? r.valor || 0), 0);
   const totalPendente = pendentes.reduce((s, r) => s + (r.valor || 0), 0);
 
   const card = { background: "#fff", borderRadius: 12, padding: "20px 24px", boxShadow: "0 1px 8px rgba(0,0,0,0.07)", marginBottom: 20 };
@@ -128,9 +139,14 @@ export default function ReembolsosAdmin() {
                       Ver nota
                     </a>
                   )}
+                  {(r.status === "aprovado_parcial" || r.status === "aprovado") && r.valorAprovado != null && (
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#0066cc", marginTop: 4 }}>
+                      Valor aprovado: {fmt(r.valorAprovado)}{r.valorAprovado < r.valor ? ` (de ${fmt(r.valor)})` : ""}
+                    </div>
+                  )}
                   {r.status === "pendente" && (
                     <div style={{ display: "flex", gap: 6 }}>
-                      <button onClick={() => handleAprovar(r.id)} disabled={actionLoading === r.id}
+                      <button onClick={() => handleAprovar(r.id, r.valor)} disabled={actionLoading === r.id}
                         style={{ padding: "5px 14px", borderRadius: 6, border: "none", background: "#15803d", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                         Aprovar
                       </button>
