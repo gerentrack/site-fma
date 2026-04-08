@@ -81,28 +81,33 @@ export default function IntranetLayout({ children, requireRole = null }) {
     }
   }, [isAuthenticated, loading, role]);
 
-  // Notificações
+  // Notificações (atualiza a cada 60s)
   useEffect(() => {
     if (!isAuthenticated || !refereeId || loading) return;
-    const items = [];
-    const ano = new Date().getFullYear();
-    Promise.all([
-      RefereesService.get(refereeId).then(r => {
-        const nv = r.data?.nivel || "";
-        return EnvioDocumentosService.listByReferee(refereeId, nv);
-      }),
-      AnuidadesService.getByRefereeAno(refereeId, ano),
-      RefereeAssignmentsService.getByReferee ? RefereeAssignmentsService.getByReferee(refereeId) : Promise.resolve({ data: [] }),
-    ]).then(([msgRes, anRes, asRes]) => {
-      const msgs = (msgRes.data || []).filter(d => d.remetenteId !== refereeId && !(d.leituras || {})[refereeId]);
-      if (msgs.length) items.push({ text: `${msgs.length} mensagem(ns) nao lida(s)`, to: "/intranet/mensagens", color: "#d97706" });
-      const an = anRes.data;
-      if (an && (an.status === "pendente" || an.status === "vencido")) items.push({ text: `Anuidade ${ano} ${an.status}`, to: "/intranet/anuidade", color: "#dc2626" });
-      const futuras = (asRes.data || []).filter(a => a.event?.date >= new Date().toISOString().slice(0, 10));
-      if (futuras.length) items.push({ text: `${futuras.length} escala(s) futura(s)`, to: "/intranet/escalas", color: "#0066cc" });
-      setNotifs(items);
-    }).catch(() => {});
-  }, [isAuthenticated, refereeId, loading, location.pathname]);
+    const fetchNotifs = () => {
+      const items = [];
+      const ano = new Date().getFullYear();
+      Promise.all([
+        RefereesService.get(refereeId).then(r => {
+          const nv = r.data?.nivel || "";
+          return EnvioDocumentosService.listByReferee(refereeId, nv);
+        }),
+        AnuidadesService.getByRefereeAno(refereeId, ano),
+        RefereeAssignmentsService.getByReferee ? RefereeAssignmentsService.getByReferee(refereeId) : Promise.resolve({ data: [] }),
+      ]).then(([msgRes, anRes, asRes]) => {
+        const msgs = (msgRes.data || []).filter(d => d.remetenteId !== refereeId && !(d.leituras || {})[refereeId]);
+        if (msgs.length) items.push({ text: `${msgs.length} mensagem(ns) nao lida(s)`, to: "/intranet/mensagens", color: "#d97706" });
+        const an = anRes.data;
+        if (an && (an.status === "pendente" || an.status === "vencido")) items.push({ text: `Anuidade ${ano} ${an.status}`, to: "/intranet/anuidade", color: "#dc2626" });
+        const futuras = (asRes.data || []).filter(a => a.event?.date >= new Date().toISOString().slice(0, 10));
+        if (futuras.length) items.push({ text: `${futuras.length} escala(s) futura(s)`, to: "/intranet/escalas", color: "#0066cc" });
+        setNotifs(items);
+      }).catch(() => {});
+    };
+    fetchNotifs();
+    const interval = setInterval(fetchNotifs, 60000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, refereeId, loading]);
 
   if (loading || !isAuthenticated) {
     return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#1a1a1a", color: "#fff", fontFamily: FONTS.body }}>Verificando acesso...</div>;
