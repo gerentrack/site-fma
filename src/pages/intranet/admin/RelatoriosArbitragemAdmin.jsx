@@ -22,6 +22,8 @@ export default function RelatoriosArbitragemAdmin() {
   const [selected, setSelected] = useState(null);
   const [filtroStatus, setFiltroStatus] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [showPendenciaForm, setShowPendenciaForm] = useState(false);
+  const [pendenciaTexto, setPendenciaTexto] = useState("");
 
   const fetchData = () => {
     setLoading(true);
@@ -42,12 +44,13 @@ export default function RelatoriosArbitragemAdmin() {
   };
 
   const handlePendencia = async (id) => {
-    const obs = prompt("Descreva o que precisa ser corrigido:");
-    if (obs === null) return;
+    if (!pendenciaTexto.trim()) return;
     setActionLoading(true);
-    await RelatoriosService.update(id, { status: "pendencia", observacaoAdmin: obs, pendenciaEm: new Date().toISOString() });
+    await RelatoriosService.update(id, { status: "pendencia", observacaoAdmin: pendenciaTexto.trim(), pendenciaEm: new Date().toISOString() });
     setActionLoading(false);
-    setSelected(prev => ({ ...prev, status: "pendencia", observacaoAdmin: obs }));
+    setSelected(prev => ({ ...prev, status: "pendencia", observacaoAdmin: pendenciaTexto.trim() }));
+    setShowPendenciaForm(false);
+    setPendenciaTexto("");
     fetchData();
   };
 
@@ -214,7 +217,7 @@ export default function RelatoriosArbitragemAdmin() {
                     style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "#15803d", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                     Aprovar Relatorio
                   </button>
-                  <button onClick={() => handlePendencia(selected.id)} disabled={actionLoading}
+                  <button onClick={() => setShowPendenciaForm(true)} disabled={actionLoading}
                     style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "#d97706", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                     Inserir Pendencia
                   </button>
@@ -222,6 +225,22 @@ export default function RelatoriosArbitragemAdmin() {
                     style={{ padding: "8px 20px", borderRadius: 8, border: "1px solid #dc2626", background: "transparent", color: "#dc2626", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                     Devolver (refazer)
                   </button>
+                </div>
+              )}
+              {showPendenciaForm && (
+                <div style={{ marginTop: 12, padding: "14px 16px", borderRadius: 8, background: "#fffbeb", border: "1px solid #fde68a" }}>
+                  <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, color: "#d97706", marginBottom: 8 }}>DESCREVA A PENDENCIA</div>
+                  <textarea value={pendenciaTexto} onChange={e => setPendenciaTexto(e.target.value)}
+                    placeholder="Descreva o que precisa ser corrigido pelo arbitro..."
+                    style={{ width: "100%", padding: "8px 12px", border: `1px solid ${COLORS.grayLight}`, borderRadius: 8, fontSize: 13, fontFamily: FONTS.body, minHeight: 60, resize: "vertical", boxSizing: "border-box" }} />
+                  <div style={{ display: "flex", gap: 8, marginTop: 8, justifyContent: "flex-end" }}>
+                    <button onClick={() => { setShowPendenciaForm(false); setPendenciaTexto(""); }}
+                      style={{ padding: "6px 16px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, background: "transparent", fontSize: 12, cursor: "pointer" }}>Cancelar</button>
+                    <button onClick={() => handlePendencia(selected.id)} disabled={actionLoading || !pendenciaTexto.trim()}
+                      style={{ padding: "6px 16px", borderRadius: 6, border: "none", background: "#d97706", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                      {actionLoading ? "Salvando..." : "Enviar Pendencia"}
+                    </button>
+                  </div>
                 </div>
               )}
               {selected.status === "aprovado" && (
