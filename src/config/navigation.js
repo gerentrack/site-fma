@@ -298,7 +298,8 @@ export const INTRANET_NAV_ADMIN = [
   { label: "Arbitros",              icon: "👥", path: "/intranet/admin/arbitros",    group: "Arbitros" },
   { label: "Avaliacoes",            icon: "⭐", path: "/intranet/admin/avaliacoes" },
   // ── Financeiro ──
-  { label: "Diarias",               icon: "💰", path: "/intranet/admin/diarias",    group: "Financeiro" },
+  { label: "Financeiro",            icon: "💰", path: "/intranet/admin/financeiro",  group: "Financeiro" },
+  { label: "Diarias",               icon: "💵", path: "/intranet/admin/diarias" },
   { label: "Aprovar Reembolsos",    icon: "🧾", path: "/intranet/admin/reembolsos" },
   // ── Relatorios ──
   { label: "Relatorios Arbitragem", icon: "📝", path: "/intranet/admin/relatorios-arbitragem", group: "Relatorios" },

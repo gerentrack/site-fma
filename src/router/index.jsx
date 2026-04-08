@@ -95,6 +95,7 @@ import DiariasAdmin from "../pages/intranet/admin/DiariasAdmin";
 import MuralAdmin from "../pages/intranet/admin/MuralAdmin";
 import ReembolsosAdmin from "../pages/intranet/admin/ReembolsosAdmin";
 import RelatoriosArbitragemAdmin from "../pages/intranet/admin/RelatoriosArbitragemAdmin";
+import FinanceiroArbitragem from "../pages/intranet/admin/FinanceiroArbitragem";
 import MeusReembolsos from "../pages/intranet/arbitro/MeusReembolsos";
 import RelatorioCorridaRua from "../pages/intranet/arbitro/RelatorioCorridaRua";
 import ChangePasswordPage from "../pages/admin/ChangePasswordPage";
@@ -181,6 +182,7 @@ export default function AppRouter() {
       <Route path="/intranet/admin/mural"            element={<MuralAdmin />} />
       <Route path="/intranet/admin/reembolsos"       element={<ReembolsosAdmin />} />
       <Route path="/intranet/admin/relatorios-arbitragem" element={<RelatoriosArbitragemAdmin />} />
+      <Route path="/intranet/admin/financeiro"           element={<FinanceiroArbitragem />} />
 
       {/* ── Galeria ── */}
       <Route path="/galeria"     element={<PublicLayout><GaleriaListagem /></PublicLayout>} />
