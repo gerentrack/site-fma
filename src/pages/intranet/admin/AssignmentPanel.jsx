@@ -245,12 +245,14 @@ export function AssignmentEditor() {
   const [notificando, setNotificando] = useState(false);
   const [notificadoMsg, setNotificadoMsg] = useState("");
 
-  const notificarTodos = async () => {
-    if (assignments.length === 0) return;
+  const pendentesNotificacao = assignments.filter(a => !a.notificadoEm);
+
+  const notificarPendentes = async () => {
+    if (pendentesNotificacao.length === 0) return;
     setNotificando(true); setNotificadoMsg("");
     const dataFormatada = event.date ? new Date(event.date + "T12:00:00").toLocaleDateString("pt-BR") : "A confirmar";
     let enviados = 0;
-    for (const asgn of assignments) {
+    for (const asgn of pendentesNotificacao) {
       const ref = asgn.referee;
       if (!ref?.email) continue;
       const fnLabel = fnOpts.find(f => f.value === asgn.refereeFunction)?.label || asgn.refereeFunction;
@@ -262,10 +264,12 @@ export function AssignmentEditor() {
         local: event.city || event.location || "A confirmar",
         funcao: funcaoTexto, observacao: event.description || "",
       }).catch(() => {});
+      await RefereeAssignmentsService.update(asgn.id, { notificadoEm: new Date().toISOString() });
       enviados++;
     }
     setNotificando(false);
     setNotificadoMsg(`${enviados} email(s) enviado(s).`);
+    await load();
     setTimeout(() => setNotificadoMsg(""), 5000);
   };
 
@@ -362,11 +366,15 @@ export function AssignmentEditor() {
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {/* Escalados */}
             {tab === "assigned" && assignments.length > 0 && (
-              <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12, padding: "10px 14px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0" }}>
-                <button onClick={notificarTodos} disabled={notificando}
-                  style={{ padding: "8px 18px", borderRadius: 7, border: "none", background: "#007733", color: "#fff", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: notificando ? "not-allowed" : "pointer" }}>
-                  {notificando ? "Enviando..." : `Notificar ${assignments.length} escalado(s) por e-mail`}
-                </button>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12, padding: "10px 14px", background: pendentesNotificacao.length > 0 ? "#f0fdf4" : COLORS.offWhite, borderRadius: 8, border: `1px solid ${pendentesNotificacao.length > 0 ? "#bbf7d0" : COLORS.grayLight}` }}>
+                {pendentesNotificacao.length > 0 ? (
+                  <button onClick={notificarPendentes} disabled={notificando}
+                    style={{ padding: "8px 18px", borderRadius: 7, border: "none", background: "#007733", color: "#fff", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: notificando ? "not-allowed" : "pointer" }}>
+                    {notificando ? "Enviando..." : `Notificar ${pendentesNotificacao.length} novo(s) por e-mail`}
+                  </button>
+                ) : (
+                  <span style={{ fontSize: 12, color: "#15803d", fontFamily: FONTS.body }}>Todos os escalados ja foram notificados.</span>
+                )}
                 {notificadoMsg && <span style={{ fontSize: 12, color: "#15803d", fontFamily: FONTS.body }}>{notificadoMsg}</span>}
               </div>
             )}
@@ -378,7 +386,14 @@ export function AssignmentEditor() {
                   <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 700, color: COLORS.dark }}>{ref.name}</div>
-                      <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>{ref.city} • {ref.email}</div>
+                      <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>
+                        {ref.city} • {ref.email}
+                        {asgn.notificadoEm ? (
+                          <span style={{ marginLeft: 8, padding: "1px 6px", borderRadius: 10, fontSize: 9, fontWeight: 700, background: "#f0fdf4", color: "#15803d" }}>Notificado</span>
+                        ) : (
+                          <span style={{ marginLeft: 8, padding: "1px 6px", borderRadius: 10, fontSize: 9, fontWeight: 700, background: "#fffbeb", color: "#d97706" }}>Pendente</span>
+                        )}
+                      </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <select
