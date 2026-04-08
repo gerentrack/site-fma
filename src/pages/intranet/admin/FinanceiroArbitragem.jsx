@@ -578,14 +578,14 @@ export default function FinanceiroArbitragem() {
       {reciboPreview && (
         <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}
           onClick={() => { URL.revokeObjectURL(reciboPreview.url); setReciboPreview(null); setModalRecibo(null); }}>
-          <div style={{ background: "#fff", borderRadius: 14, padding: 24, maxWidth: 700, width: "95%", maxHeight: "90vh", overflow: "auto" }}
+          <div style={{ background: "#fff", borderRadius: 14, padding: 24, maxWidth: 900, width: "95%", height: "90vh", display: "flex", flexDirection: "column" }}
             onClick={e => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexShrink: 0 }}>
               <span style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 800, color: COLORS.dark }}>Recibo de Pagamento</span>
               <button onClick={() => { URL.revokeObjectURL(reciboPreview.url); setReciboPreview(null); setModalRecibo(null); }}
                 style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: COLORS.gray }}>X</button>
             </div>
-            <iframe src={`${reciboPreview.url}#zoom=page-width`} style={{ width: "100%", height: 500, border: `1px solid ${COLORS.grayLight}`, borderRadius: 8, background: "#f4f4f4" }} />
+            <iframe src={`${reciboPreview.url}#page=1&zoom=page-fit`} style={{ width: "100%", flex: 1, border: `1px solid ${COLORS.grayLight}`, borderRadius: 8, background: "#f4f4f4" }} />
             <div style={{ display: "flex", gap: 8, marginTop: 12, justifyContent: "flex-end" }}>
               <button onClick={() => { URL.revokeObjectURL(reciboPreview.url); setReciboPreview(null); setModalRecibo(null); }}
                 style={{ padding: "8px 18px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", fontSize: 13, cursor: "pointer" }}>Fechar</button>
