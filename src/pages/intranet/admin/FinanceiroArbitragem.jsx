@@ -6,6 +6,8 @@ import { useState, useEffect } from "react";
 import IntranetLayout from "../IntranetLayout";
 import { RefereeAssignmentsService, AnuidadesService, ReembolsosService, RefereesService, TaxasConfigService } from "../../../services/index";
 import { gerarReciboPagamentoArbitroPdf } from "../../../services/reciboPagamentoArbitroPdf";
+import { gerarAnuidadeReciboPdf } from "../../../services/anuidadeReciboPdf";
+import { reservarNumeroRecibo, formatarNumeroRecibo } from "../../../utils/reciboCounter";
 import { REFEREE_FUNCTIONS } from "../../../config/navigation";
 import { COLORS, FONTS } from "../../../styles/colors";
 
@@ -35,6 +37,7 @@ export default function FinanceiroArbitragem() {
   const [data, setData] = useState(null);
   const [rawAssignments, setRawAssignments] = useState([]);
   const [rawReembolsos, setRawReembolsos] = useState([]);
+  const [rawAnuidades, setRawAnuidades] = useState([]);
   const [refMap, setRefMap] = useState({});
   const [config, setConfig] = useState({});
   const [expandido, setExpandido] = useState(null);
@@ -58,6 +61,7 @@ export default function FinanceiroArbitragem() {
       const rm = Object.fromEntries((refRes.data || []).map(r => [r.id, r]));
       setRawAssignments(assignments);
       setRawReembolsos(allReembolsos);
+      setRawAnuidades(anuidades);
       setRefMap(rm);
       setConfig(cfgRes.data || {});
       const refMap = rm;
@@ -150,6 +154,7 @@ export default function FinanceiroArbitragem() {
     { key: "mensal", label: "Mensal" },
     { key: "evento", label: "Por Evento" },
     { key: "arbitro", label: "Por Arbitro" },
+    { key: "anuidades", label: `Anuidades (${data?.anuidadesPagas || 0})` },
   ];
 
   return (
@@ -436,6 +441,59 @@ export default function FinanceiroArbitragem() {
           </>
         )}
       </div>
+            {/* ── Anuidades ── */}
+            {tab === "anuidades" && (
+              <div style={card}>
+                <h3 style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, color: COLORS.dark, margin: "0 0 12px", textTransform: "uppercase" }}>Anuidades {ano}</h3>
+                {rawAnuidades.filter(a => a.status === "pago").length === 0 ? (
+                  <div style={{ textAlign: "center", color: COLORS.gray, fontSize: 14, padding: 20 }}>Nenhuma anuidade paga em {ano}.</div>
+                ) : (
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead><tr style={{ background: COLORS.offWhite }}>
+                      {["Arbitro", "Nivel", "Valor", "Pago em", "Recibo", ""].map(h => <th key={h} style={th}>{h}</th>)}
+                    </tr></thead>
+                    <tbody>
+                      {rawAnuidades.filter(a => a.status === "pago").map(a => {
+                        const ref = refMap[a.refereeId] || {};
+                        return (
+                          <tr key={a.id} style={{ borderBottom: `1px solid ${COLORS.grayLight}` }}>
+                            <td style={{ ...td, fontWeight: 600 }}>{a.refereeName || ref.name}</td>
+                            <td style={td}>{a.refereeNivel || "—"}</td>
+                            <td style={td}>{fmt(a.valor)}</td>
+                            <td style={td}>{a.confirmadoEm ? new Date(a.confirmadoEm).toLocaleDateString("pt-BR") : "—"}</td>
+                            <td style={td}><span style={{ fontSize: 12, color: a.reciboNumero ? "#15803d" : COLORS.gray }}>{a.reciboNumero || "—"}</span></td>
+                            <td style={td}>
+                              <button onClick={async () => {
+                                let numero = a.reciboNumero;
+                                if (!numero) {
+                                  const seq = await reservarNumeroRecibo(ano);
+                                  numero = formatarNumeroRecibo(seq, ano);
+                                  await AnuidadesService.update(a.id, { reciboNumero: numero });
+                                }
+                                const blob = await gerarAnuidadeReciboPdf({
+                                  reciboNumero: numero,
+                                  arbitroNome: a.refereeName || ref.name,
+                                  arbitroCpf: ref.cpf || "",
+                                  arbitroNivel: a.refereeNivel,
+                                  ano: a.ano, valor: a.valor,
+                                  confirmadoEm: a.confirmadoEm,
+                                  confirmadoPor: a.confirmadoPor,
+                                  assinaturaUrl: config.assinaturaPresidenteUrl || "",
+                                });
+                                setReciboPreview({ url: URL.createObjectURL(blob), nome: `Recibo_Anuidade_${(a.refereeName || "arbitro").replace(/\s+/g, "_")}_${ano}.pdf` });
+                              }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                                Recibo
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
+
       {/* Modal preview recibo */}
       {reciboPreview && (
         <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}
