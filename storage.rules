@@ -20,8 +20,13 @@ service firebase.storage {
     match /equipes/{file}        { allow read: if true; allow write: if request.auth != null; }
     match /pistas/{file}         { allow read: if true; allow write: if request.auth != null; }
     match /atletas/{file}        { allow read: if true; allow write: if request.auth != null; }
-    match /arbitros/{file}       { allow read: if true; allow write: if request.auth != null; }
+    match /arbitros/{path=**}    { allow read: if true; allow write: if request.auth != null; }
     match /redes-sociais/{file}  { allow read: if true; allow write: if request.auth != null; }
+
+    match /anuidades/{path=**}   { allow read: if true; allow write: if request.auth != null; }
+    match /mensagens/{path=**}   { allow read: if true; allow write: if request.auth != null; }
+    match /config/{path=**}      { allow read: if true; allow write: if request.auth != null; }
+    match /envio-documentos/{path=**} { allow read: if true; allow write: if request.auth != null; }
 
     // Solicitações — leitura e escrita apenas para usuários autenticados
     match /solicitacoes/{allPaths=**} {
