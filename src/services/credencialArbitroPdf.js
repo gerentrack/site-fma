@@ -6,8 +6,8 @@
 import { jsPDF } from "jspdf";
 import { fmaLogo } from "../assets/permits";
 
-const CW = 89;  // largura do cartão (mm) — ligeiramente maior para compensar margem de impressão
-const CH = 56;   // altura do cartão (mm)
+const CW = 85.6; // largura do cartão (mm) — padrão ISO 7810 (cartão de crédito)
+const CH = 54;    // altura do cartão (mm)
 const GAP = 2;    // espaço para linha de dobra
 
 const _cache = {};

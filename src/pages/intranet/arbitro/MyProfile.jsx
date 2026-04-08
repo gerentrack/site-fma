@@ -9,7 +9,7 @@ import { useIntranet } from "../../../context/IntranetContext";
 import { RefereesService } from "../../../services/index";
 import { intranetAuthAPI } from "../../../data/api";
 import { useCep } from "../../../hooks/useCep";
-import { uploadFile } from "../../../services/storageService";
+import { uploadFile, deleteFile } from "../../../services/storageService";
 import ImageCropper from "../../../components/ui/ImageCropper";
 import { gerarCredencialPdf } from "../../../services/credencialArbitroPdf";
 import { TaxasConfigService } from "../../../services/index";
@@ -195,11 +195,16 @@ export default function MyProfile() {
             onCropDone={async (blob) => {
               setCropSrc(null);
               setMsg("Enviando foto...");
-              const file = new File([blob], "foto.jpg", { type: "image/jpeg" });
+              // Apagar foto anterior se existir
+              if (data.foto) await deleteFile(data.foto);
+              // Nome do arquivo com nome do árbitro
+              const nomeArquivo = (data.name || "foto").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+              const file = new File([blob], `${nomeArquivo}.jpg`, { type: "image/jpeg" });
               const r = await uploadFile(file, `arbitros/${refereeId}/foto`);
               if (r.url) {
-                await RefereesService.update(refereeId, { foto: r.url });
+                await RefereesService.update(refereeId, { foto: r.url, fotoPath: r.path });
                 set("foto", r.url);
+                set("fotoPath", r.path);
                 setMsg("Foto atualizada!");
               } else setMsg("Erro ao enviar foto.");
             }}
@@ -215,16 +220,35 @@ export default function MyProfile() {
           </div>
           <div>
             <div style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, marginBottom: 6 }}>Foto 3x4</div>
-            <input type="file" accept="image/*" onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              if (file.size > 5 * 1024 * 1024) { setMsg("Imagem deve ter no maximo 5MB."); return; }
-              const reader = new FileReader();
-              reader.onload = () => setCropSrc(reader.result);
-              reader.readAsDataURL(file);
-              e.target.value = "";
-            }} style={{ fontSize: 13 }} />
-            <div style={{ fontSize: 11, color: COLORS.gray, marginTop: 4 }}>JPG ou PNG. A imagem sera recortada no formato 3x4.</div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
+              <label style={{ padding: "5px 14px", borderRadius: 6, border: `1px solid ${COLORS.primary}`, background: "transparent", color: COLORS.primary, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONTS.heading }}>
+                {data.foto ? "Trocar foto" : "Enviar foto"}
+                <input type="file" accept="image/*" onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > 5 * 1024 * 1024) { setMsg("Imagem deve ter no maximo 5MB."); return; }
+                  const reader = new FileReader();
+                  reader.onload = () => setCropSrc(reader.result);
+                  reader.readAsDataURL(file);
+                  e.target.value = "";
+                }} style={{ display: "none" }} />
+              </label>
+              {data.foto && (
+                <button onClick={async () => {
+                  if (!confirm("Excluir a foto?")) return;
+                  setMsg("Excluindo foto...");
+                  await deleteFile(data.foto);
+                  await RefereesService.update(refereeId, { foto: "", fotoPath: "" });
+                  set("foto", "");
+                  set("fotoPath", "");
+                  setMsg("Foto excluida.");
+                }}
+                  style={{ padding: "5px 14px", borderRadius: 6, border: "1px solid #dc2626", background: "transparent", color: "#dc2626", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: FONTS.heading }}>
+                  Excluir
+                </button>
+              )}
+            </div>
+            <div style={{ fontSize: 11, color: COLORS.gray }}>JPG ou PNG, max 5MB. A imagem sera recortada no formato 3x4.</div>
           </div>
         </div>
 
