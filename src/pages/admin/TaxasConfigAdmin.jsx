@@ -13,7 +13,7 @@ import AdminLayout from "../../components/admin/AdminLayout";
 import { COLORS, FONTS } from "../../styles/colors";
 import { TaxasConfigService } from "../../services";
 import { TABELA_PADRAO, PRAZOS, TABELA_ARBITRAGEM, formatarMoeda, calcularTaxaModalidade } from "../../utils/taxaCalculator";
-import { uploadFile } from "../../services/storageService";
+import { uploadFile, deleteFile } from "../../services/storageService";
 import ImageCropper from "../../components/ui/ImageCropper";
 
 export default function TaxasConfigAdmin() {
@@ -353,6 +353,7 @@ export default function TaxasConfigAdmin() {
               onCropDone={async (blob) => {
                 setCropSrc(null);
                 setUploadingAssinatura(true);
+                if (config?.assinaturaPresidenteUrl) await deleteFile(config.assinaturaPresidenteUrl);
                 const file = new File([blob], "assinatura.png", { type: "image/png" });
                 const r = await uploadFile(file, "config/assinatura");
                 setUploadingAssinatura(false);
