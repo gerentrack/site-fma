@@ -156,7 +156,6 @@ export default function IntranetLayout({ children, requireRole = null }) {
                   </button>
                 );
               })()}
-              </button>
               {showNotifs && (
                 <div style={{ position: "fixed", left: 8, top: 70, width: 210, background: "#fff", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.3)", zIndex: 9999, overflow: "hidden" }}>
                   <div style={{ padding: "10px 14px", borderBottom: `1px solid ${COLORS.grayLight}`, fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark }}>
