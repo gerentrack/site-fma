@@ -544,6 +544,13 @@ export const refereeAssignmentModel = {
   refereeFunction: "percurso", // chefe|largada|chegada|percurso|pista|aferidor|juiz
   status: "confirmado",  // "confirmado" | "pendente" | "cancelado"
   notes: "",
+  // ── Diária (preenchido na escalação) ──
+  valorDiaria: 0,        // R$ da diária conforme Art. 6
+  transporte: 0,         // R$ extras
+  hospedagem: 0,
+  alimentacao: 0,
+  diariaPaga: false,     // admin marca como pago após evento
+  diariaPagaEm: "",      // ISO date
   createdAt: "",
   updatedAt: "",
 };

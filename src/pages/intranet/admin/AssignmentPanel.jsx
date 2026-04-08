@@ -15,36 +15,80 @@ import {
 import { COLORS, FONTS } from "../../../styles/colors";
 import { notificarEscalacaoArbitro } from "../../../services/emailService";
 import { CALENDAR_CATEGORIES, REFEREE_FUNCTIONS } from "../../../config/navigation";
+import { TABELA_ARBITRAGEM } from "../../../utils/taxaCalculator";
 
 const catMap = Object.fromEntries((CALENDAR_CATEGORIES || []).filter(c => c.value).map(c => [c.value, c]));
 const fnOpts = REFEREE_FUNCTIONS || [];
 
 // ─── Sub-componente: linha de árbitro disponível/todos ────────────────────────
 // Precisa ser componente separado pois tem useState (regras de hooks)
+// Helper: buscar valor da diária por função na tabela Art. 6
+function getDiariaByFunction(fn, nivel) {
+  // Pista e campo — por nível
+  const pistaByNivel = TABELA_ARBITRAGEM.pistaECampo.porNivel.find(n => n.nivel === nivel);
+  // Pista e campo — por função especial
+  const pistaByFn = TABELA_ARBITRAGEM.pistaECampo.porFuncao.find(f => f.funcao.toLowerCase().includes(fn.toLowerCase()));
+  // Corrida de rua
+  const corrida6h = TABELA_ARBITRAGEM.corridaDeRua6h.find(f => f.funcao.toLowerCase().includes(fn.toLowerCase()));
+  const corrida12h = TABELA_ARBITRAGEM.corridaDeRua12h.find(f => f.funcao.toLowerCase().includes(fn.toLowerCase()));
+  if (pistaByFn) return pistaByFn.diaria;
+  if (corrida6h) return corrida6h.diaria;
+  if (pistaByNivel) return pistaByNivel.diaria;
+  return 0;
+}
+
+const smallInp = { padding: "5px 8px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, fontSize: 12, fontFamily: FONTS.body, width: 80, boxSizing: "border-box" };
+
 function RefereeRow({ ref_, tab, isAssigned, assign, saving }) {
   const [selFn, setSelFn] = useState("percurso");
+  const [diaria, setDiaria] = useState({ valorDiaria: 0, transporte: 0, hospedagem: 0, alimentacao: 0 });
+  const [showDiaria, setShowDiaria] = useState(false);
   const alreadyAssigned = isAssigned(ref_.id);
+
+  const handleFnChange = (fn) => {
+    setSelFn(fn);
+    const valor = getDiariaByFunction(fn, ref_.nivel);
+    setDiaria(d => ({ ...d, valorDiaria: valor }));
+  };
+
+  const total = (diaria.valorDiaria || 0) + (diaria.transporte || 0) + (diaria.hospedagem || 0) + (diaria.alimentacao || 0);
+
   return (
-    <div style={{ background: "#fff", borderRadius: 10, padding: "14px 18px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", display: "flex", alignItems: "center", gap: 14, borderLeft: alreadyAssigned ? "3px solid #007733" : "3px solid transparent", opacity: alreadyAssigned ? 0.7 : 1 }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 700, color: COLORS.dark }}>{ref_.name}</div>
-        <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>{ref_.city} • {ref_.email}</div>
-        {tab === "available" && ref_.availability?.notes && (
-          <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, fontStyle: "italic" }}>💬 {ref_.availability.notes}</div>
+    <div style={{ background: "#fff", borderRadius: 10, padding: "14px 18px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", borderLeft: alreadyAssigned ? "3px solid #007733" : "3px solid transparent", opacity: alreadyAssigned ? 0.7 : 1 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 700, color: COLORS.dark }}>{ref_.name}</div>
+          <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>{ref_.city} • {ref_.nivel || "—"}</div>
+          {tab === "available" && ref_.availability?.notes && (
+            <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, fontStyle: "italic" }}>{ref_.availability.notes}</div>
+          )}
+        </div>
+        {alreadyAssigned ? (
+          <span style={{ padding: "5px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: "#e6f9ee", color: "#007733" }}>Ja escalado</span>
+        ) : (
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <select value={selFn} onChange={e => handleFnChange(e.target.value)}
+              style={{ padding: "7px 10px", borderRadius: 7, border: `1.5px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 13, outline: "none", cursor: "pointer" }}>
+              {fnOpts.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+            </select>
+            <button onClick={() => setShowDiaria(!showDiaria)}
+              style={{ padding: "7px 10px", borderRadius: 7, border: `1px solid ${COLORS.grayLight}`, background: showDiaria ? COLORS.offWhite : "transparent", cursor: "pointer", fontSize: 11, fontFamily: FONTS.heading, fontWeight: 600, color: COLORS.gray }}>
+              R$
+            </button>
+            <button onClick={() => assign(ref_.id, selFn, diaria)} disabled={saving === ref_.id}
+              style={{ padding: "8px 16px", borderRadius: 7, background: saving === ref_.id ? COLORS.gray : "#007733", color: "#fff", border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
+              {saving === ref_.id ? "..." : "Escalar"}
+            </button>
+          </div>
         )}
       </div>
-      {alreadyAssigned ? (
-        <span style={{ padding: "5px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: "#e6f9ee", color: "#007733" }}>✓ Já escalado</span>
-      ) : (
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <select value={selFn} onChange={e => setSelFn(e.target.value)}
-            style={{ padding: "7px 10px", borderRadius: 7, border: `1.5px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 13, outline: "none", cursor: "pointer" }}>
-            {fnOpts.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-          </select>
-          <button onClick={() => assign(ref_.id, selFn)} disabled={saving === ref_.id}
-            style={{ padding: "8px 16px", borderRadius: 7, background: saving === ref_.id ? COLORS.gray : "#007733", color: "#fff", border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
-            {saving === ref_.id ? "..." : "⚖️ Escalar"}
-          </button>
+      {showDiaria && !alreadyAssigned && (
+        <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center", paddingLeft: 2 }}>
+          <label style={{ fontSize: 11, color: COLORS.gray }}>Diaria: <input type="number" min="0" step="0.01" style={smallInp} value={diaria.valorDiaria} onChange={e => setDiaria(d => ({ ...d, valorDiaria: Number(e.target.value) || 0 }))} /></label>
+          <label style={{ fontSize: 11, color: COLORS.gray }}>Transp: <input type="number" min="0" step="0.01" style={smallInp} value={diaria.transporte} onChange={e => setDiaria(d => ({ ...d, transporte: Number(e.target.value) || 0 }))} /></label>
+          <label style={{ fontSize: 11, color: COLORS.gray }}>Hosp: <input type="number" min="0" step="0.01" style={smallInp} value={diaria.hospedagem} onChange={e => setDiaria(d => ({ ...d, hospedagem: Number(e.target.value) || 0 }))} /></label>
+          <label style={{ fontSize: 11, color: COLORS.gray }}>Alim: <input type="number" min="0" step="0.01" style={smallInp} value={diaria.alimentacao} onChange={e => setDiaria(d => ({ ...d, alimentacao: Number(e.target.value) || 0 }))} /></label>
+          <span style={{ fontSize: 12, fontWeight: 700, color: COLORS.dark }}>= R$ {total.toFixed(2)}</span>
         </div>
       )}
     </div>
@@ -162,9 +206,16 @@ export function AssignmentEditor() {
   const isAssigned = (refereeId) => assignments.some(a => a.refereeId === refereeId);
   const getAssignment = (refereeId) => assignments.find(a => a.refereeId === refereeId);
 
-  const assign = async (refereeId, refFn) => {
+  const assign = async (refereeId, refFn, diariaData = {}) => {
     setSaving(refereeId);
-    await RefereeAssignmentsService.assign({ eventId, refereeId, refereeFunction: refFn, status: "confirmado" });
+    await RefereeAssignmentsService.assign({
+      eventId, refereeId, refereeFunction: refFn, status: "confirmado",
+      valorDiaria: diariaData.valorDiaria || 0,
+      transporte: diariaData.transporte || 0,
+      hospedagem: diariaData.hospedagem || 0,
+      alimentacao: diariaData.alimentacao || 0,
+      diariaPaga: false,
+    });
     // Notificar árbitro por email
     const referee = [...available, ...allRefs].find(r => r.id === refereeId);
     if (referee?.email && event) {
@@ -260,25 +311,50 @@ export function AssignmentEditor() {
             {/* Escalados */}
             {tab === "assigned" && assignments.map(asgn => {
               const ref = asgn.referee || {};
+              const totalDiaria = (asgn.valorDiaria || 0) + (asgn.transporte || 0) + (asgn.hospedagem || 0) + (asgn.alimentacao || 0);
               return (
-                <div key={asgn.id} style={{ background: "#fff", borderRadius: 10, padding: "16px 18px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", display: "flex", alignItems: "center", gap: 14, borderLeft: "3px solid #007733" }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 700, color: COLORS.dark }}>{ref.name}</div>
-                    <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>{ref.city} • {ref.email}</div>
+                <div key={asgn.id} style={{ background: "#fff", borderRadius: 10, padding: "16px 18px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", borderLeft: "3px solid #007733" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 700, color: COLORS.dark }}>{ref.name}</div>
+                      <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>{ref.city} • {ref.email}</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <select
+                        value={asgn.refereeFunction}
+                        onChange={e => updateFunction(asgn.id, e.target.value)}
+                        disabled={saving === asgn.id}
+                        style={{ padding: "7px 10px", borderRadius: 7, border: `1.5px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 13, outline: "none", cursor: "pointer" }}>
+                        {fnOpts.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+                      </select>
+                      <button onClick={() => removeAssignment(asgn.id)} disabled={saving === asgn.id}
+                        style={{ padding: "7px 12px", borderRadius: 7, border: "1px solid #fca5a5", background: "#fff5f5", color: "#cc0000", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
+                        Remover
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <select
-                      value={asgn.refereeFunction}
-                      onChange={e => updateFunction(asgn.id, e.target.value)}
-                      disabled={saving === asgn.id}
-                      style={{ padding: "7px 10px", borderRadius: 7, border: `1.5px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 13, outline: "none", cursor: "pointer" }}>
-                      {fnOpts.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-                    </select>
-                    <button onClick={() => removeAssignment(asgn.id)} disabled={saving === asgn.id}
-                      style={{ padding: "7px 12px", borderRadius: 7, border: "1px solid #fca5a5", background: "#fff5f5", color: "#cc0000", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
-                      Remover
-                    </button>
-                  </div>
+                  {totalDiaria > 0 && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8, fontSize: 12, fontFamily: FONTS.body, color: COLORS.gray }}>
+                      <span>Diaria: R$ {(asgn.valorDiaria || 0).toFixed(2)}</span>
+                      {(asgn.transporte || 0) > 0 && <span>Transp: R$ {asgn.transporte.toFixed(2)}</span>}
+                      {(asgn.hospedagem || 0) > 0 && <span>Hosp: R$ {asgn.hospedagem.toFixed(2)}</span>}
+                      {(asgn.alimentacao || 0) > 0 && <span>Alim: R$ {asgn.alimentacao.toFixed(2)}</span>}
+                      <span style={{ fontWeight: 700, color: COLORS.dark }}>Total: R$ {totalDiaria.toFixed(2)}</span>
+                      {asgn.diariaPaga ? (
+                        <span style={{ padding: "2px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, background: "#f0fdf4", color: "#15803d" }}>Pago</span>
+                      ) : (
+                        <button onClick={async () => {
+                          setSaving(asgn.id);
+                          await RefereeAssignmentsService.update(asgn.id, { diariaPaga: true, diariaPagaEm: new Date().toISOString() });
+                          await load();
+                          setSaving(null);
+                        }} disabled={saving === asgn.id}
+                          style={{ padding: "3px 10px", borderRadius: 6, border: "none", background: "#15803d", color: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>
+                          Marcar pago
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
