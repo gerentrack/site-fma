@@ -4,7 +4,8 @@
  */
 import { useState, useEffect } from "react";
 import IntranetLayout from "../IntranetLayout";
-import { ReembolsosService } from "../../../services/index";
+import { ReembolsosService, RefereesService } from "../../../services/index";
+import { notificarReembolso } from "../../../services/emailService";
 import { COLORS, FONTS } from "../../../styles/colors";
 
 const CATEGORIAS = { transporte: "Transporte", hospedagem: "Hospedagem", alimentacao: "Alimentacao", outro: "Outro" };
@@ -22,6 +23,7 @@ export default function ReembolsosAdmin() {
   const [loading, setLoading] = useState(true);
   const [filtroStatus, setFiltroStatus] = useState("pendente");
   const [actionLoading, setActionLoading] = useState(null);
+  const [notifyEmail, setNotifyEmail] = useState(true);
 
   const fetchData = async () => {
     setLoading(true);
@@ -32,6 +34,18 @@ export default function ReembolsosAdmin() {
 
   useEffect(() => { fetchData(); }, []);
 
+  const notificarArbitro = async (r, status, valorAprovado, motivo) => {
+    if (!notifyEmail) return;
+    const refRes = await RefereesService.get(r.refereeId);
+    const ref = refRes.data;
+    if (!ref?.email) return;
+    notificarReembolso({
+      arbitroEmail: ref.email, arbitroNome: ref.name,
+      status, categoria: CATEGORIAS[r.categoria] || r.categoria,
+      valor: r.valor, valorAprovado, motivo,
+    }).catch(() => {});
+  };
+
   const handleAprovar = async (id, valorOriginal) => {
     const input = prompt(`Valor aprovado (deixe vazio para aprovar integral R$ ${(valorOriginal || 0).toFixed(2)}):`, valorOriginal);
     if (input === null) return;
@@ -39,12 +53,10 @@ export default function ReembolsosAdmin() {
     if (isNaN(valorAprovado) || valorAprovado < 0) return;
     setActionLoading(id);
     const parcial = valorAprovado < valorOriginal;
-    await ReembolsosService.update(id, {
-      status: parcial ? "aprovado_parcial" : "aprovado",
-      valorAprovado,
-      aprovadoPor: "Admin",
-      aprovadoEm: new Date().toISOString(),
-    });
+    const status = parcial ? "aprovado_parcial" : "aprovado";
+    await ReembolsosService.update(id, { status, valorAprovado, aprovadoPor: "Admin", aprovadoEm: new Date().toISOString() });
+    const r = reembolsos.find(x => x.id === id);
+    if (r) notificarArbitro(r, status, valorAprovado);
     setActionLoading(null);
     fetchData();
   };
@@ -54,6 +66,8 @@ export default function ReembolsosAdmin() {
     if (motivo === null) return;
     setActionLoading(id);
     await ReembolsosService.update(id, { status: "rejeitado", motivoRejeicao: motivo });
+    const r = reembolsos.find(x => x.id === id);
+    if (r) notificarArbitro(r, "rejeitado", null, motivo);
     setActionLoading(null);
     fetchData();
   };
@@ -93,7 +107,7 @@ export default function ReembolsosAdmin() {
         </div>
 
         {/* Filtro */}
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 16, display: "flex", gap: 16, alignItems: "center" }}>
           <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
             style={{ padding: "7px 10px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, fontSize: 13 }}>
             <option value="">Todos</option>
@@ -101,6 +115,10 @@ export default function ReembolsosAdmin() {
             <option value="aprovado">Aprovados</option>
             <option value="rejeitado">Rejeitados</option>
           </select>
+          <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: COLORS.gray }}>
+            <input type="checkbox" checked={notifyEmail} onChange={e => setNotifyEmail(e.target.checked)} style={{ accentColor: COLORS.primary, width: 15, height: 15 }} />
+            Notificar arbitro por e-mail
+          </label>
         </div>
 
         {/* Lista */}

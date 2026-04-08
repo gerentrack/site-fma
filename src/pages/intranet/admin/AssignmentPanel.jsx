@@ -184,6 +184,7 @@ export function AssignmentEditor() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(null);
   const [tab, setTab] = useState("available"); // available | all | assigned
+  const [notifyEmail, setNotifyEmail] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -195,9 +196,14 @@ export function AssignmentEditor() {
     ]);
     if (evR.data) setEvent(evR.data);
     else { navigate("/intranet/admin/escalacao"); return; }
-    if (avR.data) setAvailable(avR.data);
     if (asR.data) setAssignments(asR.data);
-    if (refR.data) setAllRefs(refR.data);
+    const refs = refR.data || [];
+    if (refR.data) setAllRefs(refs);
+    // Enriquecer disponíveis com dados do árbitro
+    if (avR.data) {
+      const refMap = Object.fromEntries(refs.map(r => [r.id, r]));
+      setAvailable(avR.data.map(a => ({ ...refMap[a.refereeId], availability: a, id: a.refereeId })).filter(a => a.name));
+    }
     setLoading(false);
   }, [eventId]);
 
@@ -218,7 +224,7 @@ export function AssignmentEditor() {
     });
     // Notificar árbitro por email
     const referee = [...available, ...allRefs].find(r => r.id === refereeId);
-    if (referee?.email && event) {
+    if (notifyEmail && referee?.email && event) {
       const dataFormatada = event.date
         ? new Date(event.date + "T12:00:00").toLocaleDateString("pt-BR")
         : "A confirmar";
@@ -282,6 +288,10 @@ export function AssignmentEditor() {
               <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>de {event.refereesNeeded || "?"} escalados</div>
             </div>
           </div>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 13, fontFamily: FONTS.body, color: COLORS.gray, marginTop: 12 }}>
+            <input type="checkbox" checked={notifyEmail} onChange={e => setNotifyEmail(e.target.checked)} style={{ accentColor: COLORS.primary, width: 16, height: 16 }} />
+            Notificar arbitro por e-mail ao escalar
+          </label>
         </div>
 
         {/* Tabs */}

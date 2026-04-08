@@ -306,3 +306,88 @@ export async function notificarArbitroStatus({
     html,
   });
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 7. Notificações da Intranet
+// ═════════════════════════════════════════════════════════════════════════════
+
+export async function notificarAnuidade({ arbitroEmail, arbitroNome, ano, valor, status }) {
+  const statusLabels = { pendente: "Pendente", vencido: "Vencida", pago: "Paga", isento: "Isento" };
+  const html = templateBase(`
+    <p>Ola, <strong>${arbitroNome}</strong>!</p>
+    <p>Informamos sobre sua anuidade de arbitragem <strong>${ano}</strong>:</p>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Ano</td><td style="padding:10px 14px;border:1px solid #eee;">${ano}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Valor</td><td style="padding:10px 14px;border:1px solid #eee;">R$ ${(valor || 0).toFixed(2)}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Status</td><td style="padding:10px 14px;border:1px solid #eee;">${statusLabels[status] || status}</td></tr>
+    </table>
+    <p>Acesse a Intranet para mais detalhes:</p>
+    <p style="text-align:center;margin:24px 0;">
+      <a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar a Intranet</a>
+    </p>
+  `);
+  return enviarEmail({ to: arbitroEmail, subject: `[FMA] Anuidade ${ano} — ${statusLabels[status] || status}`, html });
+}
+
+export async function notificarMensagemRecebida({ arbitroEmail, arbitroNome, remetenteNome, titulo }) {
+  const html = templateBase(`
+    <p>Ola, <strong>${arbitroNome}</strong>!</p>
+    <p>Voce recebeu uma nova mensagem na Intranet FMA:</p>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">De</td><td style="padding:10px 14px;border:1px solid #eee;">${remetenteNome}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Assunto</td><td style="padding:10px 14px;border:1px solid #eee;">${titulo}</td></tr>
+    </table>
+    <p style="text-align:center;margin:24px 0;">
+      <a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver Mensagem</a>
+    </p>
+  `);
+  return enviarEmail({ to: arbitroEmail, subject: `[FMA] Nova mensagem: ${titulo}`, html });
+}
+
+export async function notificarReembolso({ arbitroEmail, arbitroNome, status, categoria, valor, valorAprovado, motivo }) {
+  const statusLabels = { aprovado: "Aprovado", aprovado_parcial: "Aprovado parcialmente", rejeitado: "Rejeitado" };
+  const html = templateBase(`
+    <p>Ola, <strong>${arbitroNome}</strong>!</p>
+    <p>Seu pedido de reembolso foi atualizado:</p>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Categoria</td><td style="padding:10px 14px;border:1px solid #eee;">${categoria}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Valor solicitado</td><td style="padding:10px 14px;border:1px solid #eee;">R$ ${(valor || 0).toFixed(2)}</td></tr>
+      ${valorAprovado != null ? `<tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Valor aprovado</td><td style="padding:10px 14px;border:1px solid #eee;">R$ ${(valorAprovado || 0).toFixed(2)}</td></tr>` : ""}
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Status</td><td style="padding:10px 14px;border:1px solid #eee;">${statusLabels[status] || status}</td></tr>
+      ${motivo ? `<tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Motivo</td><td style="padding:10px 14px;border:1px solid #eee;">${motivo}</td></tr>` : ""}
+    </table>
+    <p style="text-align:center;margin:24px 0;">
+      <a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver Detalhes</a>
+    </p>
+  `);
+  return enviarEmail({ to: arbitroEmail, subject: `[FMA] Reembolso ${statusLabels[status] || status}: ${categoria}`, html });
+}
+
+export async function notificarAvaliacao({ arbitroEmail, arbitroNome, evento, nota }) {
+  const html = templateBase(`
+    <p>Ola, <strong>${arbitroNome}</strong>!</p>
+    <p>Voce recebeu uma avaliacao de desempenho referente ao evento <strong>${evento}</strong>.</p>
+    <p style="text-align:center;margin:24px 0;">
+      <span style="display:inline-block;padding:14px 32px;border-radius:12px;background:#f8f8f8;font-size:24px;font-weight:900;color:${nota >= 4 ? '#15803d' : nota >= 3 ? '#d97706' : '#dc2626'};">${nota}/5</span>
+    </p>
+    <p>Acesse a Intranet para ver os detalhes completos.</p>
+    <p style="text-align:center;margin:24px 0;">
+      <a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar a Intranet</a>
+    </p>
+  `);
+  return enviarEmail({ to: arbitroEmail, subject: `[FMA] Avaliacao de desempenho: ${evento}`, html });
+}
+
+export async function notificarDiariaPaga({ arbitroEmail, arbitroNome, evento, valor }) {
+  const html = templateBase(`
+    <p>Ola, <strong>${arbitroNome}</strong>!</p>
+    <p>Sua diaria referente ao evento <strong>${evento}</strong> foi confirmada como paga.</p>
+    <p style="text-align:center;margin:24px 0;">
+      <span style="display:inline-block;padding:14px 32px;border-radius:12px;background:#f0fdf4;font-size:20px;font-weight:900;color:#15803d;">R$ ${(valor || 0).toFixed(2)}</span>
+    </p>
+    <p style="text-align:center;margin:24px 0;">
+      <a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar a Intranet</a>
+    </p>
+  `);
+  return enviarEmail({ to: arbitroEmail, subject: `[FMA] Diaria paga: ${evento}`, html });
+}

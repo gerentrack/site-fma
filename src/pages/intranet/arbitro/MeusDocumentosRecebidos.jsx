@@ -9,6 +9,7 @@ import IntranetLayout from "../IntranetLayout";
 import { useIntranet } from "../../../context/IntranetContext";
 import { EnvioDocumentosService, RefereesService } from "../../../services/index";
 import { uploadFile } from "../../../services/storageService";
+import { notificarMensagemRecebida } from "../../../services/emailService";
 import { COLORS, FONTS } from "../../../styles/colors";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -53,6 +54,7 @@ export default function MeusDocumentosRecebidos() {
   const [destNiveis, setDestNiveis] = useState([]);
   const [destIds, setDestIds] = useState([]);
   const [sending, setSending] = useState(false);
+  const [notifyEmail, setNotifyEmail] = useState(true);
   const [formMsg, setFormMsg] = useState("");
   const fileRef = useRef(null);
 
@@ -140,6 +142,17 @@ export default function MeusDocumentosRecebidos() {
       destinatariosNomes: nomes,
       leituras: {},
     });
+
+    // Notificar por email
+    if (notifyEmail) {
+      const destRefs = arbitros.filter(a => ids.includes(a.id) && a.email);
+      destRefs.forEach(r => {
+        notificarMensagemRecebida({
+          arbitroEmail: r.email, arbitroNome: r.name,
+          remetenteNome: name, titulo: titulo.trim(),
+        }).catch(() => {});
+      });
+    }
 
     setSending(false);
     resetForm();
@@ -306,7 +319,11 @@ export default function MeusDocumentosRecebidos() {
 
               {formMsg && <div style={{ padding: "8px 12px", borderRadius: 8, background: "#fef2f2", color: "#dc2626", fontSize: 13 }}>{formMsg}</div>}
 
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: COLORS.gray }}>
+                  <input type="checkbox" checked={notifyEmail} onChange={e => setNotifyEmail(e.target.checked)} style={{ accentColor: COLORS.primary, width: 15, height: 15 }} />
+                  Notificar por e-mail
+                </label>
                 <button onClick={handleSend} disabled={sending}
                   style={{
                     padding: "10px 28px", borderRadius: 8, border: "none",
