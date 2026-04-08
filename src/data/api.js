@@ -797,11 +797,19 @@ export const refereeAssignmentsAPI = {
   getByEvent: async (eventId) => {
     let items = await readCol("refereeAssignments");
     items = items.filter(a => a.eventId === eventId);
+    // Popular referee
+    const refs = await readCol("referees");
+    const refMap = Object.fromEntries(refs.map(r => [r.id, r]));
+    items = items.map(a => ({ ...a, referee: refMap[a.refereeId] || null }));
     return ok(items);
   },
   getByReferee: async (refereeId) => {
     let items = await readCol("refereeAssignments");
     items = items.filter(a => a.refereeId === refereeId);
+    // Popular evento
+    const events = await readCol("refereeEvents");
+    const evtMap = Object.fromEntries(events.map(e => [e.id, e]));
+    items = items.map(a => ({ ...a, event: evtMap[a.eventId] || null }));
     return ok(items);
   },
   assign: async (data) => {
@@ -813,6 +821,11 @@ export const refereeAssignmentsAPI = {
     if (refereeId) items=items.filter(a=>a.refereeId===refereeId);
     if (eventId)   items=items.filter(a=>a.eventId===eventId);
     if (status)    items=items.filter(a=>a.status===status);
+    // Popular evento e referee
+    const [events, refs] = await Promise.all([readCol("refereeEvents"), readCol("referees")]);
+    const evtMap = Object.fromEntries(events.map(e => [e.id, e]));
+    const refMap = Object.fromEntries(refs.map(r => [r.id, r]));
+    items = items.map(a => ({ ...a, event: evtMap[a.eventId] || null, referee: refMap[a.refereeId] || null }));
     return ok(items);
   },
   get:    async (id)      => { const item=await readDoc("refereeAssignments",id); return item?ok(item):err("Não encontrado."); },
