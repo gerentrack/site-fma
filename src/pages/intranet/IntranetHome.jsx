@@ -91,19 +91,25 @@ export default function IntranetHome() {
         RelatoriosService.list(),
       ]).then(([aRes, eRes, anRes, reembRes, relRes]) => {
         const allAsgn = aRes.data || [];
+        // Limpar escalações órfãs (evento excluído) em background
+        const orfas = allAsgn.filter(a => !a.event);
+        if (orfas.length > 0) {
+          orfas.forEach(a => RefereeAssignmentsService.remove(a.id).catch(() => {}));
+        }
         const futureEventIds = new Set((eRes.data || []).map(e => e.id));
-        const ativas = allAsgn.filter(a => futureEventIds.has(a.eventId));
+        const ativas = allAsgn.filter(a => a.event && futureEventIds.has(a.eventId));
         setStats(s => ({ ...s, assigned: ativas.length }));
 
         const today = new Date().toISOString().slice(0, 10);
-        const passadas = allAsgn.filter(a => a.event?.date <= today);
+        // Ignorar escalações sem evento (dados órfãos)
+        const passadas = allAsgn.filter(a => a.event && a.event.date <= today);
         const relatorioEventIds = new Set((relRes.data || []).filter(r => r.status === "enviado").map(r => r.eventId));
         const eventosPassadosIds = [...new Set(passadas.map(a => a.eventId))];
         const semRelatorio = eventosPassadosIds.filter(eid => !relatorioEventIds.has(eid)).length;
         const anuidadesVencidas = (anRes.data || []).filter(a => a.status === "vencido").length;
         const anuidadesPendentes = (anRes.data || []).filter(a => a.status === "pendente").length;
         const reembolsosPendentes = (reembRes.data || []).length;
-        const diariasPendentes = passadas.filter(a => (a.valorDiaria || 0) > 0 && !a.diariaPaga).length;
+        const diariasPendentes = allAsgn.filter(a => a.event && (a.valorDiaria || 0) > 0 && !a.diariaPaga).length;
 
         setPendencias({ semRelatorio, anuidadesVencidas, anuidadesPendentes, reembolsosPendentes, diariasPendentes });
       });
