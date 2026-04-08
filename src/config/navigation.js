@@ -281,6 +281,8 @@ export const INTRANET_NAV_ARBITRO = [
 
 export const INTRANET_NAV_ADMIN = [
   { label: "Início",              icon: "🏠", path: "/intranet" },
+  { label: "Minha Disponibilidade", icon: "📅", path: "/intranet/disponibilidade" },
+  { label: "Minhas Escalas",      icon: "📋", path: "/intranet/escalas" },
   { label: "Árbitros",            icon: "👥", path: "/intranet/admin/arbitros" },
   { label: "Eventos",             icon: "🗓️", path: "/intranet/admin/eventos" },
   { label: "Escalação",           icon: "📋", path: "/intranet/admin/escalacao" },
