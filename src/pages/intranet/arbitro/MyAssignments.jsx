@@ -185,15 +185,18 @@ export default function MyAssignments() {
                             <div style={{ marginTop: 8 }}>
                               <Link to={`/intranet/relatorio/${asgn.id}`} style={{
                                 padding: "5px 14px", borderRadius: 6, fontSize: 12, fontWeight: 600, textDecoration: "none",
-                                background: meuRelatorio.status === "enviado" ? "#f0fdf4" : "#fffbeb",
-                                color: meuRelatorio.status === "enviado" ? "#15803d" : "#d97706",
+                                background: meuRelatorio.status === "aprovado" ? "#f0fdf4" : meuRelatorio.status === "pendencia" ? "#fef2f2" : meuRelatorio.status === "enviado" ? "#f0fdf4" : "#fffbeb",
+                                color: meuRelatorio.status === "aprovado" ? "#15803d" : meuRelatorio.status === "pendencia" ? "#dc2626" : meuRelatorio.status === "enviado" ? "#15803d" : "#d97706",
                               }}>
-                                {meuRelatorio.status === "enviado" ? "Relatorio enviado" : "Continuar relatorio (rascunho)"}
+                                {meuRelatorio.status === "aprovado" ? "Relatorio aprovado"
+                                  : meuRelatorio.status === "pendencia" ? "Pendencia — corrigir e reenviar"
+                                  : meuRelatorio.status === "enviado" ? "Relatorio enviado — aguardando"
+                                  : "Continuar relatorio (rascunho)"}
                               </Link>
                             </div>
                           );
                         }
-                        if (outroPreencheu && relatorioEvento.status === "enviado") {
+                        if (outroPreencheu && (relatorioEvento.status === "enviado" || relatorioEvento.status === "aprovado")) {
                           return (
                             <div style={{ marginTop: 8 }}>
                               <span style={{ padding: "5px 14px", borderRadius: 6, fontSize: 12, fontWeight: 600, background: "#f0fdf4", color: "#15803d" }}>
