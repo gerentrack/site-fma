@@ -328,7 +328,7 @@ export const RefereeAssignmentsService = {
   getByReferee: (refereeId) => refereeAssignmentsAPI.getByReferee(refereeId),
   assign: (data) => refereeAssignmentsAPI.assign(data),
   update: (id, data) => refereeAssignmentsAPI.update(id, data),
-  remove: (id) => refereeAssignmentsAPI.remove(id),
+  remove: (id) => refereeAssignmentsAPI.delete(id),
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
