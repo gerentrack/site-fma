@@ -45,6 +45,7 @@ export default function FinanceiroArbitragem() {
   const [modalRecibo, setModalRecibo] = useState(null); // { type, id, numero, data, existente }
   const [reciboNumeroInput, setReciboNumeroInput] = useState("");
   const [gerandoRecibo, setGerandoRecibo] = useState(false);
+  const [confirmarExclusao, setConfirmarExclusao] = useState(false);
 
   const fetchData = async () => {
       setLoading(true);
@@ -508,7 +509,7 @@ export default function FinanceiroArbitragem() {
       {/* Modal recibo — geração ou consulta */}
       {modalRecibo && !reciboPreview && (
         <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }}
-          onClick={() => setModalRecibo(null)}>
+          onClick={() => { setModalRecibo(null); setConfirmarExclusao(false); }}>
           <div style={{ background: "#fff", borderRadius: 14, padding: 24, width: 400 }} onClick={e => e.stopPropagation()}>
             <h3 style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 800, color: COLORS.dark, margin: "0 0 16px" }}>
               {modalRecibo.existente ? "Consultar Recibo" : "Gerar Recibo"}
@@ -518,15 +519,31 @@ export default function FinanceiroArbitragem() {
               <div>
                 <div style={{ fontSize: 14, marginBottom: 8 }}>Recibo: <strong>{modalRecibo.numero}</strong></div>
                 {modalRecibo.data && <div style={{ fontSize: 13, color: COLORS.gray, marginBottom: 16 }}>Gerado em: {modalRecibo.data.split("-").reverse().join("/")}</div>}
+
+                {confirmarExclusao ? (
+                  <div style={{ padding: "12px 16px", borderRadius: 8, background: "#fef2f2", border: "1px solid #fecaca", marginBottom: 12 }}>
+                    <div style={{ fontSize: 13, color: "#dc2626", marginBottom: 10 }}>Excluir recibo? Um novo numero sera gerado na proxima emissao.</div>
+                    <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                      <button onClick={() => setConfirmarExclusao(false)}
+                        style={{ padding: "6px 14px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, background: "transparent", fontSize: 12, cursor: "pointer" }}>Cancelar</button>
+                      <button onClick={async () => {
+                        if (modalRecibo.type === "diaria") await RefereeAssignmentsService.update(modalRecibo.id, { reciboNumero: "", reciboData: "" });
+                        else if (modalRecibo.type === "anuidade") await AnuidadesService.update(modalRecibo.id, { reciboNumero: "" });
+                        setConfirmarExclusao(false); setModalRecibo(null); fetchData();
+                      }} style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: "#dc2626", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                        Confirmar Exclusao
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                  <button onClick={async () => {
-                    if (!confirm("Excluir recibo? Um novo numero sera gerado na proxima emissao.")) return;
-                    if (modalRecibo.type === "diaria") await RefereeAssignmentsService.update(modalRecibo.id, { reciboNumero: "", reciboData: "" });
-                    else if (modalRecibo.type === "anuidade") await AnuidadesService.update(modalRecibo.id, { reciboNumero: "" });
-                    setModalRecibo(null); fetchData();
-                  }} style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #dc2626", background: "transparent", color: "#dc2626", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-                    Excluir Recibo
-                  </button>
+                  {!confirmarExclusao && (
+                    <button onClick={() => setConfirmarExclusao(true)}
+                      style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #dc2626", background: "transparent", color: "#dc2626", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                      Excluir Recibo
+                    </button>
+                  )}
                   <button onClick={async () => {
                     setGerandoRecibo(true);
                     const blob = await gerarReciboPagamentoArbitroPdf({ ...modalRecibo.dados, reciboNumero: modalRecibo.numero });
@@ -547,7 +564,7 @@ export default function FinanceiroArbitragem() {
                   <div style={{ fontSize: 11, color: COLORS.gray, marginTop: 4 }}>Deixe vazio para gerar numero sequencial automatico. Ou digite caso tenha emitido fora do sistema.</div>
                 </div>
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                  <button onClick={() => setModalRecibo(null)} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", fontSize: 13, cursor: "pointer" }}>Cancelar</button>
+                  <button onClick={() => { setModalRecibo(null); setConfirmarExclusao(false); }} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", fontSize: 13, cursor: "pointer" }}>Cancelar</button>
                   <button disabled={gerandoRecibo} onClick={async () => {
                     setGerandoRecibo(true);
                     let numero = reciboNumeroInput.trim();
