@@ -9,6 +9,7 @@
  */
 import { useState, useEffect } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
+import IntranetLayout from "../../pages/intranet/IntranetLayout";
 import { COLORS, FONTS } from "../../styles/colors";
 import { AnuidadesService, TaxasConfigService, RefereesService } from "../../services/index";
 import { ANUIDADE_STATUS } from "../../config/navigation";
@@ -31,7 +32,8 @@ function formatMoeda(v) {
   return (v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-export default function AnuidadesAdmin() {
+export default function AnuidadesAdmin({ useIntranet = false }) {
+  const Layout = useIntranet ? IntranetLayout : ({ children }) => <AdminLayout title="Anuidades de Arbitragem">{children}</AdminLayout>;
   const [anuidades, setAnuidades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [config, setConfig] = useState(null);
@@ -97,7 +99,7 @@ export default function AnuidadesAdmin() {
   const card = { background: "#fff", borderRadius: 12, padding: "20px 24px", boxShadow: "0 1px 8px rgba(0,0,0,0.07)", marginBottom: 20 };
 
   return (
-    <AdminLayout title="Anuidades de Arbitragem">
+    <Layout>
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
 
         {/* ── Filtros e ações ── */}
@@ -362,7 +364,7 @@ export default function AnuidadesAdmin() {
           </div>
         )}
       </div>
-    </AdminLayout>
+    </Layout>
   );
 }
 
