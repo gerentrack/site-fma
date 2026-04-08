@@ -163,7 +163,6 @@ export default function CompleteProfileWizard() {
       if (!data.escolaridade) e.escolaridade = "Obrigatório";
       if (!data.municipioNascimento?.trim()) e.municipioNascimento = "Obrigatório";
       if (!data.ufNascimento) e.ufNascimento = "Obrigatório";
-      if (!data.nomePai?.trim()) e.nomePai = "Obrigatório";
       if (!data.nomeMae?.trim()) e.nomeMae = "Obrigatório";
     }
     if (step === 1) {
@@ -313,7 +312,7 @@ export default function CompleteProfileWizard() {
               <Field label="Município de Nascimento" required error={errors.municipioNascimento}><Input value={data.municipioNascimento || ""} onChange={v => set("municipioNascimento", v)} /></Field>
               <Field label="UF de Nascimento" required error={errors.ufNascimento}><Select value={data.ufNascimento || ""} onChange={v => set("ufNascimento", v)} options={UFS.map(u => ({ value: u, label: u }))} /></Field>
               <div style={{ gridColumn: "1 / -1" }}>
-                <Field label="Nome do Pai" required error={errors.nomePai}><Input value={data.nomePai || ""} onChange={v => set("nomePai", v)} /></Field>
+                <Field label="Nome do Pai" error={errors.nomePai}><Input value={data.nomePai || ""} onChange={v => set("nomePai", v)} /></Field>
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
                 <Field label="Nome da Mãe" required error={errors.nomeMae}><Input value={data.nomeMae || ""} onChange={v => set("nomeMae", v)} /></Field>
