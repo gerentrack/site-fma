@@ -25,10 +25,10 @@ async function imgToBase64(url) {
   } catch { return null; }
 }
 
-function maskCpf(cpf) {
+function formatCpf(cpf) {
   const d = (cpf || "").replace(/\D/g, "");
   if (d.length !== 11) return cpf || "";
-  return `${d.slice(0, 3)}.***.**-${d.slice(9)}`;
+  return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
 }
 
 /**
@@ -165,7 +165,7 @@ export async function gerarCredencialPdf(dados) {
   pdf.setFontSize(5.5);
 
   const versoFields = [
-    ["CPF:", maskCpf(dados.cpf)],
+    ["CPF:", formatCpf(dados.cpf)],
     ["RG:", dados.rg || "—"],
   ];
 
