@@ -13,7 +13,7 @@ import {
   RefereesService,
 } from "../../../services/index";
 import { COLORS, FONTS } from "../../../styles/colors";
-import { notificarEscalacaoArbitro } from "../../../services/emailService";
+import { notificarEscalacaoArbitro, notificarRemocaoEscalacao } from "../../../services/emailService";
 import { CALENDAR_CATEGORIES, REFEREE_FUNCTIONS } from "../../../config/navigation";
 import { TABELA_ARBITRAGEM } from "../../../utils/taxaCalculator";
 
@@ -270,7 +270,17 @@ export function AssignmentEditor() {
   const removeAssignment = async (assignmentId) => {
     if (!confirm("Remover este árbitro da escalação?")) return;
     setSaving(assignmentId);
+    const asgn = assignments.find(a => a.id === assignmentId);
     await RefereeAssignmentsService.remove(assignmentId);
+    if (notifyEmail && asgn?.referee?.email && event) {
+      const dataFormatada = event.date ? new Date(event.date + "T12:00:00").toLocaleDateString("pt-BR") : "A confirmar";
+      notificarRemocaoEscalacao({
+        arbitroEmail: asgn.referee.email,
+        arbitroNome: asgn.referee.name,
+        evento: event.title,
+        data: dataFormatada,
+      }).catch(() => {});
+    }
     await load();
     setSaving(null);
   };

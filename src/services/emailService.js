@@ -142,6 +142,22 @@ export async function notificarEscalacaoArbitro({
   });
 }
 
+export async function notificarRemocaoEscalacao({ arbitroEmail, arbitroNome, evento, data }) {
+  const html = templateBase(`
+    <p>Ola, <strong>${arbitroNome}</strong>!</p>
+    <p>Informamos que sua escalacao para o evento abaixo foi removida:</p>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Evento</td><td style="padding:10px 14px;border:1px solid #eee;">${evento}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Data</td><td style="padding:10px 14px;border:1px solid #eee;">${data}</td></tr>
+    </table>
+    <p>Em caso de duvidas, entre em contato com a coordenacao.</p>
+    <p style="text-align:center;margin:24px 0;">
+      <a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar a Intranet</a>
+    </p>
+  `);
+  return enviarEmail({ to: arbitroEmail, subject: `[FMA] Escalação removida: ${evento} — ${data}`, html });
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
 // 3. Ouvidoria — Confirmação + Notificação interna
 // ═════════════════════════════════════════════════════════════════════════════
