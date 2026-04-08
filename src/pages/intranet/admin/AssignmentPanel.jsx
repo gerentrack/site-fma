@@ -44,7 +44,8 @@ const FUNCOES_CUMULAVEIS = ["coordenador_ev", "representante"];
 function RefereeRow({ ref_, tab, isAssigned, assign, saving }) {
   const [selFn, setSelFn] = useState("auxiliar");
   const [selFnExtra, setSelFnExtra] = useState("");
-  const [diaria, setDiaria] = useState({ valorDiaria: 0, transporte: 0, hospedagem: 0, alimentacao: 0 });
+  const initValor = getDiariaByFunction("auxiliar", ref_.nivel);
+  const [diaria, setDiaria] = useState({ valorDiaria: initValor, transporte: 0, hospedagem: 0, alimentacao: 0 });
   const [showDiaria, setShowDiaria] = useState(false);
   const alreadyAssigned = isAssigned(ref_.id);
 

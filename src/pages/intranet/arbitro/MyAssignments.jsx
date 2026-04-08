@@ -115,11 +115,33 @@ export default function MyAssignments() {
                         )}
                       </div>
                       {/* Detalhes do evento para o árbitro */}
-                      <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 4, fontSize: 12, fontFamily: FONTS.body, color: COLORS.gray }}>
-                        {evt.horarioApresentacao && <div><strong>Apresentacao:</strong> {evt.horarioApresentacao}</div>}
-                        {evt.contatoCoordenador && <div><strong>Coordenador:</strong> {evt.contatoCoordenador}</div>}
-                        {evt.observacoesArbitro && <div><strong>Instrucoes:</strong> {evt.observacoesArbitro}</div>}
-                      </div>
+                      {(() => {
+                        // Horário de apresentação: campo do evento ou 1h antes
+                        let horario = evt.horarioApresentacao;
+                        if (!horario && evt.time) {
+                          const [h, m] = evt.time.split(":").map(Number);
+                          if (!isNaN(h)) horario = `${String(Math.max(0, h - 1)).padStart(2, "0")}:${String(m || 0).padStart(2, "0")}`;
+                        }
+                        // Contato: campo do evento, ou puxar do coordenador/chefe escalado
+                        let contato = evt.contatoCoordenador;
+                        if (!contato) {
+                          const colegas = allAssignments.filter(a => a.eventId === asgn.eventId);
+                          const coord = colegas.find(a => a.refereeFunction === "coordenador_ev" || a.refereeFunction === "representante");
+                          const chefe = colegas.find(a => a.refereeFunction === "chefe");
+                          const responsavel = coord || chefe;
+                          if (responsavel) {
+                            const ref = referees[responsavel.refereeId];
+                            if (ref) contato = `${ref.name}${ref.phone ? ` — ${ref.phone}` : ""}`;
+                          }
+                        }
+                        return (
+                          <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 4, fontSize: 12, fontFamily: FONTS.body, color: COLORS.gray }}>
+                            {horario && <div><strong>Apresentacao:</strong> {horario}</div>}
+                            {contato && <div><strong>Coordenador:</strong> {contato}</div>}
+                            {evt.observacoesArbitro && <div><strong>Instrucoes:</strong> {evt.observacoesArbitro}</div>}
+                          </div>
+                        );
+                      })()}
                       {/* Documentos */}
                       {(evt.regulamentoUrl || evt.mapaPercursoUrl) && (
                         <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
