@@ -4,8 +4,12 @@
  */
 import { useState, useEffect } from "react";
 import IntranetLayout from "../IntranetLayout";
-import { RefereeAssignmentsService, AnuidadesService, ReembolsosService, RefereesService } from "../../../services/index";
+import { RefereeAssignmentsService, AnuidadesService, ReembolsosService, RefereesService, TaxasConfigService } from "../../../services/index";
+import { gerarReciboPagamentoArbitroPdf } from "../../../services/reciboPagamentoArbitroPdf";
+import { REFEREE_FUNCTIONS } from "../../../config/navigation";
 import { COLORS, FONTS } from "../../../styles/colors";
+
+const fnMap = Object.fromEntries((REFEREE_FUNCTIONS || []).map(f => [f.value, f.label]));
 
 function fmt(v) { return (v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
 
@@ -22,21 +26,33 @@ export default function FinanceiroArbitragem() {
   const [tab, setTab] = useState("resumo");
   const [ano, setAno] = useState(new Date().getFullYear());
   const [data, setData] = useState(null);
+  const [rawAssignments, setRawAssignments] = useState([]);
+  const [rawReembolsos, setRawReembolsos] = useState([]);
+  const [refMap, setRefMap] = useState({});
+  const [config, setConfig] = useState({});
+  const [expandido, setExpandido] = useState(null);
 
   useEffect(() => {
     const fetch = async () => {
       setLoading(true);
-      const [asgRes, anRes, reembRes, refRes] = await Promise.all([
+      const [asgRes, anRes, reembRes, refRes, cfgRes] = await Promise.all([
         RefereeAssignmentsService.list(),
         AnuidadesService.list({ ano }),
         ReembolsosService.list(),
         RefereesService.list(),
+        TaxasConfigService.get(),
       ]);
 
       const assignments = (asgRes.data || []).filter(a => a.event);
       const anuidades = anRes.data || [];
-      const reembolsos = (reembRes.data || []).filter(r => r.status === "aprovado" || r.status === "aprovado_parcial" || r.status === "pago");
-      const refMap = Object.fromEntries((refRes.data || []).map(r => [r.id, r]));
+      const allReembolsos = reembRes.data || [];
+      const reembolsos = allReembolsos.filter(r => r.status === "aprovado" || r.status === "aprovado_parcial" || r.status === "pago");
+      const rm = Object.fromEntries((refRes.data || []).map(r => [r.id, r]));
+      setRawAssignments(assignments);
+      setRawReembolsos(allReembolsos);
+      setRefMap(rm);
+      setConfig(cfgRes.data || {});
+      const refMap = rm;
 
       // Receitas
       const anuidadesPagas = anuidades.filter(a => a.status === "pago");
@@ -79,7 +95,7 @@ export default function FinanceiroArbitragem() {
       const eventosMap = {};
       assignments.filter(a => (a.valorDiaria || 0) > 0).forEach(a => {
         const key = a.eventId;
-        if (!eventosMap[key]) eventosMap[key] = { title: a.event?.title || "—", date: a.event?.date || "", diarias: 0, extras: 0, reembolsos: 0, arbitros: 0 };
+        if (!eventosMap[key]) eventosMap[key] = { eventId: key, title: a.event?.title || "—", date: a.event?.date || "", diarias: 0, extras: 0, reembolsos: 0, arbitros: 0 };
         eventosMap[key].diarias += (a.valorDiaria || 0);
         eventosMap[key].extras += (a.transporte || 0) + (a.hospedagem || 0) + (a.alimentacao || 0);
         eventosMap[key].arbitros++;
@@ -93,13 +109,13 @@ export default function FinanceiroArbitragem() {
       const arbitrosMap = {};
       comDiaria.forEach(a => {
         const id = a.refereeId;
-        if (!arbitrosMap[id]) arbitrosMap[id] = { nome: refMap[id]?.name || id, diarias: 0, extras: 0, reembolsos: 0, eventos: 0 };
+        if (!arbitrosMap[id]) arbitrosMap[id] = { refereeId: id, nome: refMap[id]?.name || id, diarias: 0, extras: 0, reembolsos: 0, eventos: 0 };
         arbitrosMap[id].diarias += (a.valorDiaria || 0);
         arbitrosMap[id].extras += (a.transporte || 0) + (a.hospedagem || 0) + (a.alimentacao || 0);
         arbitrosMap[id].eventos++;
       });
       reembolsos.forEach(r => {
-        if (!arbitrosMap[r.refereeId]) arbitrosMap[r.refereeId] = { nome: refMap[r.refereeId]?.name || r.refereeName || r.refereeId, diarias: 0, extras: 0, reembolsos: 0, eventos: 0 };
+        if (!arbitrosMap[r.refereeId]) arbitrosMap[r.refereeId] = { refereeId: r.refereeId, nome: refMap[r.refereeId]?.name || r.refereeName || r.refereeId, diarias: 0, extras: 0, reembolsos: 0, eventos: 0 };
         arbitrosMap[r.refereeId].reembolsos += ((r.valorAprovado ?? r.valor) || 0);
       });
       const porArbitro = Object.values(arbitrosMap).sort((a, b) => a.nome.localeCompare(b.nome));
@@ -259,25 +275,72 @@ export default function FinanceiroArbitragem() {
                 </div>
                 {data.porEvento.length === 0 ? (
                   <div style={{ textAlign: "center", color: COLORS.gray, fontSize: 14, padding: 20 }}>Nenhum evento com custos registrados.</div>
-                ) : (
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead><tr style={{ background: COLORS.offWhite }}>
-                      <th style={th}>Evento</th><th style={th}>Arbitros</th><th style={th}>Diarias</th><th style={th}>Extras</th><th style={th}>Reembolsos</th><th style={th}>Total</th>
-                    </tr></thead>
-                    <tbody>
-                      {data.porEvento.map((e, i) => (
-                        <tr key={i} style={{ borderBottom: `1px solid ${COLORS.grayLight}` }}>
-                          <td style={{ ...td, fontWeight: 600 }}>{e.title}</td>
-                          <td style={td}>{e.arbitros}</td>
-                          <td style={td}>{fmt(e.diarias)}</td>
-                          <td style={td}>{fmt(e.extras)}</td>
-                          <td style={td}>{fmt(e.reembolsos)}</td>
-                          <td style={{ ...td, fontWeight: 700 }}>{fmt(e.diarias + e.extras + e.reembolsos)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                ) : data.porEvento.map((e, i) => {
+                  const isOpen = expandido === `ev_${i}`;
+                  const evtAssigns = rawAssignments.filter(a => a.eventId === e.eventId && (a.valorDiaria || 0) > 0);
+                  const evtReemb = rawReembolsos.filter(r => r.eventId === e.eventId && (r.status === "aprovado" || r.status === "aprovado_parcial" || r.status === "pago"));
+                  return (
+                    <div key={i} style={{ borderBottom: `1px solid ${COLORS.grayLight}` }}>
+                      <div onClick={() => setExpandido(isOpen ? null : `ev_${i}`)}
+                        style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", cursor: "pointer", alignItems: "center" }}>
+                        <div>
+                          <span style={{ fontWeight: 600, fontSize: 14 }}>{e.title}</span>
+                          <span style={{ fontSize: 12, color: COLORS.gray, marginLeft: 8 }}>{e.arbitros} arbitro(s)</span>
+                        </div>
+                        <div style={{ display: "flex", gap: 16, fontSize: 13, alignItems: "center" }}>
+                          <span style={{ color: COLORS.gray }}>D: {fmt(e.diarias)}</span>
+                          <span style={{ color: COLORS.gray }}>R: {fmt(e.reembolsos)}</span>
+                          <strong>{fmt(e.diarias + e.extras + e.reembolsos)}</strong>
+                          <span style={{ fontSize: 10, color: COLORS.gray }}>{isOpen ? "▲" : "▼"}</span>
+                        </div>
+                      </div>
+                      {isOpen && (
+                        <div style={{ padding: "0 0 14px 14px" }}>
+                          {evtAssigns.map(a => {
+                            const ref = refMap[a.refereeId] || {};
+                            const reembs = evtReemb.filter(r => r.refereeId === a.refereeId);
+                            const totalRef = (a.valorDiaria || 0) + (a.transporte || 0) + (a.hospedagem || 0) + (a.alimentacao || 0) + reembs.reduce((s, r) => s + ((r.valorAprovado ?? r.valor) || 0), 0);
+                            return (
+                              <div key={a.id} style={{ background: COLORS.offWhite, borderRadius: 8, padding: "10px 14px", marginBottom: 8 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                                  <span style={{ fontWeight: 600, fontSize: 13 }}>{ref.name || a.refereeId}</span>
+                                  <button onClick={async (ev) => {
+                                    ev.stopPropagation();
+                                    const blob = await gerarReciboPagamentoArbitroPdf({
+                                      arbitroNome: ref.name, arbitroCpf: ref.cpf,
+                                      funcao: fnMap[a.refereeFunction] || a.refereeFunction,
+                                      evento: e.title, dataEvento: a.event?.date, cidade: a.event?.city,
+                                      valorDiaria: a.valorDiaria, transporte: a.transporte,
+                                      hospedagem: a.hospedagem, alimentacao: a.alimentacao,
+                                      reembolsos: reembs.map(r => ({ categoria: r.categoria, descricao: r.descricao, valor: (r.valorAprovado ?? r.valor) || 0 })),
+                                      assinaturaUrl: config.assinaturaPresidenteUrl || "",
+                                    });
+                                    const url = URL.createObjectURL(blob);
+                                    const link = document.createElement("a"); link.href = url;
+                                    link.download = `Recibo_${(ref.name || "arbitro").replace(/\s+/g, "_")}_${(e.title || "evento").replace(/\s+/g, "_")}.pdf`;
+                                    link.click(); URL.revokeObjectURL(url);
+                                  }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                                    Gerar Recibo
+                                  </button>
+                                </div>
+                                <div style={{ fontSize: 12, color: COLORS.gray, display: "flex", flexDirection: "column", gap: 2 }}>
+                                  {(a.valorDiaria || 0) > 0 && <div>Diaria ({fnMap[a.refereeFunction] || a.refereeFunction}): <strong>{fmt(a.valorDiaria)}</strong></div>}
+                                  {(a.transporte || 0) > 0 && <div>Transporte: {fmt(a.transporte)}</div>}
+                                  {(a.hospedagem || 0) > 0 && <div>Hospedagem: {fmt(a.hospedagem)}</div>}
+                                  {(a.alimentacao || 0) > 0 && <div>Alimentacao: {fmt(a.alimentacao)}</div>}
+                                  {reembs.map((r, ri) => (
+                                    <div key={ri} style={{ color: "#0066cc" }}>Reembolso — {r.categoria}{r.descricao ? `: ${r.descricao}` : ""}: {fmt((r.valorAprovado ?? r.valor) || 0)}</div>
+                                  ))}
+                                  <div style={{ marginTop: 4, fontWeight: 700, color: COLORS.dark }}>Total: {fmt(totalRef)}</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -293,25 +356,73 @@ export default function FinanceiroArbitragem() {
                 </div>
                 {data.porArbitro.length === 0 ? (
                   <div style={{ textAlign: "center", color: COLORS.gray, fontSize: 14, padding: 20 }}>Nenhum pagamento registrado.</div>
-                ) : (
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead><tr style={{ background: COLORS.offWhite }}>
-                      <th style={th}>Arbitro</th><th style={th}>Eventos</th><th style={th}>Diarias</th><th style={th}>Extras</th><th style={th}>Reembolsos</th><th style={th}>Total</th>
-                    </tr></thead>
-                    <tbody>
-                      {data.porArbitro.map((a, i) => (
-                        <tr key={i} style={{ borderBottom: `1px solid ${COLORS.grayLight}` }}>
-                          <td style={{ ...td, fontWeight: 600 }}>{a.nome}</td>
-                          <td style={td}>{a.eventos}</td>
-                          <td style={td}>{fmt(a.diarias)}</td>
-                          <td style={td}>{fmt(a.extras)}</td>
-                          <td style={td}>{fmt(a.reembolsos)}</td>
-                          <td style={{ ...td, fontWeight: 700 }}>{fmt(a.diarias + a.extras + a.reembolsos)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                ) : data.porArbitro.map((arb, i) => {
+                  const isOpen = expandido === `arb_${i}`;
+                  const arbAssigns = rawAssignments.filter(a => a.refereeId === arb.refereeId && (a.valorDiaria || 0) > 0);
+                  const arbReemb = rawReembolsos.filter(r => r.refereeId === arb.refereeId && (r.status === "aprovado" || r.status === "aprovado_parcial" || r.status === "pago"));
+                  return (
+                    <div key={i} style={{ borderBottom: `1px solid ${COLORS.grayLight}` }}>
+                      <div onClick={() => setExpandido(isOpen ? null : `arb_${i}`)}
+                        style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", cursor: "pointer", alignItems: "center" }}>
+                        <div>
+                          <span style={{ fontWeight: 600, fontSize: 14 }}>{arb.nome}</span>
+                          <span style={{ fontSize: 12, color: COLORS.gray, marginLeft: 8 }}>{arb.eventos} evento(s)</span>
+                        </div>
+                        <div style={{ display: "flex", gap: 16, fontSize: 13, alignItems: "center" }}>
+                          <span style={{ color: COLORS.gray }}>D: {fmt(arb.diarias)}</span>
+                          <span style={{ color: COLORS.gray }}>R: {fmt(arb.reembolsos)}</span>
+                          <strong>{fmt(arb.diarias + arb.extras + arb.reembolsos)}</strong>
+                          <span style={{ fontSize: 10, color: COLORS.gray }}>{isOpen ? "▲" : "▼"}</span>
+                        </div>
+                      </div>
+                      {isOpen && (
+                        <div style={{ padding: "0 0 14px 14px" }}>
+                          {arbAssigns.map(a => {
+                            const evt = a.event || {};
+                            const reembs = arbReemb.filter(r => r.eventId === a.eventId);
+                            const totalEvt = (a.valorDiaria || 0) + (a.transporte || 0) + (a.hospedagem || 0) + (a.alimentacao || 0) + reembs.reduce((s, r) => s + ((r.valorAprovado ?? r.valor) || 0), 0);
+                            const ref = refMap[arb.refereeId] || {};
+                            return (
+                              <div key={a.id} style={{ background: COLORS.offWhite, borderRadius: 8, padding: "10px 14px", marginBottom: 8 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                                  <span style={{ fontWeight: 600, fontSize: 13 }}>{evt.title || "—"} — {evt.date ? new Date(evt.date + "T12:00:00").toLocaleDateString("pt-BR") : ""}</span>
+                                  <button onClick={async (ev) => {
+                                    ev.stopPropagation();
+                                    const blob = await gerarReciboPagamentoArbitroPdf({
+                                      arbitroNome: arb.nome, arbitroCpf: ref.cpf,
+                                      funcao: fnMap[a.refereeFunction] || a.refereeFunction,
+                                      evento: evt.title, dataEvento: evt.date, cidade: evt.city,
+                                      valorDiaria: a.valorDiaria, transporte: a.transporte,
+                                      hospedagem: a.hospedagem, alimentacao: a.alimentacao,
+                                      reembolsos: reembs.map(r => ({ categoria: r.categoria, descricao: r.descricao, valor: (r.valorAprovado ?? r.valor) || 0 })),
+                                      assinaturaUrl: config.assinaturaPresidenteUrl || "",
+                                    });
+                                    const url = URL.createObjectURL(blob);
+                                    const link = document.createElement("a"); link.href = url;
+                                    link.download = `Recibo_${arb.nome.replace(/\s+/g, "_")}_${(evt.title || "evento").replace(/\s+/g, "_")}.pdf`;
+                                    link.click(); URL.revokeObjectURL(url);
+                                  }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                                    Gerar Recibo
+                                  </button>
+                                </div>
+                                <div style={{ fontSize: 12, color: COLORS.gray, display: "flex", flexDirection: "column", gap: 2 }}>
+                                  {(a.valorDiaria || 0) > 0 && <div>Diaria ({fnMap[a.refereeFunction] || a.refereeFunction}): <strong>{fmt(a.valorDiaria)}</strong></div>}
+                                  {(a.transporte || 0) > 0 && <div>Transporte: {fmt(a.transporte)}</div>}
+                                  {(a.hospedagem || 0) > 0 && <div>Hospedagem: {fmt(a.hospedagem)}</div>}
+                                  {(a.alimentacao || 0) > 0 && <div>Alimentacao: {fmt(a.alimentacao)}</div>}
+                                  {reembs.map((r, ri) => (
+                                    <div key={ri} style={{ color: "#0066cc" }}>Reembolso — {r.categoria}{r.descricao ? `: ${r.descricao}` : ""}: {fmt((r.valorAprovado ?? r.valor) || 0)}</div>
+                                  ))}
+                                  <div style={{ marginTop: 4, fontWeight: 700, color: COLORS.dark }}>Total: {fmt(totalEvt)}</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </>
