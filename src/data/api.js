@@ -729,23 +729,37 @@ export const refereeEventsAPI = {
   update: async (id,data) => { const item=await patchDoc("refereeEvents",id,data); return item?ok(item):err("Não encontrado."); },
   delete: async (id)      => { await removeDoc("refereeEvents",id); return ok(true); },
   importFromCalendar: async (calendarEventId) => {
+    // Importação em lote (sem argumento) ou individual
+    if (!calendarEventId) {
+      const today = new Date().toISOString().slice(0, 10);
+      const calEvents = await readCol("calendar");
+      const futureEvents = calEvents.filter(e => e.date >= today);
+      const existing = await readCol("refereeEvents");
+      const importedRefs = new Set(existing.map(e => e.calendarRef).filter(Boolean));
+      let imported = 0;
+      for (const cal of futureEvents) {
+        if (importedRefs.has(cal.id)) continue;
+        await createDoc("refereeEvents", {
+          title: cal.title, date: cal.date, city: cal.city,
+          location: cal.location || "", category: cal.category || "",
+          organizer: cal.organizer || "", refereesNeeded: 3,
+          status: "aberto", source: "calendar", calendarRef: cal.id,
+          notes: cal.description || "",
+        });
+        imported++;
+      }
+      return ok({ imported });
+    }
     const cal = await readDoc("calendar", calendarEventId);
     if (!cal) return err("Evento do calendário não encontrado.");
-    // Check if already imported
     const all = await readCol("refereeEvents");
     const existing = all.find(e => e.calendarRef === calendarEventId);
     if (existing) return ok(existing);
     const item = await createDoc("refereeEvents", {
-      title: cal.title,
-      date: cal.date,
-      city: cal.city,
-      location: cal.location || "",
-      category: cal.category || "",
-      organizer: cal.organizer || "",
-      refereesNeeded: 3,
-      status: "aberto",
-      source: "calendar",
-      calendarRef: calendarEventId,
+      title: cal.title, date: cal.date, city: cal.city,
+      location: cal.location || "", category: cal.category || "",
+      organizer: cal.organizer || "", refereesNeeded: 3,
+      status: "aberto", source: "calendar", calendarRef: calendarEventId,
       notes: cal.description || "",
     });
     return ok(item);
