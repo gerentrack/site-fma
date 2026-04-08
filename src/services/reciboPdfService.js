@@ -6,7 +6,7 @@
  */
 
 import { jsPDF } from "jspdf";
-import { fmaLogo, calibriUrl, calibriBoldUrl } from "../assets/permits";
+import { fmaLogo } from "../assets/permits";
 
 const MESES = [
   "janeiro", "fevereiro", "marco", "abril", "maio", "junho",
@@ -117,20 +117,7 @@ export async function gerarReciboPdf(dados) {
   const MR = 25;
   const CW = W - ML - MR; // content width
 
-  // Fontes
-  try {
-    const [calibriData, calibriBoldData] = await Promise.all([
-      imgToBase64(calibriUrl).then(d => d.split(",")[1]),
-      imgToBase64(calibriBoldUrl).then(d => d.split(",")[1]),
-    ]);
-    pdf.addFileToVFS("calibri.ttf", calibriData);
-    pdf.addFont("calibri.ttf", "Calibri", "normal");
-    pdf.addFileToVFS("calibri-bold.ttf", calibriBoldData);
-    pdf.addFont("calibri-bold.ttf", "Calibri", "bold");
-    pdf.setFont("Calibri", "normal");
-  } catch {
-    pdf.setFont("helvetica", "normal");
-  }
+  pdf.setFont("helvetica", "normal");
 
   let y = 20;
 
@@ -163,7 +150,7 @@ export async function gerarReciboPdf(dados) {
   // Titulo
   pdf.setFontSize(16);
   pdf.setTextColor(0);
-  pdf.setFont(pdf.getFont().fontName, "bold");
+  pdf.setFont("helvetica", "bold");
   pdf.text("RECIBO DE PAGAMENTO", W / 2, y, { align: "center" });
   y += 8;
 
@@ -175,7 +162,7 @@ export async function gerarReciboPdf(dados) {
 
   // Corpo
   pdf.setTextColor(0);
-  pdf.setFont(pdf.getFont().fontName, "normal");
+  pdf.setFont("helvetica", "normal");
   pdf.setFontSize(11);
 
   const tipoLabels = {
@@ -201,7 +188,7 @@ export async function gerarReciboPdf(dados) {
   y += lines.length * 5.5 + 8;
 
   // Detalhes em tabela
-  pdf.setFont(pdf.getFont().fontName, "bold");
+  pdf.setFont("helvetica", "bold");
   const detalhes = [
     ["Referente a:", tipoLabels[dados.tipo] || dados.tipo],
     ["Natureza:", naturezaLabels[dados.natureza] || dados.natureza],
@@ -212,9 +199,9 @@ export async function gerarReciboPdf(dados) {
   ];
 
   for (const [label, value] of detalhes) {
-    pdf.setFont(pdf.getFont().fontName, "bold");
+    pdf.setFont("helvetica", "bold");
     pdf.text(label, ML, y);
-    pdf.setFont(pdf.getFont().fontName, "normal");
+    pdf.setFont("helvetica", "normal");
     pdf.text(value, ML + 38, y);
     y += 6;
   }
@@ -224,7 +211,7 @@ export async function gerarReciboPdf(dados) {
   // Valor destaque
   pdf.setFillColor(245, 245, 245);
   pdf.roundedRect(ML, y - 4, CW, 14, 3, 3, "F");
-  pdf.setFont(pdf.getFont().fontName, "bold");
+  pdf.setFont("helvetica", "bold");
   pdf.setFontSize(14);
   pdf.text(`Valor: ${valorStr}`, W / 2, y + 5, { align: "center" });
   y += 20;
@@ -233,7 +220,7 @@ export async function gerarReciboPdf(dados) {
   if (dados.natureza !== "total") {
     pdf.setFontSize(10);
     pdf.setTextColor(180, 100, 0);
-    pdf.setFont(pdf.getFont().fontName, "bold");
+    pdf.setFont("helvetica", "bold");
     const aviso = dados.natureza === "parcial"
       ? "Este recibo refere-se a pagamento parcial. O saldo remanescente devera ser quitado para conclusao do processo."
       : "Este recibo refere-se a pagamento complementar, referente ao saldo remanescente de pagamento anterior.";
@@ -245,7 +232,7 @@ export async function gerarReciboPdf(dados) {
 
   // Declaração
   pdf.setFontSize(10);
-  pdf.setFont(pdf.getFont().fontName, "normal");
+  pdf.setFont("helvetica", "normal");
   const declaracao = "Para maior clareza, firmamos o presente recibo, que passa a ter validade apos a confirmacao do credito na conta da Federacao Mineira de Atletismo.";
   const declLines = pdf.splitTextToSize(declaracao, CW);
   pdf.text(declLines, ML, y);

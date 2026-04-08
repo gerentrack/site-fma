@@ -16,15 +16,22 @@ function createImage(url) {
   });
 }
 
-async function getCroppedBlob(imageSrc, pixelCrop, outputFormat = "image/jpeg") {
+async function getCroppedBlob(imageSrc, pixelCrop, outputFormat = "image/jpeg", maxSize = 800) {
   const image = await createImage(imageSrc);
+  // Limitar resolução para reduzir tamanho do arquivo
+  let w = pixelCrop.width, h = pixelCrop.height;
+  if (w > maxSize || h > maxSize) {
+    const scale = maxSize / Math.max(w, h);
+    w = Math.round(w * scale);
+    h = Math.round(h * scale);
+  }
   const canvas = document.createElement("canvas");
-  canvas.width = pixelCrop.width;
-  canvas.height = pixelCrop.height;
+  canvas.width = w;
+  canvas.height = h;
   const ctx = canvas.getContext("2d");
-  ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
+  ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, w, h);
   return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob), outputFormat, outputFormat === "image/jpeg" ? 0.85 : undefined);
+    canvas.toBlob((blob) => resolve(blob), outputFormat, outputFormat === "image/jpeg" ? 0.7 : undefined);
   });
 }
 

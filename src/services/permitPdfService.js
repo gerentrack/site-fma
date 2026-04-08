@@ -130,7 +130,7 @@ async function gerarPdf(dados, tipo) {
   await registerCalibri(doc);
 
   // ── 1. Fundo cobrindo página inteira (convertido para JPEG comprimido) ──
-  const bg = await imgToJpegBase64(tipo === "chancela" ? chancelaBg : permitBg, 0.75);
+  const bg = await imgToJpegBase64(tipo === "chancela" ? chancelaBg : permitBg, 0.5);
   doc.addImage(bg, "JPEG", 0, 0, PAGE_W, PAGE_H, undefined, "FAST");
 
   // ── 2. Logo FMA centralizada no topo (acima do badge PERMIT BRONZE) ──
