@@ -92,6 +92,7 @@ import IndicadoresPanel from "../pages/intranet/admin/IndicadoresPanel";
 import RelatorioArbitros from "../pages/intranet/admin/RelatorioArbitros";
 import CalendarioEscalas from "../pages/intranet/arbitro/CalendarioEscalas";
 import DiariasAdmin from "../pages/intranet/admin/DiariasAdmin";
+import PagamentosArbitragem from "../pages/intranet/admin/PagamentosArbitragem";
 import MuralAdmin from "../pages/intranet/admin/MuralAdmin";
 import ReembolsosAdmin from "../pages/intranet/admin/ReembolsosAdmin";
 import RelatoriosArbitragemAdmin from "../pages/intranet/admin/RelatoriosArbitragemAdmin";
@@ -179,6 +180,8 @@ export default function AppRouter() {
       <Route path="/intranet/admin/indicadores"      element={<IndicadoresPanel />} />
       <Route path="/intranet/admin/relatorio"        element={<RelatorioArbitros />} />
       <Route path="/intranet/admin/diarias"          element={<DiariasAdmin />} />
+      <Route path="/intranet/admin/pagamentos"       element={<PagamentosArbitragem />} />
+      <Route path="/intranet/admin/anuidades"        element={<AnuidadesAdmin />} />
       <Route path="/intranet/admin/mural"            element={<MuralAdmin />} />
       <Route path="/intranet/admin/reembolsos"       element={<ReembolsosAdmin />} />
       <Route path="/intranet/admin/relatorios-arbitragem" element={<RelatoriosArbitragemAdmin />} />
