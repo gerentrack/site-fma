@@ -23,6 +23,7 @@ export default function MinhaAnuidade() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState("");
+  const [dataPagamento, setDataPagamento] = useState(new Date().toISOString().slice(0, 10));
   const fileRef = useRef(null);
   const ano = new Date().getFullYear();
 
@@ -40,7 +41,8 @@ export default function MinhaAnuidade() {
 
   const handleUpload = async () => {
     const file = fileRef.current?.files?.[0];
-    if (!file) return;
+    if (!file) { setMsg("Selecione o comprovante."); return; }
+    if (!dataPagamento) { setMsg("Informe a data do pagamento."); return; }
     setUploading(true); setMsg("");
     const result = await uploadFile(file, `anuidades/${ano}/${refereeId}`);
     if (result.error) {
@@ -51,9 +53,9 @@ export default function MinhaAnuidade() {
     await AnuidadesService.update(anuidade.id, {
       comprovanteUrl: result.url,
       comprovantePath: result.path,
-      pagamentoEm: new Date().toISOString(),
+      pagamentoEm: dataPagamento,
     });
-    setAnuidade(prev => ({ ...prev, comprovanteUrl: result.url, pagamentoEm: new Date().toISOString() }));
+    setAnuidade(prev => ({ ...prev, comprovanteUrl: result.url, pagamentoEm: dataPagamento }));
     setUploading(false);
     setMsg("Comprovante enviado com sucesso! Aguarde a confirmacao do admin.");
     fileRef.current.value = "";
@@ -149,6 +151,11 @@ export default function MinhaAnuidade() {
                   </div>
                 )}
 
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.grayDark, marginBottom: 4 }}>Data do pagamento *</div>
+                  <input type="date" value={dataPagamento} onChange={e => setDataPagamento(e.target.value)}
+                    style={{ padding: "8px 12px", border: `1px solid ${COLORS.grayLight}`, borderRadius: 8, fontSize: 14, fontFamily: FONTS.body }} />
+                </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <input type="file" ref={fileRef} accept="image/*,.pdf"
                     style={{ flex: 1, fontSize: 13, fontFamily: FONTS.body }} />

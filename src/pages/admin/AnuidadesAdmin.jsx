@@ -229,6 +229,9 @@ export default function AnuidadesAdmin() {
                 <div><strong>Nivel:</strong> {detail.refereeNivel || "—"}</div>
                 <div><strong>Valor:</strong> {formatMoeda(detail.valor)}</div>
                 <div><strong>Status:</strong> <Badge label={(statusMap[detail.status] || {}).label || detail.status} color={(statusMap[detail.status] || {}).color} bg={(statusMap[detail.status] || {}).bg} /></div>
+                {detail.pagamentoEm && (
+                  <div><strong>Pagamento em:</strong> {detail.pagamentoEm.length === 10 ? new Date(detail.pagamentoEm + "T12:00:00").toLocaleDateString("pt-BR") : new Date(detail.pagamentoEm).toLocaleDateString("pt-BR")}</div>
+                )}
                 {detail.comprovanteUrl && (
                   <div><a href={detail.comprovanteUrl} target="_blank" rel="noreferrer" style={{ color: COLORS.primary }}>Ver comprovante</a></div>
                 )}
