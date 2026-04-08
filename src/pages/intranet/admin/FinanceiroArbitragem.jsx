@@ -46,8 +46,7 @@ export default function FinanceiroArbitragem() {
   const [reciboNumeroInput, setReciboNumeroInput] = useState("");
   const [gerandoRecibo, setGerandoRecibo] = useState(false);
 
-  useEffect(() => {
-    const fetch = async () => {
+  const fetchData = async () => {
       setLoading(true);
       const [asgRes, anRes, reembRes, refRes, cfgRes] = await Promise.all([
         RefereeAssignmentsService.list(),
@@ -144,9 +143,9 @@ export default function FinanceiroArbitragem() {
         anuidadesPagas: anuidadesPagas.length, anuidadesPendentes: anuidadesPend.length,
       });
       setLoading(false);
-    };
-    fetch();
-  }, [ano]);
+  };
+
+  useEffect(() => { fetchData(); }, [ano]);
 
   const card = { background: "#fff", borderRadius: 12, padding: "20px 24px", boxShadow: "0 1px 8px rgba(0,0,0,0.07)", marginBottom: 20 };
   const th = { textAlign: "left", padding: "8px 10px", fontSize: 11, fontWeight: 700, color: COLORS.grayDark, textTransform: "uppercase" };
