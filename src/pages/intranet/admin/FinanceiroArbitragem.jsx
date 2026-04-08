@@ -11,6 +11,13 @@ import { COLORS, FONTS } from "../../../styles/colors";
 
 const fnMap = Object.fromEntries((REFEREE_FUNCTIONS || []).map(f => [f.value, f.label]));
 
+async function gerarEMostrarRecibo(dados, setPreview) {
+  const blob = await gerarReciboPagamentoArbitroPdf(dados);
+  const url = URL.createObjectURL(blob);
+  const nome = `Recibo_${(dados.arbitroNome || "arbitro").replace(/\s+/g, "_")}_${(dados.evento || "evento").replace(/\s+/g, "_")}.pdf`;
+  setPreview({ url, nome });
+}
+
 function fmt(v) { return (v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
 
 function exportCSV(rows, headers, filename) {
@@ -31,6 +38,7 @@ export default function FinanceiroArbitragem() {
   const [refMap, setRefMap] = useState({});
   const [config, setConfig] = useState({});
   const [expandido, setExpandido] = useState(null);
+  const [reciboPreview, setReciboPreview] = useState(null); // { url, nome }
 
   useEffect(() => {
     const fetch = async () => {
@@ -304,9 +312,9 @@ export default function FinanceiroArbitragem() {
                               <div key={a.id} style={{ background: COLORS.offWhite, borderRadius: 8, padding: "10px 14px", marginBottom: 8 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                                   <span style={{ fontWeight: 600, fontSize: 13 }}>{ref.name || a.refereeId}</span>
-                                  <button onClick={async (ev) => {
+                                  <button onClick={(ev) => {
                                     ev.stopPropagation();
-                                    const blob = await gerarReciboPagamentoArbitroPdf({
+                                    gerarEMostrarRecibo({
                                       arbitroNome: ref.name, arbitroCpf: ref.cpf,
                                       funcao: fnMap[a.refereeFunction] || a.refereeFunction,
                                       evento: e.title, dataEvento: a.event?.date, cidade: a.event?.city,
@@ -314,13 +322,9 @@ export default function FinanceiroArbitragem() {
                                       hospedagem: a.hospedagem, alimentacao: a.alimentacao,
                                       reembolsos: reembs.map(r => ({ categoria: r.categoria, descricao: r.descricao, valor: (r.valorAprovado ?? r.valor) || 0 })),
                                       assinaturaUrl: config.assinaturaPresidenteUrl || "",
-                                    });
-                                    const url = URL.createObjectURL(blob);
-                                    const link = document.createElement("a"); link.href = url;
-                                    link.download = `Recibo_${(ref.name || "arbitro").replace(/\s+/g, "_")}_${(e.title || "evento").replace(/\s+/g, "_")}.pdf`;
-                                    link.click(); URL.revokeObjectURL(url);
+                                    }, setReciboPreview);
                                   }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                                    Gerar Recibo
+                                    Recibo
                                   </button>
                                 </div>
                                 <div style={{ fontSize: 12, color: COLORS.gray, display: "flex", flexDirection: "column", gap: 2 }}>
@@ -386,9 +390,9 @@ export default function FinanceiroArbitragem() {
                               <div key={a.id} style={{ background: COLORS.offWhite, borderRadius: 8, padding: "10px 14px", marginBottom: 8 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                                   <span style={{ fontWeight: 600, fontSize: 13 }}>{evt.title || "—"} — {evt.date ? new Date(evt.date + "T12:00:00").toLocaleDateString("pt-BR") : ""}</span>
-                                  <button onClick={async (ev) => {
+                                  <button onClick={(ev) => {
                                     ev.stopPropagation();
-                                    const blob = await gerarReciboPagamentoArbitroPdf({
+                                    gerarEMostrarRecibo({
                                       arbitroNome: arb.nome, arbitroCpf: ref.cpf,
                                       funcao: fnMap[a.refereeFunction] || a.refereeFunction,
                                       evento: evt.title, dataEvento: evt.date, cidade: evt.city,
@@ -396,13 +400,9 @@ export default function FinanceiroArbitragem() {
                                       hospedagem: a.hospedagem, alimentacao: a.alimentacao,
                                       reembolsos: reembs.map(r => ({ categoria: r.categoria, descricao: r.descricao, valor: (r.valorAprovado ?? r.valor) || 0 })),
                                       assinaturaUrl: config.assinaturaPresidenteUrl || "",
-                                    });
-                                    const url = URL.createObjectURL(blob);
-                                    const link = document.createElement("a"); link.href = url;
-                                    link.download = `Recibo_${arb.nome.replace(/\s+/g, "_")}_${(evt.title || "evento").replace(/\s+/g, "_")}.pdf`;
-                                    link.click(); URL.revokeObjectURL(url);
+                                    }, setReciboPreview);
                                   }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                                    Gerar Recibo
+                                    Recibo
                                   </button>
                                 </div>
                                 <div style={{ fontSize: 12, color: COLORS.gray, display: "flex", flexDirection: "column", gap: 2 }}>
@@ -428,6 +428,31 @@ export default function FinanceiroArbitragem() {
           </>
         )}
       </div>
+      {/* Modal preview recibo */}
+      {reciboPreview && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={() => { URL.revokeObjectURL(reciboPreview.url); setReciboPreview(null); }}>
+          <div style={{ background: "#fff", borderRadius: 14, padding: 24, maxWidth: 700, width: "95%", maxHeight: "90vh", overflow: "auto" }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <span style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 800, color: COLORS.dark }}>Recibo de Pagamento</span>
+              <button onClick={() => { URL.revokeObjectURL(reciboPreview.url); setReciboPreview(null); }}
+                style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: COLORS.gray }}>X</button>
+            </div>
+            <iframe src={`${reciboPreview.url}#zoom=page-width`} style={{ width: "100%", height: 500, border: `1px solid ${COLORS.grayLight}`, borderRadius: 8, background: "#f4f4f4" }} />
+            <div style={{ display: "flex", gap: 8, marginTop: 12, justifyContent: "flex-end" }}>
+              <button onClick={() => { URL.revokeObjectURL(reciboPreview.url); setReciboPreview(null); }}
+                style={{ padding: "8px 18px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", fontSize: 13, cursor: "pointer" }}>Fechar</button>
+              <button onClick={() => {
+                const win = window.open(reciboPreview.url);
+                if (win) { win.onload = () => { win.focus(); win.print(); }; }
+              }} style={{ padding: "8px 18px", borderRadius: 8, border: `1px solid ${COLORS.primary}`, background: "transparent", color: COLORS.primary, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FONTS.heading }}>Imprimir</button>
+              <a href={reciboPreview.url} download={reciboPreview.nome}
+                style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: COLORS.primary, color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none", fontFamily: FONTS.heading }}>Baixar PDF</a>
+            </div>
+          </div>
+        </div>
+      )}
     </IntranetLayout>
   );
 }
