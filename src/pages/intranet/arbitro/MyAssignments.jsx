@@ -172,7 +172,10 @@ export default function MyAssignments() {
                       )}
                       {asgn.notes && <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 6, fontStyle: "italic" }}>Obs: {asgn.notes}</div>}
                       {/* Relatório (eventos passados, chefe ou coordenador) */}
-                      {evt.date <= today && (asgn.refereeFunction === "chefe" || asgn.refereeFunction === "coordenador_ev") && (() => {
+                      {evt.date <= today && (
+                        asgn.refereeFunction === "chefe" || asgn.refereeFunction === "coordenador_ev" ||
+                        asgn.funcaoExtra === "chefe" || asgn.funcaoExtra === "coordenador_ev"
+                      ) && (() => {
                         const meuRelatorio = relatorios.byAssign?.[asgn.id];
                         const relatorioEvento = relatorios.byEvent?.[asgn.eventId];
                         const outroPreencheu = relatorioEvento && relatorioEvento.refereeId !== refereeId;

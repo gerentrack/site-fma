@@ -120,7 +120,10 @@ export default function IntranetHome() {
           const today = new Date().toISOString().slice(0, 10);
           setMyAssignments(r.data.filter(a => a.event?.date >= today));
           // Verificar relatórios pendentes (chefe/coordenador, evento passado ou hoje)
-          const elegíveis = r.data.filter(a => a.event?.date <= today && (a.refereeFunction === "chefe" || a.refereeFunction === "coordenador_ev"));
+          const elegíveis = r.data.filter(a => a.event?.date <= today && (
+            a.refereeFunction === "chefe" || a.refereeFunction === "coordenador_ev" ||
+            a.funcaoExtra === "chefe" || a.funcaoExtra === "coordenador_ev"
+          ));
           if (elegíveis.length > 0) {
             RelatoriosService.list().then(relRes => {
               const relEventIds = new Set((relRes.data || []).filter(rl => rl.status === "enviado").map(rl => rl.eventId));
