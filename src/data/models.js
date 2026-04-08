@@ -493,6 +493,7 @@ export const refereeEventModel = {
   id: "",
   source: "manual",      // "calendar" | "manual"
   calendarRef: null,     // FK → EventoCalendario.id
+  solicitacaoId: null,   // FK → solicitacao.id (quando originado de permit/chancela)
   title: "",
   date: "",
   time: "",
@@ -502,6 +503,12 @@ export const refereeEventModel = {
   organizer: "",
   refereesNeeded: 1,     // quantidade de árbitros necessários
   notes: "",             // instruções internas da coordenação
+  // ── Informações para o árbitro ──
+  horarioApresentacao: "", // ex: "06:30"
+  contatoCoordenador: "",  // ex: "João - (31) 99999-0000"
+  regulamentoUrl: "",      // URL do regulamento (upload ou da solicitação)
+  mapaPercursoUrl: "",     // URL do mapa do percurso
+  observacoesArbitro: "",  // instruções específicas (uniforme, material, etc.)
   status: "aberto",      // "aberto" | "escalado" | "realizado" | "cancelado"
   createdAt: "",
   updatedAt: "",

@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import IntranetLayout from "../IntranetLayout";
 import { RefereeEventsService } from "../../../services/index";
+import { uploadFile } from "../../../services/storageService";
 import { COLORS, FONTS } from "../../../styles/colors";
 import { CALENDAR_CATEGORIES } from "../../../config/navigation";
 
@@ -176,7 +177,7 @@ export function IntranetEventList() {
 }
 
 // ─── Editor ───────────────────────────────────────────────────────────────────
-const emptyEvt = { title:"", date:"", time:"", city:"", location:"", category:"corrida", organizer:"", refereesNeeded:3, notes:"", status:"aberto", source:"manual", calendarRef:null };
+const emptyEvt = { title:"", date:"", time:"", city:"", location:"", category:"corrida", organizer:"", refereesNeeded:3, notes:"", status:"aberto", source:"manual", calendarRef:null, horarioApresentacao:"", contatoCoordenador:"", regulamentoUrl:"", mapaPercursoUrl:"", observacoesArbitro:"" };
 
 export function IntranetEventEditor() {
   const { id } = useParams();
@@ -280,9 +281,51 @@ export function IntranetEventEditor() {
               </div>
             </div>
             <div>
-              {lbl("Observações")}
-              <textarea value={form.notes} onChange={e => set("notes", e.target.value)} rows={3} placeholder="Informações adicionais para árbitros..."
+              {lbl("Observações internas")}
+              <textarea value={form.notes} onChange={e => set("notes", e.target.value)} rows={2} placeholder="Notas internas da coordenação..."
                 style={{ width: "100%", padding: "10px 13px", borderRadius: 8, border: `1.5px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 14, resize: "vertical", outline: "none", boxSizing: "border-box" }} />
+            </div>
+
+            {/* Informações para o árbitro */}
+            <div style={{ borderTop: `1px solid ${COLORS.grayLight}`, paddingTop: 16, marginTop: 8 }}>
+              <h3 style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.primary, margin: "0 0 12px" }}>Informacoes para o Arbitro</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <div>
+                  {lbl("Horario de apresentacao")}
+                  <input value={form.horarioApresentacao || ""} onChange={e => set("horarioApresentacao", e.target.value)} placeholder="Ex: 06:30" style={inp()} />
+                </div>
+                <div>
+                  {lbl("Contato do coordenador")}
+                  <input value={form.contatoCoordenador || ""} onChange={e => set("contatoCoordenador", e.target.value)} placeholder="Ex: Joao - (31) 99999-0000" style={inp()} />
+                </div>
+                <div>
+                  {lbl("Regulamento")}
+                  {form.regulamentoUrl && <div style={{ marginBottom: 4 }}><a href={form.regulamentoUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: COLORS.primary }}>Ver regulamento atual</a></div>}
+                  <input type="file" accept=".pdf" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const r = await uploadFile(file, "eventos/regulamentos");
+                    if (r.url) set("regulamentoUrl", r.url);
+                    e.target.value = "";
+                  }} style={{ fontSize: 12 }} />
+                </div>
+                <div>
+                  {lbl("Mapa do percurso")}
+                  {form.mapaPercursoUrl && <div style={{ marginBottom: 4 }}><a href={form.mapaPercursoUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: COLORS.primary }}>Ver mapa atual</a></div>}
+                  <input type="file" accept=".pdf,image/*" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const r = await uploadFile(file, "eventos/mapas");
+                    if (r.url) set("mapaPercursoUrl", r.url);
+                    e.target.value = "";
+                  }} style={{ fontSize: 12 }} />
+                </div>
+              </div>
+              <div style={{ marginTop: 14 }}>
+                {lbl("Observacoes para os arbitros")}
+                <textarea value={form.observacoesArbitro || ""} onChange={e => set("observacoesArbitro", e.target.value)} rows={2} placeholder="Uniforme, material necessario, ponto de encontro..."
+                  style={{ width: "100%", padding: "10px 13px", borderRadius: 8, border: `1.5px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 14, resize: "vertical", outline: "none", boxSizing: "border-box" }} />
+              </div>
             </div>
           </div>
         </div>

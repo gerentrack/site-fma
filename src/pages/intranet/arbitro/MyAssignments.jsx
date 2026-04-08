@@ -95,18 +95,48 @@ export default function MyAssignments() {
                       </div>
                       <div style={{ fontFamily: FONTS.heading, fontSize: 15, fontWeight: 700, color: COLORS.dark }}>{evt.title}</div>
                       <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 4 }}>
-                        📍 {evt.city}{evt.location ? ` — ${evt.location}` : ""}{evt.time ? ` • ${evt.time}` : ""}
+                        {evt.city}{evt.location ? ` — ${evt.location}` : ""}{evt.time ? ` • ${evt.time}` : ""}
                       </div>
+                      {/* Funções */}
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
                         <span style={{ fontFamily: FONTS.heading, fontSize: 13, color: COLORS.primary, background: `${COLORS.primary}10`, display: "inline-block", padding: "4px 12px", borderRadius: 20 }}>
-                          Funcao: {fnMap[asgn.refereeFunction] || asgn.refereeFunction}
+                          {fnMap[asgn.refereeFunction] || asgn.refereeFunction}
                         </span>
                         {asgn.funcaoExtra && (
                           <span style={{ fontFamily: FONTS.heading, fontSize: 13, color: "#0066cc", background: "#eff6ff", display: "inline-block", padding: "4px 12px", borderRadius: 20 }}>
                             + {fnMap[asgn.funcaoExtra] || asgn.funcaoExtra}
                           </span>
                         )}
+                        {/* Valor da diária */}
+                        {(asgn.valorDiaria || 0) > 0 && (
+                          <span style={{ fontFamily: FONTS.heading, fontSize: 13, color: "#15803d", background: "#f0fdf4", display: "inline-block", padding: "4px 12px", borderRadius: 20 }}>
+                            R$ {((asgn.valorDiaria || 0) + (asgn.transporte || 0) + (asgn.hospedagem || 0) + (asgn.alimentacao || 0)).toFixed(2)}
+                          </span>
+                        )}
                       </div>
+                      {/* Detalhes do evento para o árbitro */}
+                      <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 4, fontSize: 12, fontFamily: FONTS.body, color: COLORS.gray }}>
+                        {evt.horarioApresentacao && <div><strong>Apresentacao:</strong> {evt.horarioApresentacao}</div>}
+                        {evt.contatoCoordenador && <div><strong>Coordenador:</strong> {evt.contatoCoordenador}</div>}
+                        {evt.observacoesArbitro && <div><strong>Instrucoes:</strong> {evt.observacoesArbitro}</div>}
+                      </div>
+                      {/* Documentos */}
+                      {(evt.regulamentoUrl || evt.mapaPercursoUrl) && (
+                        <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+                          {evt.regulamentoUrl && (
+                            <a href={evt.regulamentoUrl} target="_blank" rel="noreferrer"
+                              style={{ padding: "4px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600, background: COLORS.offWhite, color: COLORS.primary, textDecoration: "none" }}>
+                              Regulamento
+                            </a>
+                          )}
+                          {evt.mapaPercursoUrl && (
+                            <a href={evt.mapaPercursoUrl} target="_blank" rel="noreferrer"
+                              style={{ padding: "4px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600, background: COLORS.offWhite, color: COLORS.primary, textDecoration: "none" }}>
+                              Mapa do Percurso
+                            </a>
+                          )}
+                        </div>
+                      )}
                       {asgn.notes && <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 6, fontStyle: "italic" }}>Obs: {asgn.notes}</div>}
                       {/* Colegas escalados */}
                       {(() => {
