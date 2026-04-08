@@ -8,6 +8,8 @@ import { RefereeAssignmentsService, AnuidadesService, ReembolsosService, Referee
 import { gerarReciboPagamentoArbitroPdf } from "../../../services/reciboPagamentoArbitroPdf";
 import { gerarAnuidadeReciboPdf } from "../../../services/anuidadeReciboPdf";
 import { reservarNumeroRecibo, formatarNumeroRecibo } from "../../../utils/reciboCounter";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../../firebase";
 import { REFEREE_FUNCTIONS } from "../../../config/navigation";
 import { COLORS, FONTS } from "../../../styles/colors";
 
@@ -46,6 +48,19 @@ export default function FinanceiroArbitragem() {
   const [reciboNumeroInput, setReciboNumeroInput] = useState("");
   const [gerandoRecibo, setGerandoRecibo] = useState(false);
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
+
+  const abrirModalRecibo = async (config) => {
+    setModalRecibo(config);
+    if (!config.existente) {
+      // Buscar próximo número sequencial (sem reservar)
+      const anoAtual = new Date().getFullYear();
+      const snap = await getDoc(doc(db, "counters", `recibo_${anoAtual}`));
+      const atual = snap.exists() ? snap.data().sequencial : 0;
+      setReciboNumeroInput(formatarNumeroRecibo(atual + 1, anoAtual));
+    } else {
+      setReciboNumeroInput(config.numero);
+    }
+  };
 
   const fetchData = async () => {
       setLoading(true);
@@ -326,7 +341,7 @@ export default function FinanceiroArbitragem() {
                                   {a.diariaPaga && (
                                     <button onClick={(ev) => {
                                       ev.stopPropagation();
-                                      setModalRecibo({
+                                      abrirModalRecibo({
                                         type: "diaria", id: a.id,
                                         numero: a.reciboNumero || "", data: a.reciboData || "",
                                         existente: !!a.reciboNumero,
@@ -340,7 +355,6 @@ export default function FinanceiroArbitragem() {
                                           assinaturaUrl: config.assinaturaPresidenteUrl || "",
                                         },
                                       });
-                                      setReciboNumeroInput(a.reciboNumero || "");
                                     }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: a.reciboNumero ? "#15803d" : COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                                       {a.reciboNumero ? `${a.reciboNumero}` : "Gerar Recibo"}
                                     </button>
@@ -414,7 +428,7 @@ export default function FinanceiroArbitragem() {
                                   </span>
                                   {a.diariaPaga && <button onClick={(ev) => {
                                     ev.stopPropagation();
-                                    setModalRecibo({
+                                    abrirModalRecibo({
                                       type: "diaria", id: a.id,
                                       numero: a.reciboNumero || "", data: a.reciboData || "",
                                       existente: !!a.reciboNumero,
@@ -428,7 +442,6 @@ export default function FinanceiroArbitragem() {
                                         assinaturaUrl: config.assinaturaPresidenteUrl || "",
                                       },
                                     });
-                                    setReciboNumeroInput(a.reciboNumero || "");
                                   }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: a.reciboNumero ? "#15803d" : COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                                     {a.reciboNumero ? `${a.reciboNumero}` : "Gerar Recibo"}
                                   </button>}
@@ -479,7 +492,7 @@ export default function FinanceiroArbitragem() {
                             <td style={td}><span style={{ fontSize: 12, color: a.reciboNumero ? "#15803d" : COLORS.gray }}>{a.reciboNumero || "—"}</span></td>
                             <td style={td}>
                               <button onClick={() => {
-                                setModalRecibo({
+                                abrirModalRecibo({
                                   type: "anuidade", id: a.id,
                                   numero: a.reciboNumero || "", data: "",
                                   existente: !!a.reciboNumero,
@@ -492,7 +505,6 @@ export default function FinanceiroArbitragem() {
                                     assinaturaUrl: config.assinaturaPresidenteUrl || "",
                                   },
                                 });
-                                setReciboNumeroInput(a.reciboNumero || "");
                               }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: a.reciboNumero ? "#15803d" : COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                                 {a.reciboNumero || "Gerar Recibo"}
                               </button>
@@ -559,18 +571,22 @@ export default function FinanceiroArbitragem() {
                 <div style={{ marginBottom: 12 }}>
                   <label style={{ fontSize: 11, fontWeight: 600, color: COLORS.grayDark, display: "block", marginBottom: 4 }}>Numero do recibo</label>
                   <input value={reciboNumeroInput} onChange={e => setReciboNumeroInput(e.target.value)}
-                    placeholder="Vazio = gerar automatico"
                     style={{ width: "100%", padding: "10px 12px", border: `1px solid ${COLORS.grayLight}`, borderRadius: 8, fontSize: 14, boxSizing: "border-box" }} />
-                  <div style={{ fontSize: 11, color: COLORS.gray, marginTop: 4 }}>Deixe vazio para gerar numero sequencial automatico. Ou digite caso tenha emitido fora do sistema.</div>
+                  <div style={{ fontSize: 11, color: COLORS.gray, marginTop: 4 }}>Proximo numero sugerido. Altere se necessario (ex: recibo emitido fora do sistema).</div>
                 </div>
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                   <button onClick={() => { setModalRecibo(null); setConfirmarExclusao(false); }} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", fontSize: 13, cursor: "pointer" }}>Cancelar</button>
                   <button disabled={gerandoRecibo} onClick={async () => {
                     setGerandoRecibo(true);
+                    const anoR = new Date().getFullYear();
                     let numero = reciboNumeroInput.trim();
-                    if (!numero) {
-                      const seq = await reservarNumeroRecibo(new Date().getFullYear());
-                      numero = formatarNumeroRecibo(seq, new Date().getFullYear());
+                    // Se o número é o sugerido (próximo sequencial), reservar para incrementar
+                    const snapCheck = await getDoc(doc(db, "counters", `recibo_${anoR}`));
+                    const atualCheck = snapCheck.exists() ? snapCheck.data().sequencial : 0;
+                    const sugerido = formatarNumeroRecibo(atualCheck + 1, anoR);
+                    if (!numero || numero === sugerido) {
+                      const seq = await reservarNumeroRecibo(anoR);
+                      numero = formatarNumeroRecibo(seq, anoR);
                     }
                     const dataHoje = new Date().toISOString().slice(0, 10);
                     // Salvar no registro
