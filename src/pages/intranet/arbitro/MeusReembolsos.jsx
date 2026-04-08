@@ -89,7 +89,7 @@ export default function MeusReembolsos() {
     fetchData();
   };
 
-  const totalAprovado = reembolsos.filter(r => r.status === "aprovado" || r.status === "aprovado_parcial").reduce((s, r) => s + (r.valorAprovado ?? r.valor || 0), 0);
+  const totalAprovado = reembolsos.filter(r => r.status === "aprovado" || r.status === "aprovado_parcial").reduce((s, r) => s + ((r.valorAprovado ?? r.valor) || 0), 0);
   const totalPendente = reembolsos.filter(r => r.status === "pendente").reduce((s, r) => s + (r.valor || 0), 0);
 
   const card = { background: "#fff", borderRadius: 12, padding: "18px 22px", marginBottom: 12, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" };

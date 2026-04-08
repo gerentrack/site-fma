@@ -61,7 +61,7 @@ export default function ReembolsosAdmin() {
   const filtered = reembolsos.filter(r => !filtroStatus || r.status === filtroStatus);
 
   const pendentes = reembolsos.filter(r => r.status === "pendente");
-  const totalAprovado = reembolsos.filter(r => r.status === "aprovado" || r.status === "aprovado_parcial").reduce((s, r) => s + (r.valorAprovado ?? r.valor || 0), 0);
+  const totalAprovado = reembolsos.filter(r => r.status === "aprovado" || r.status === "aprovado_parcial").reduce((s, r) => s + ((r.valorAprovado ?? r.valor) || 0), 0);
   const totalPendente = pendentes.reduce((s, r) => s + (r.valor || 0), 0);
 
   const card = { background: "#fff", borderRadius: 12, padding: "20px 24px", boxShadow: "0 1px 8px rgba(0,0,0,0.07)", marginBottom: 20 };
