@@ -2170,6 +2170,10 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
       const num = await reservarNumeroRecibo(ano);
       const reciboNumero = formatarNumeroRecibo(num, ano);
 
+      // Buscar config para assinatura
+      const cfgRes = await TaxasConfigService.get();
+      const cfg = cfgRes.data || {};
+
       const blob = await gerarReciboPdf({
         reciboNumero,
         valor: pag.valor,
@@ -2183,6 +2187,9 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
         protocoloFMA: sol.protocoloFMA,
         organizadorNome: organizer?.name || "",
         tipoSolicitacao: sol.tipo,
+        assinaturaUrl: cfg.assinaturaPresidenteUrl || "",
+        presidenteNome: cfg.presidenteNome || "",
+        presidenteCargo: cfg.presidenteCargo || "",
       });
 
       // Upload do PDF

@@ -105,6 +105,9 @@ async function imgToBase64(url) {
  * @param {string} dados.protocoloFMA
  * @param {string} dados.organizadorNome — titular do permit
  * @param {string} [dados.tipoSolicitacao] — "permit" | "chancela"
+ * @param {string} [dados.assinaturaUrl] — URL da imagem da assinatura do presidente
+ * @param {string} [dados.presidenteNome]
+ * @param {string} [dados.presidenteCargo]
  * @returns {Promise<Blob>}
  */
 export async function gerarReciboPdf(dados) {
@@ -253,6 +256,17 @@ export async function gerarReciboPdf(dados) {
   pdf.text(`Belo Horizonte/MG, ${dataExtenso()}`, W / 2, y, { align: "center" });
   y += 20;
 
+  // Assinatura do presidente
+  if (dados.assinaturaUrl) {
+    try {
+      const sigData = await imgToBase64(dados.assinaturaUrl);
+      if (sigData) {
+        pdf.addImage(sigData, "PNG", (W - 50) / 2, y - 8, 50, 20);
+        y += 14;
+      }
+    } catch {}
+  }
+
   // Linha para assinatura
   pdf.setDrawColor(0);
   pdf.setLineWidth(0.3);
@@ -260,7 +274,11 @@ export async function gerarReciboPdf(dados) {
   pdf.line((W - sigW) / 2, y, (W + sigW) / 2, y);
   y += 5;
   pdf.setFontSize(9);
-  pdf.text("Federacao Mineira de Atletismo", W / 2, y, { align: "center" });
+  pdf.setFont(pdf.getFont().fontName, "bold");
+  pdf.text(dados.presidenteNome || "Federacao Mineira de Atletismo", W / 2, y, { align: "center" });
+  y += 4;
+  pdf.setFont(pdf.getFont().fontName, "normal");
+  pdf.text(dados.presidenteCargo || "CNPJ: 16.681.223/0001-00", W / 2, y, { align: "center" });
   y += 4;
   pdf.text("CNPJ: 16.681.223/0001-00", W / 2, y, { align: "center" });
 
