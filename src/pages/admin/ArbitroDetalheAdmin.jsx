@@ -14,6 +14,7 @@ import { refereesAPI } from "../../data/api";
 import { TaxasConfigService } from "../../services/index";
 import { REFEREE_CATEGORIES, REFEREE_ROLES, REFEREE_STATUS } from "../../config/navigation";
 import { gerarDeclaracaoArbitroPdf } from "../../services/declaracaoArbitroPdf";
+import { gerarCredencialPdf } from "../../services/credencialArbitroPdf";
 import { COLORS, FONTS } from "../../styles/colors";
 
 const field = (label, value) => (
@@ -89,6 +90,33 @@ export default function ArbitroDetalheAdmin() {
             }}
             style={{ padding: "4px 14px", borderRadius: 20, border: `1px solid ${COLORS.primary}`, background: "transparent", color: COLORS.primary, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FONTS.heading }}>
             Gerar Declaracao
+          </button>
+          <button
+            onClick={async () => {
+              const cRes = await TaxasConfigService.get();
+              const cfg = cRes.data || {};
+              const blob = await gerarCredencialPdf({
+                nome: data.name,
+                cpf: data.cpf,
+                rg: data.rg,
+                nivel: data.nivel,
+                registroCbat: data.registroCbat,
+                fotoUrl: data.foto || "",
+                refereeId: data.id,
+                siteUrl: window.location.origin,
+                validadeAno: new Date().getFullYear(),
+                assinaturaUrl: cfg.assinaturaPresidenteUrl || "",
+                presidenteNome: cfg.presidenteNome || "",
+              });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `Credencial_${data.name.replace(/\s+/g, "_")}.pdf`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            style={{ padding: "4px 14px", borderRadius: 20, border: `1px solid #007733`, background: "transparent", color: "#007733", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FONTS.heading }}>
+            Gerar Credencial
           </button>
         </div>
 
