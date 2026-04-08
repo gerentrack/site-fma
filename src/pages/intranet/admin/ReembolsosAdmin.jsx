@@ -185,13 +185,28 @@ export default function ReembolsosAdmin() {
                   )}
                   {(r.status === "aprovado" || r.status === "aprovado_parcial") && (
                     <button onClick={async () => {
+                      const dt = prompt("Data do pagamento (DD/MM/AAAA):", new Date().toLocaleDateString("pt-BR"));
+                      if (!dt) return;
+                      const partes = dt.split("/");
+                      const dataISO = partes.length === 3 ? `${partes[2]}-${partes[1]}-${partes[0]}` : new Date().toISOString().slice(0, 10);
                       setActionLoading(r.id);
-                      await ReembolsosService.update(r.id, { status: "pago", pagoEm: new Date().toISOString() });
+                      await ReembolsosService.update(r.id, { status: "pago", pagoEm: dataISO });
                       setActionLoading(null);
                       fetchData();
                     }} disabled={actionLoading === r.id}
                       style={{ padding: "5px 14px", borderRadius: 6, border: "none", background: "#15803d", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                       Marcar como pago
+                    </button>
+                  )}
+                  {r.status === "pago" && (
+                    <button onClick={async () => {
+                      setActionLoading(r.id);
+                      await ReembolsosService.update(r.id, { status: "aprovado", pagoEm: "" });
+                      setActionLoading(null);
+                      fetchData();
+                    }} disabled={actionLoading === r.id}
+                      style={{ padding: "5px 14px", borderRadius: 6, border: "1px solid #dc2626", background: "transparent", color: "#dc2626", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                      Desfazer pagamento
                     </button>
                   )}
                 </div>

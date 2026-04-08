@@ -44,7 +44,15 @@ export default function DiariasAdmin() {
   const totalPendente = assignments.filter(a => !a.diariaPaga).reduce((s, a) => s + (a.valorDiaria || 0) + (a.transporte || 0) + (a.hospedagem || 0) + (a.alimentacao || 0), 0);
 
   const handlePagar = async (id) => {
-    await RefereeAssignmentsService.update(id, { diariaPaga: true, diariaPagaEm: new Date().toISOString() });
+    const dt = prompt("Data do pagamento (DD/MM/AAAA):", new Date().toLocaleDateString("pt-BR"));
+    if (!dt) return;
+    const partes = dt.split("/");
+    const dataISO = partes.length === 3 ? `${partes[2]}-${partes[1]}-${partes[0]}` : new Date().toISOString().slice(0, 10);
+    await RefereeAssignmentsService.update(id, { diariaPaga: true, diariaPagaEm: dataISO });
+    fetchData();
+  };
+  const handleDesfazerPago = async (id) => {
+    await RefereeAssignmentsService.update(id, { diariaPaga: false, diariaPagaEm: "" });
     fetchData();
   };
 
@@ -130,7 +138,12 @@ export default function DiariasAdmin() {
                         }}>{a.diariaPaga ? "Pago" : "Pendente"}</span>
                       </td>
                       <td style={{ padding: "8px 10px" }}>
-                        {!a.diariaPaga && (
+                        {a.diariaPaga ? (
+                          <button onClick={() => handleDesfazerPago(a.id)}
+                            style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #dc2626", background: "transparent", color: "#dc2626", fontSize: 10, cursor: "pointer" }}>
+                            Desfazer
+                          </button>
+                        ) : (
                           <button onClick={() => handlePagar(a.id)}
                             style={{ padding: "4px 10px", borderRadius: 6, border: "none", background: "#15803d", color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
                             Pagar

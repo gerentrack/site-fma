@@ -299,6 +299,7 @@ export const INTRANET_NAV_ADMIN = [
   { label: "Avaliacoes",            icon: "⭐", path: "/intranet/admin/avaliacoes" },
   // ── Financeiro ──
   { label: "Financeiro",            icon: "💰", path: "/intranet/admin/financeiro",  group: "Financeiro" },
+  { label: "Anuidades",             icon: "💳", path: "/admin/anuidades" },
   { label: "Diarias",               icon: "💵", path: "/intranet/admin/diarias" },
   { label: "Aprovar Reembolsos",    icon: "🧾", path: "/intranet/admin/reembolsos" },
   // ── Relatorios ──

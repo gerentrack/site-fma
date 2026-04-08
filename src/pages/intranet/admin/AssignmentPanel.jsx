@@ -417,13 +417,24 @@ export function AssignmentEditor() {
                       {(asgn.alimentacao || 0) > 0 && <span>Alim: R$ {asgn.alimentacao.toFixed(2)}</span>}
                       <span style={{ fontWeight: 700, color: COLORS.dark }}>Total: R$ {totalDiaria.toFixed(2)}</span>
                       {asgn.diariaPaga ? (
-                        <span style={{ padding: "2px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, background: "#f0fdf4", color: "#15803d" }}>Pago</span>
+                        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                          <span style={{ padding: "2px 8px", borderRadius: 12, fontSize: 10, fontWeight: 700, background: "#f0fdf4", color: "#15803d" }}>Pago{asgn.diariaPagaEm ? ` ${asgn.diariaPagaEm.slice(0, 10).split("-").reverse().join("/")}` : ""}</span>
+                          <button onClick={async () => {
+                            setSaving(asgn.id);
+                            await RefereeAssignmentsService.update(asgn.id, { diariaPaga: false, diariaPagaEm: "" });
+                            await load(); setSaving(null);
+                          }} disabled={saving === asgn.id}
+                            style={{ padding: "2px 6px", borderRadius: 4, border: "none", background: "transparent", color: "#dc2626", fontSize: 9, cursor: "pointer" }}>desfazer</button>
+                        </div>
                       ) : (
                         <button onClick={async () => {
+                          const dt = prompt("Data do pagamento (DD/MM/AAAA):", new Date().toLocaleDateString("pt-BR"));
+                          if (!dt) return;
+                          const partes = dt.split("/");
+                          const dataISO = partes.length === 3 ? `${partes[2]}-${partes[1]}-${partes[0]}` : new Date().toISOString().slice(0, 10);
                           setSaving(asgn.id);
-                          await RefereeAssignmentsService.update(asgn.id, { diariaPaga: true, diariaPagaEm: new Date().toISOString() });
-                          await load();
-                          setSaving(null);
+                          await RefereeAssignmentsService.update(asgn.id, { diariaPaga: true, diariaPagaEm: dataISO });
+                          await load(); setSaving(null);
                         }} disabled={saving === asgn.id}
                           style={{ padding: "3px 10px", borderRadius: 6, border: "none", background: "#15803d", color: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>
                           Marcar pago
