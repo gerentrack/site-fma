@@ -101,8 +101,8 @@ export default function IntranetHome() {
         setStats(s => ({ ...s, assigned: ativas.length }));
 
         const today = new Date().toISOString().slice(0, 10);
-        // Ignorar escalações sem evento (dados órfãos)
-        const passadas = allAsgn.filter(a => a.event && a.event.date <= today);
+        // Ignorar escalações sem evento (dados órfãos) — só eventos já passados
+        const passadas = allAsgn.filter(a => a.event && a.event.date < today);
         const relatorioEventIds = new Set((relRes.data || []).filter(r => r.status === "enviado").map(r => r.eventId));
         const eventosPassadosIds = [...new Set(passadas.map(a => a.eventId))];
         const semRelatorio = eventosPassadosIds.filter(eid => !relatorioEventIds.has(eid)).length;
