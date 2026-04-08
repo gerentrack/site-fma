@@ -113,6 +113,12 @@ service cloud.firestore {
       allow write: if isAuth() && (isAdminRole() || "referee" in getUserData().roles || getUserData().role == "referee");
     }
 
+    // ── Reembolsos (leitura: autenticado; escrita: autenticado — árbitro envia, admin aprova) ──
+    match /reembolsos/{docId} {
+      allow read: if isAuth();
+      allow write: if isAuth();
+    }
+
     // ── Diárias (leitura: autenticado; escrita: admin) ──
     match /diarias/{docId} {
       allow read: if isAuth();

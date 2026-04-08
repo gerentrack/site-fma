@@ -555,7 +555,34 @@ export const refereeAssignmentModel = {
   updatedAt: "",
 };
 
-// ─── 19b. Diária de Arbitragem ────────────────────────────────────────────────
+// ─── 19b. Reembolso de Despesa ────────────────────────────────────────────────
+/**
+ * Nota fiscal enviada pelo árbitro para reembolso.
+ * Coleção: reembolsos
+ * Vinculada a uma escalação (assignmentId).
+ */
+export const reembolsoModel = {
+  id: "",
+  assignmentId: "",      // FK → refereeAssignment.id
+  eventId: "",           // FK → refereeEvent.id
+  refereeId: "",         // FK → referee.id
+  refereeName: "",       // snapshot
+  eventTitle: "",        // snapshot
+  eventDate: "",         // snapshot
+  categoria: "",         // "transporte" | "hospedagem" | "alimentacao" | "outro"
+  descricao: "",         // ex: "Uber aeroporto-estádio"
+  valor: 0,              // R$
+  notaUrl: "",           // URL da foto/PDF da nota fiscal
+  notaPath: "",          // path no Storage
+  status: "pendente",    // "pendente" | "aprovado" | "rejeitado"
+  motivoRejeicao: "",    // preenchido pelo admin ao rejeitar
+  aprovadoPor: "",
+  aprovadoEm: "",
+  createdAt: "",
+  updatedAt: "",
+};
+
+// ─── 19c. Diária de Arbitragem ───────────────────────────────────────────────
 /**
  * Registro de diária paga a um árbitro por evento.
  * Coleção: diarias

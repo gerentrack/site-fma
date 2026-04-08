@@ -1071,6 +1071,22 @@ export const envioDocumentosAPI = {
   },
 };
 
+// ─── Reembolsos ─────────────────────────────────────────────────────────────
+export const reembolsosAPI = {
+  list: async (filtros = {}) => {
+    let items = await readCol("reembolsos");
+    if (filtros.refereeId) items = items.filter(r => r.refereeId === filtros.refereeId);
+    if (filtros.assignmentId) items = items.filter(r => r.assignmentId === filtros.assignmentId);
+    if (filtros.status) items = items.filter(r => r.status === filtros.status);
+    items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return ok(items);
+  },
+  get: async (id) => { const item = await readDoc("reembolsos", id); return item ? ok(item) : err("Nao encontrado."); },
+  create: async (data) => { const item = await createDoc("reembolsos", { ...data, createdAt: now() }); return ok(item); },
+  update: async (id, data) => { const item = await patchDoc("reembolsos", id, data); return item ? ok(item) : err("Nao encontrado."); },
+  delete: async (id) => { await removeDoc("reembolsos", id); return ok(true); },
+};
+
 // ─── Diárias de Arbitragem ───────────────────────────────────────────────────
 export const diariasAPI = {
   list: async (filtros = {}) => {

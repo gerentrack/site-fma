@@ -93,6 +93,8 @@ import RelatorioArbitros from "../pages/intranet/admin/RelatorioArbitros";
 import CalendarioEscalas from "../pages/intranet/arbitro/CalendarioEscalas";
 import DiariasAdmin from "../pages/intranet/admin/DiariasAdmin";
 import MuralAdmin from "../pages/intranet/admin/MuralAdmin";
+import ReembolsosAdmin from "../pages/intranet/admin/ReembolsosAdmin";
+import MeusReembolsos from "../pages/intranet/arbitro/MeusReembolsos";
 import ChangePasswordPage from "../pages/admin/ChangePasswordPage";
 
 // ── Layout público ────────────────────────────────────────────────────────────
@@ -160,6 +162,7 @@ export default function AppRouter() {
       <Route path="/intranet/anuidade"          element={<MinhaAnuidade />} />
       <Route path="/intranet/mensagens"          element={<MeusDocumentosRecebidos />} />
       <Route path="/intranet/calendario"         element={<CalendarioEscalas />} />
+      <Route path="/intranet/reembolsos"         element={<MeusReembolsos />} />
       {/* Área do admin/coordenador */}
       <Route path="/intranet/admin/arbitros"          element={<IntranetRefereeList />} />
       <Route path="/intranet/admin/arbitros/:id"      element={<IntranetRefereeEditor />} />
@@ -173,6 +176,7 @@ export default function AppRouter() {
       <Route path="/intranet/admin/relatorio"        element={<RelatorioArbitros />} />
       <Route path="/intranet/admin/diarias"          element={<DiariasAdmin />} />
       <Route path="/intranet/admin/mural"            element={<MuralAdmin />} />
+      <Route path="/intranet/admin/reembolsos"       element={<ReembolsosAdmin />} />
 
       {/* ── Galeria ── */}
       <Route path="/galeria"     element={<PublicLayout><GaleriaListagem /></PublicLayout>} />

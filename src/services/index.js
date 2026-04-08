@@ -15,7 +15,7 @@ import {
   solicitacaoArquivosAPI, movimentacoesAPI, pagamentosAPI,
   resultadosAPI, equipesAPI,
   taxasConfigAPI, anuidadesAPI, envioDocumentosAPI, avaliacoesAPI,
-  diariasAPI, muralAvisosAPI,
+  diariasAPI, muralAvisosAPI, reembolsosAPI,
 } from "../data/api";
 
 function slugify(str = "") {
@@ -714,6 +714,14 @@ export const AvaliacoesService = {
 };
 
 // ─── Diárias ────────────────────────────────────────────────────────────────
+
+export const ReembolsosService = {
+  list: (filtros) => reembolsosAPI.list(filtros),
+  get: (id) => reembolsosAPI.get(id),
+  create: (data) => reembolsosAPI.create(data),
+  update: (id, data) => reembolsosAPI.update(id, data),
+  delete: (id) => reembolsosAPI.delete(id),
+};
 
 export const DiariasService = {
   list: (filtros) => diariasAPI.list(filtros),
