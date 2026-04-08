@@ -33,12 +33,19 @@ export default function MyAssignments() {
       RefereeAssignmentsService.getByReferee(refereeId),
       RefereeAssignmentsService.list(),
       RefereesService.list(),
-      RelatoriosService.list({ refereeId }),
+      RelatoriosService.list(),
     ]).then(([myR, allR, refR, relR]) => {
       if (myR.data) setAssignments(myR.data);
       if (allR.data) setAllAssignments(allR.data);
       if (refR.data) setReferees(Object.fromEntries(refR.data.map(r => [r.id, r])));
-      if (relR.data) setRelatorios(Object.fromEntries(relR.data.map(r => [r.assignmentId, r])));
+      // Mapear relatórios por eventId (qualquer árbitro) e por assignmentId (meu)
+      const relByEvent = {};
+      const relByAssign = {};
+      (relR.data || []).forEach(r => {
+        relByEvent[r.eventId] = r;
+        relByAssign[r.assignmentId] = r;
+      });
+      setRelatorios({ byEvent: relByEvent, byAssign: relByAssign });
       setLoading(false);
     });
   }, [refereeId]);
@@ -164,25 +171,43 @@ export default function MyAssignments() {
                         </div>
                       )}
                       {asgn.notes && <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 6, fontStyle: "italic" }}>Obs: {asgn.notes}</div>}
-                      {/* Relatório (eventos passados, apenas árbitro chefe) */}
-                      {evt.date < today && asgn.refereeFunction === "chefe" && (
-                        <div style={{ marginTop: 8 }}>
-                          {relatorios[asgn.id] ? (
-                            <Link to={`/intranet/relatorio/${asgn.id}`} style={{
-                              padding: "5px 14px", borderRadius: 6, fontSize: 12, fontWeight: 600, textDecoration: "none",
-                              background: relatorios[asgn.id].status === "enviado" ? "#f0fdf4" : "#fffbeb",
-                              color: relatorios[asgn.id].status === "enviado" ? "#15803d" : "#d97706",
-                            }}>
-                              {relatorios[asgn.id].status === "enviado" ? "Relatorio enviado" : "Continuar relatorio (rascunho)"}
-                            </Link>
-                          ) : (
+                      {/* Relatório (eventos passados, chefe ou coordenador) */}
+                      {evt.date <= today && (asgn.refereeFunction === "chefe" || asgn.refereeFunction === "coordenador_ev") && (() => {
+                        const meuRelatorio = relatorios.byAssign?.[asgn.id];
+                        const relatorioEvento = relatorios.byEvent?.[asgn.eventId];
+                        const outroPreencheu = relatorioEvento && relatorioEvento.refereeId !== refereeId;
+
+                        if (meuRelatorio) {
+                          return (
+                            <div style={{ marginTop: 8 }}>
+                              <Link to={`/intranet/relatorio/${asgn.id}`} style={{
+                                padding: "5px 14px", borderRadius: 6, fontSize: 12, fontWeight: 600, textDecoration: "none",
+                                background: meuRelatorio.status === "enviado" ? "#f0fdf4" : "#fffbeb",
+                                color: meuRelatorio.status === "enviado" ? "#15803d" : "#d97706",
+                              }}>
+                                {meuRelatorio.status === "enviado" ? "Relatorio enviado" : "Continuar relatorio (rascunho)"}
+                              </Link>
+                            </div>
+                          );
+                        }
+                        if (outroPreencheu && relatorioEvento.status === "enviado") {
+                          return (
+                            <div style={{ marginTop: 8 }}>
+                              <span style={{ padding: "5px 14px", borderRadius: 6, fontSize: 12, fontWeight: 600, background: "#f0fdf4", color: "#15803d" }}>
+                                Relatorio ja preenchido por {relatorioEvento.refereeName}
+                              </span>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div style={{ marginTop: 8 }}>
                             <Link to={`/intranet/relatorio/${asgn.id}`} style={{
                               padding: "5px 14px", borderRadius: 6, fontSize: 12, fontWeight: 600, textDecoration: "none",
                               background: COLORS.primary, color: "#fff",
                             }}>Preencher Relatorio</Link>
-                          )}
-                        </div>
-                      )}
+                          </div>
+                        );
+                      })()}
                       {/* Colegas escalados */}
                       {(() => {
                         const colegas = allAssignments.filter(a => a.eventId === asgn.eventId && a.refereeId !== refereeId);
