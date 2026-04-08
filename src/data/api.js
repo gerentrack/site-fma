@@ -1071,6 +1071,36 @@ export const envioDocumentosAPI = {
   },
 };
 
+// ─── Diárias de Arbitragem ───────────────────────────────────────────────────
+export const diariasAPI = {
+  list: async (filtros = {}) => {
+    let items = await readCol("diarias");
+    if (filtros.refereeId) items = items.filter(d => d.refereeId === filtros.refereeId);
+    if (filtros.eventId) items = items.filter(d => d.eventId === filtros.eventId);
+    if (filtros.status) items = items.filter(d => d.status === filtros.status);
+    items.sort((a, b) => new Date(b.eventDate || b.createdAt) - new Date(a.eventDate || a.createdAt));
+    return ok(items);
+  },
+  get: async (id) => { const item = await readDoc("diarias", id); return item ? ok(item) : err("Nao encontrada."); },
+  create: async (data) => { const item = await createDoc("diarias", { ...data, createdAt: now() }); return ok(item); },
+  update: async (id, data) => { const item = await patchDoc("diarias", id, data); return item ? ok(item) : err("Nao encontrada."); },
+  delete: async (id) => { await removeDoc("diarias", id); return ok(true); },
+};
+
+// ─── Mural de Avisos ────────────────────────────────────────────────────────
+export const muralAvisosAPI = {
+  list: async ({ apenasAtivos = false } = {}) => {
+    let items = await readCol("muralAvisos");
+    if (apenasAtivos) items = items.filter(a => a.ativo);
+    items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return ok(items);
+  },
+  get: async (id) => { const item = await readDoc("muralAvisos", id); return item ? ok(item) : err("Nao encontrado."); },
+  create: async (data) => { const item = await createDoc("muralAvisos", { ...data, createdAt: now() }); return ok(item); },
+  update: async (id, data) => { const item = await patchDoc("muralAvisos", id, data); return item ? ok(item) : err("Nao encontrado."); },
+  delete: async (id) => { await removeDoc("muralAvisos", id); return ok(true); },
+};
+
 // ─── Avaliações de Árbitros ──────────────────────────────────────────────────
 export const avaliacoesAPI = {
   list: async (filtros = {}) => {

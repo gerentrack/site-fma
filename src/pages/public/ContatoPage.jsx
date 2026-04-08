@@ -9,6 +9,7 @@
 import { useState, useEffect } from "react";
 import { FooterConfigService } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
+import { enviarContato } from "../../services/emailService";
 
 // ─── Config de seções de contato ─────────────────────────────────────────────
 function buildContatos(cfg) {
@@ -88,6 +89,74 @@ function ContatoCard({ icon, title, value, href, cta, color = COLORS.primary, bg
         {cta} →
       </div>
     </a>
+  );
+}
+
+// ─── Formulário de Contato ────────────────────────────────────────────────────
+function ContatoForm() {
+  const [form, setForm] = useState({ nome: "", email: "", assunto: "", mensagem: "" });
+  const [enviado, setEnviado] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleSubmit = async () => {
+    if (!form.nome || !form.email || !form.assunto || !form.mensagem) {
+      alert("Preencha todos os campos.");
+      return;
+    }
+    setEnviando(true);
+    const r = await enviarContato(form);
+    setEnviando(false);
+    if (!r.ok) { alert("Erro ao enviar mensagem. Tente novamente."); return; }
+    setEnviado(true);
+  };
+
+  const inpSt = { width: "100%", boxSizing: "border-box", padding: "10px 14px", borderRadius: 8, border: `1.5px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 14, outline: "none" };
+  const lblSt = { display: "block", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, marginBottom: 5 };
+
+  if (enviado) {
+    return (
+      <div style={{ padding: "36px 24px", borderRadius: 14, background: "#f0fdf4", border: "1.5px solid #86efac", textAlign: "center", marginBottom: 28 }}>
+        <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+        <h3 style={{ fontFamily: FONTS.heading, fontSize: 18, fontWeight: 800, color: "#15803d", textTransform: "uppercase", margin: "0 0 8px" }}>Mensagem enviada!</h3>
+        <p style={{ fontFamily: FONTS.body, fontSize: 14, color: "#166534", margin: 0 }}>Recebemos sua mensagem e responderemos o mais breve possível.</p>
+        <button onClick={() => { setEnviado(false); setForm({ nome: "", email: "", assunto: "", mensagem: "" }); }}
+          style={{ marginTop: 16, padding: "9px 22px", borderRadius: 9, border: "none", background: "#15803d", color: "#fff", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+          Nova mensagem
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ background: "#fff", borderRadius: 14, padding: 28, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", border: `1px solid ${COLORS.grayLight}`, marginBottom: 28 }}>
+      <h2 style={{ fontFamily: FONTS.heading, fontSize: 18, fontWeight: 800, textTransform: "uppercase", color: COLORS.dark, margin: "0 0 20px", letterSpacing: 0.5 }}>
+        Envie uma mensagem
+      </h2>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div>
+          <label style={lblSt}>Nome *</label>
+          <input value={form.nome} onChange={e => set("nome", e.target.value)} placeholder="Seu nome" style={inpSt} />
+        </div>
+        <div>
+          <label style={lblSt}>E-mail *</label>
+          <input type="email" value={form.email} onChange={e => set("email", e.target.value)} placeholder="seu@email.com" style={inpSt} />
+        </div>
+        <div style={{ gridColumn: "1/-1" }}>
+          <label style={lblSt}>Assunto *</label>
+          <input value={form.assunto} onChange={e => set("assunto", e.target.value)} placeholder="Assunto da mensagem" style={inpSt} />
+        </div>
+        <div style={{ gridColumn: "1/-1" }}>
+          <label style={lblSt}>Mensagem *</label>
+          <textarea value={form.mensagem} onChange={e => set("mensagem", e.target.value)} rows={4} placeholder="Escreva sua mensagem..." style={{ ...inpSt, resize: "vertical" }} />
+        </div>
+      </div>
+      <button onClick={handleSubmit} disabled={enviando}
+        style={{ marginTop: 18, width: "100%", padding: "12px", borderRadius: 9, border: "none", background: enviando ? COLORS.gray : COLORS.primary, color: "#fff", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, cursor: enviando ? "not-allowed" : "pointer" }}>
+        {enviando ? "Enviando..." : "Enviar mensagem"}
+      </button>
+    </div>
   );
 }
 
@@ -191,10 +260,13 @@ export default function ContatoPage() {
           </div>
         )}
 
-        {/* Seção de formulário de contato — placeholder institucional */}
+        {/* Formulário de contato */}
+        <ContatoForm />
+
+        {/* Seção Portal de Organizadores */}
         <div style={{
           background: "linear-gradient(135deg, #1a1a1a, #2d2d2d)",
-          borderRadius: 16, padding: "36px 40px",
+          borderRadius: 16, padding: "36px 40px", marginTop: 20,
           display: "grid", gridTemplateColumns: "1fr auto",
           gap: 24, alignItems: "center",
         }}>

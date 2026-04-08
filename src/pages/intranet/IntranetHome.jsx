@@ -10,7 +10,7 @@ import { useIntranet } from "../../context/IntranetContext";
 import {
   RefereeEventsService, RefereeAvailabilityService,
   RefereeAssignmentsService, RefereesService, AnuidadesService,
-  EnvioDocumentosService,
+  EnvioDocumentosService, MuralAvisosService,
 } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
 import { CALENDAR_CATEGORIES, ANUIDADE_STATUS } from "../../config/navigation";
@@ -69,11 +69,13 @@ export default function IntranetHome() {
   const [myAssignments, setMyAssignments] = useState([]);
   const [anuidade, setAnuidade] = useState(null);
   const [docsNaoLidos, setDocsNaoLidos] = useState(0);
+  const [avisos, setAvisos] = useState([]);
 
   const anoAtual = new Date().getFullYear();
 
   useEffect(() => {
     RefereeEventsService.list({ upcoming: true }).then(r => { if (r.data) setEvents(r.data.slice(0, 5)); });
+    MuralAvisosService.list({ apenasAtivos: true }).then(r => { if (r.data) setAvisos(r.data); });
     if (canManage) {
       RefereesService.list().then(r => {
         if (r.data) setStats(s => ({ ...s, total: r.data.length, active: r.data.filter(x => x.status === "ativo").length }));
@@ -115,6 +117,25 @@ export default function IntranetHome() {
             {canManage ? "Painel de gerenciamento da intranet de árbitros." : "Sua área pessoal na intranet FMA."}
           </p>
         </div>
+
+        {/* Mural de avisos */}
+        {avisos.length > 0 && (
+          <div style={{ marginBottom: 24, display: "flex", flexDirection: "column", gap: 8 }}>
+            {avisos.map(aviso => {
+              const cores = { info: { color: "#0066cc", bg: "#eff6ff", border: "#bfdbfe" }, alerta: { color: "#d97706", bg: "#fffbeb", border: "#fde68a" }, urgente: { color: "#dc2626", bg: "#fef2f2", border: "#fecaca" } };
+              const c = cores[aviso.tipo] || cores.info;
+              return (
+                <div key={aviso.id} style={{ padding: "12px 16px", borderRadius: 10, background: c.bg, border: `1px solid ${c.border}`, display: "flex", alignItems: "flex-start", gap: 10 }}>
+                  <span style={{ fontSize: 16, flexShrink: 0 }}>{aviso.tipo === "urgente" ? "🔴" : aviso.tipo === "alerta" ? "🟡" : "🔵"}</span>
+                  <div>
+                    <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: c.color }}>{aviso.titulo}</div>
+                    {aviso.mensagem && <div style={{ fontFamily: FONTS.body, fontSize: 12, color: c.color, opacity: 0.8, marginTop: 2 }}>{aviso.mensagem}</div>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Stats — admin/coordenador */}
         {canManage && (

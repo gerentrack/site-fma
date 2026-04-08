@@ -113,6 +113,18 @@ service cloud.firestore {
       allow write: if isAuth() && (isAdminRole() || "referee" in getUserData().roles || getUserData().role == "referee");
     }
 
+    // ── Diárias (leitura: autenticado; escrita: admin) ──
+    match /diarias/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdminRole();
+    }
+
+    // ── Mural de Avisos (leitura: autenticado; escrita: admin) ──
+    match /muralAvisos/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdminRole();
+    }
+
     // ── Avaliações (leitura: autenticado; escrita: admin) ──
     match /avaliacoes/{docId} {
       allow read: if isAuth();

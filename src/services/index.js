@@ -15,6 +15,7 @@ import {
   solicitacaoArquivosAPI, movimentacoesAPI, pagamentosAPI,
   resultadosAPI, equipesAPI,
   taxasConfigAPI, anuidadesAPI, envioDocumentosAPI, avaliacoesAPI,
+  diariasAPI, muralAvisosAPI,
 } from "../data/api";
 
 function slugify(str = "") {
@@ -710,4 +711,24 @@ export const AvaliacoesService = {
   create: (data) => avaliacoesAPI.create(data),
   update: (id, data) => avaliacoesAPI.update(id, data),
   delete: (id) => avaliacoesAPI.delete(id),
+};
+
+// ─── Diárias ────────────────────────────────────────────────────────────────
+
+export const DiariasService = {
+  list: (filtros) => diariasAPI.list(filtros),
+  get: (id) => diariasAPI.get(id),
+  create: (data) => diariasAPI.create(data),
+  update: (id, data) => diariasAPI.update(id, data),
+  delete: (id) => diariasAPI.delete(id),
+};
+
+// ─── Mural de Avisos ────────────────────────────────────────────────────────
+
+export const MuralAvisosService = {
+  list: (opts) => muralAvisosAPI.list(opts),
+  get: (id) => muralAvisosAPI.get(id),
+  create: (data) => muralAvisosAPI.create(data),
+  update: (id, data) => muralAvisosAPI.update(id, data),
+  delete: (id) => muralAvisosAPI.delete(id),
 };

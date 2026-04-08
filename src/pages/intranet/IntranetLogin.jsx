@@ -6,6 +6,8 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useIntranet } from "../../context/IntranetContext";
 import { COLORS, FONTS } from "../../styles/colors";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "../../firebase";
 
 export default function IntranetLogin() {
   const { login } = useIntranet();
@@ -14,6 +16,8 @@ export default function IntranetLogin() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resetMsg, setResetMsg] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,6 +27,19 @@ export default function IntranetLogin() {
     setLoading(false);
     if (r.error) { setError(r.error); return; }
     navigate("/intranet");
+  };
+
+  const handleResetPassword = async () => {
+    setResetMsg(""); setError("");
+    if (!email.trim()) { setError("Digite seu e-mail acima para recuperar a senha."); return; }
+    setResetLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      setResetMsg("E-mail de recuperação enviado! Verifique sua caixa de entrada.");
+    } catch {
+      setResetMsg("Se este e-mail estiver cadastrado, você receberá as instruções de recuperação.");
+    }
+    setResetLoading(false);
   };
 
   return (
@@ -75,12 +92,21 @@ export default function IntranetLogin() {
           </button>
         </form>
 
-        <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${COLORS.grayLight}`, textAlign: "center" }}>
-          <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginBottom: 8 }}>Contas de demonstração:</div>
-          <div style={{ fontFamily: "monospace", fontSize: 11, color: COLORS.grayDark, lineHeight: 1.8 }}>
-            coordenador@fma.org.br / fma2026 (admin)<br />
-            carlos@arbitros.fma.org.br / carlos123 (coord.)<br />
-            ana@arbitros.fma.org.br / ana123 (árbitro)
+        <div style={{ marginTop: 16, textAlign: "center" }}>
+          <button type="button" onClick={handleResetPassword} disabled={resetLoading}
+            style={{ background: "none", border: "none", padding: 0, fontFamily: FONTS.body, fontSize: 13, color: COLORS.primary, cursor: resetLoading ? "not-allowed" : "pointer", textDecoration: "underline" }}>
+            {resetLoading ? "Enviando..." : "Esqueci minha senha"}
+          </button>
+          {resetMsg && (
+            <div style={{ marginTop: 10, padding: "10px 14px", borderRadius: 8, background: "#f0fdf4", border: "1px solid #86efac", fontFamily: FONTS.body, fontSize: 12, color: "#15803d" }}>
+              {resetMsg}
+            </div>
+          )}
+        </div>
+
+        <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${COLORS.grayLight}`, textAlign: "center" }}>
+          <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>
+            Acesso restrito a árbitros credenciados pela FMA.
           </div>
         </div>
       </div>

@@ -10,6 +10,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { COLORS, FONTS } from "../../styles/colors";
+import { enviarOuvidoria } from "../../services/emailService";
 
 const ITENS = [
   {
@@ -43,15 +44,28 @@ const ITENS = [
 export default function OuvidoriaPage() {
   const [formData, setFormData] = useState({ nome: "", email: "", assunto: "", mensagem: "", anonimo: false });
   const [enviado, setEnviado] = useState(false);
+  const [enviando, setEnviando] = useState(false);
 
   const handleChange = (field, value) => setFormData(f => ({ ...f, [field]: value }));
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.email || !formData.assunto || !formData.mensagem) {
       alert("Preencha os campos obrigatórios: e-mail, assunto e mensagem.");
       return;
     }
-    // Simulação — em produção: POST para API
+    setEnviando(true);
+    const r = await enviarOuvidoria({
+      nome: formData.nome,
+      email: formData.email,
+      assunto: formData.assunto,
+      mensagem: formData.mensagem,
+      anonimo: formData.anonimo,
+    });
+    setEnviando(false);
+    if (!r.ok) {
+      alert("Erro ao enviar manifestação. Tente novamente ou entre em contato por e-mail.");
+      return;
+    }
     setEnviado(true);
   };
 
@@ -224,14 +238,14 @@ export default function OuvidoriaPage() {
                       resize: "vertical" }} />
                 </div>
 
-                <button onClick={handleSubmit}
+                <button onClick={handleSubmit} disabled={enviando}
                   style={{ width: "100%", padding: "12px",
                     borderRadius: 9, border: "none",
-                    background: COLORS.primary, color: "#fff",
+                    background: enviando ? COLORS.gray : COLORS.primary, color: "#fff",
                     fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700,
                     textTransform: "uppercase", letterSpacing: 0.5,
-                    cursor: "pointer" }}>
-                  📣 Enviar Manifestação
+                    cursor: enviando ? "not-allowed" : "pointer" }}>
+                  {enviando ? "Enviando..." : "📣 Enviar Manifestação"}
                 </button>
 
                 <p style={{ fontFamily: FONTS.body, fontSize: 11,

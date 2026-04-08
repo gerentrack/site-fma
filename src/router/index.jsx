@@ -91,6 +91,8 @@ import AvaliacaoArbitro from "../pages/intranet/admin/AvaliacaoArbitro";
 import IndicadoresPanel from "../pages/intranet/admin/IndicadoresPanel";
 import RelatorioArbitros from "../pages/intranet/admin/RelatorioArbitros";
 import CalendarioEscalas from "../pages/intranet/arbitro/CalendarioEscalas";
+import DiariasAdmin from "../pages/intranet/admin/DiariasAdmin";
+import MuralAdmin from "../pages/intranet/admin/MuralAdmin";
 import ChangePasswordPage from "../pages/admin/ChangePasswordPage";
 
 // ── Layout público ────────────────────────────────────────────────────────────
@@ -169,6 +171,8 @@ export default function AppRouter() {
       <Route path="/intranet/admin/avaliacoes"       element={<AvaliacaoArbitro />} />
       <Route path="/intranet/admin/indicadores"      element={<IndicadoresPanel />} />
       <Route path="/intranet/admin/relatorio"        element={<RelatorioArbitros />} />
+      <Route path="/intranet/admin/diarias"          element={<DiariasAdmin />} />
+      <Route path="/intranet/admin/mural"            element={<MuralAdmin />} />
 
       {/* ── Galeria ── */}
       <Route path="/galeria"     element={<PublicLayout><GaleriaListagem /></PublicLayout>} />

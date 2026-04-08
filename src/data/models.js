@@ -548,7 +548,50 @@ export const refereeAssignmentModel = {
   updatedAt: "",
 };
 
-// ─── 19b. Avaliação pós-evento ────────────────────────────────────────────────
+// ─── 19b. Diária de Arbitragem ────────────────────────────────────────────────
+/**
+ * Registro de diária paga a um árbitro por evento.
+ * Coleção: diarias
+ */
+export const diariaModel = {
+  id: "",
+  assignmentId: "",      // FK → refereeAssignment.id
+  eventId: "",           // FK → refereeEvent.id
+  refereeId: "",         // FK → referee.id
+  refereeName: "",       // snapshot
+  eventTitle: "",        // snapshot
+  eventDate: "",         // snapshot
+  categoria: "",         // "pista" | "corrida6h" | "corrida12h"
+  funcaoDiaria: "",      // função na tabela Art. 6
+  valorDiaria: 0,        // R$
+  transporte: 0,         // R$ (opcional)
+  hospedagem: 0,         // R$ (opcional)
+  alimentacao: 0,        // R$ (opcional)
+  valorTotal: 0,         // soma
+  status: "pendente",    // "pendente" | "pago"
+  pagoEm: "",            // ISO date
+  observacao: "",
+  createdAt: "",
+  updatedAt: "",
+};
+
+// ─── 19c. Mural de Avisos ────────────────────────────────────────────────────
+/**
+ * Avisos fixos exibidos no topo do dashboard da intranet.
+ * Coleção: muralAvisos
+ */
+export const muralAvisoModel = {
+  id: "",
+  titulo: "",
+  mensagem: "",
+  tipo: "info",          // "info" | "alerta" | "urgente"
+  ativo: true,
+  criadoPor: "",
+  createdAt: "",
+  updatedAt: "",
+};
+
+// ─── 19d. Avaliação pós-evento ───────────────────────────────────────────────
 export const avaliacaoArbitroModel = {
   id: "",
   assignmentId: "",      // FK → refereeAssignment.id
