@@ -164,8 +164,8 @@ export default function MyAssignments() {
                         </div>
                       )}
                       {asgn.notes && <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 6, fontStyle: "italic" }}>Obs: {asgn.notes}</div>}
-                      {/* Relatório (eventos passados) */}
-                      {evt.date < today && (
+                      {/* Relatório (eventos passados, apenas árbitro chefe) */}
+                      {evt.date < today && asgn.refereeFunction === "chefe" && (
                         <div style={{ marginTop: 8 }}>
                           {relatorios[asgn.id] ? (
                             <Link to={`/intranet/relatorio/${asgn.id}`} style={{
