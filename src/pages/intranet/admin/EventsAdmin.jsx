@@ -291,14 +291,6 @@ export function IntranetEventEditor() {
               <h3 style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.primary, margin: "0 0 12px" }}>Informacoes para o Arbitro</h3>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <div>
-                  {lbl("Horario de apresentacao")}
-                  <input value={form.horarioApresentacao || ""} onChange={e => set("horarioApresentacao", e.target.value)} placeholder="Ex: 06:30" style={inp()} />
-                </div>
-                <div>
-                  {lbl("Contato do coordenador")}
-                  <input value={form.contatoCoordenador || ""} onChange={e => set("contatoCoordenador", e.target.value)} placeholder="Ex: Joao - (31) 99999-0000" style={inp()} />
-                </div>
-                <div>
                   {lbl("Regulamento")}
                   {form.regulamentoUrl && <div style={{ marginBottom: 4 }}><a href={form.regulamentoUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: COLORS.primary }}>Ver regulamento atual</a></div>}
                   <input type="file" accept=".pdf" onChange={async (e) => {
