@@ -172,7 +172,8 @@ export async function gerarCredencialPdf(dados) {
   if (dados.assinaturaUrl) {
     try {
       const sigData = await imgToBase64(dados.assinaturaUrl);
-      if (sigData) pdf.addImage(sigData, "PNG", vx + 3, sigLineY - 10, 25, 10);
+      const sigCenterX = vx + 3 + (35 - 3) / 2 - 12.5;
+      if (sigData) pdf.addImage(sigData, "PNG", sigCenterX, sigLineY - 10, 25, 10);
     } catch {}
   }
   pdf.setDrawColor(0); pdf.setLineWidth(0.15);

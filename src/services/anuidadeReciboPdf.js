@@ -233,7 +233,7 @@ export async function gerarAnuidadeReciboPdf(dados) {
   if (dados.assinaturaUrl) {
     try {
       const sigData = await imgToBase64(dados.assinaturaUrl);
-      pdf.addImage(sigData, "PNG", (W - sigImgW) / 2, y - sigImgH + 2, sigImgW, sigImgH);
+      pdf.addImage(sigData, "PNG", (W - sigImgW) / 2, y + 4 - sigImgH, sigImgW, sigImgH);
     } catch {}
   }
   y += 4;
