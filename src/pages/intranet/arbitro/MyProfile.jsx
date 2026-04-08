@@ -10,6 +10,7 @@ import { RefereesService } from "../../../services/index";
 import { intranetAuthAPI } from "../../../data/api";
 import { useCep } from "../../../hooks/useCep";
 import { uploadFile } from "../../../services/storageService";
+import ImageCropper from "../../../components/ui/ImageCropper";
 import { COLORS, FONTS } from "../../../styles/colors";
 import { REFEREE_CATEGORIES, REFEREE_ROLES, REFEREE_STATUS } from "../../../config/navigation";
 import { validarCPF, validarNisPis, cpfJaExisteArbitro } from "../../../utils/cpfCnpj";
@@ -55,6 +56,7 @@ export default function MyProfile() {
   const [data, setData] = useState(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  const [cropSrc, setCropSrc] = useState(null);
   const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
   const [pwSaving, setPwSaving] = useState(false);
   const [pwMsg, setPwMsg] = useState("");
@@ -135,6 +137,24 @@ export default function MyProfile() {
         </div>
 
         {/* Foto 3x4 */}
+        {cropSrc && (
+          <ImageCropper
+            imageSrc={cropSrc}
+            aspect={3 / 4}
+            onCancel={() => setCropSrc(null)}
+            onCropDone={async (blob) => {
+              setCropSrc(null);
+              setMsg("Enviando foto...");
+              const file = new File([blob], "foto.jpg", { type: "image/jpeg" });
+              const r = await uploadFile(file, `arbitros/${refereeId}/foto`);
+              if (r.url) {
+                await RefereesService.update(refereeId, { foto: r.url });
+                set("foto", r.url);
+                setMsg("Foto atualizada!");
+              } else setMsg("Erro ao enviar foto.");
+            }}
+          />
+        )}
         <div style={{ ...card, display: "flex", alignItems: "center", gap: 20 }}>
           <div style={{ width: 90, height: 120, borderRadius: 8, overflow: "hidden", background: COLORS.offWhite, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${COLORS.grayLight}` }}>
             {data.foto ? (
@@ -145,19 +165,16 @@ export default function MyProfile() {
           </div>
           <div>
             <div style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, marginBottom: 6 }}>Foto 3x4</div>
-            <input type="file" accept="image/*" onChange={async (e) => {
+            <input type="file" accept="image/*" onChange={(e) => {
               const file = e.target.files?.[0];
               if (!file) return;
-              if (file.size > 2 * 1024 * 1024) { setMsg("Foto deve ter no maximo 2MB."); return; }
-              setMsg("Enviando foto...");
-              const r = await uploadFile(file, `arbitros/${refereeId}/foto`);
-              if (r.url) {
-                await RefereesService.update(refereeId, { foto: r.url });
-                set("foto", r.url);
-                setMsg("Foto atualizada!");
-              } else setMsg("Erro ao enviar foto.");
+              if (file.size > 5 * 1024 * 1024) { setMsg("Imagem deve ter no maximo 5MB."); return; }
+              const reader = new FileReader();
+              reader.onload = () => setCropSrc(reader.result);
+              reader.readAsDataURL(file);
+              e.target.value = "";
             }} style={{ fontSize: 13 }} />
-            <div style={{ fontSize: 11, color: COLORS.gray, marginTop: 4 }}>JPG ou PNG, max 2MB. Recomendado: 300x400px.</div>
+            <div style={{ fontSize: 11, color: COLORS.gray, marginTop: 4 }}>JPG ou PNG. A imagem sera recortada no formato 3x4.</div>
           </div>
         </div>
 
