@@ -129,7 +129,7 @@ export async function notificarEscalacaoArbitro({
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Função</td><td style="padding:10px 14px;border:1px solid #eee;">${funcao}</td></tr>
       ${observacao && observacao !== "—" ? `<tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Observação</td><td style="padding:10px 14px;border:1px solid #eee;">${observacao}</td></tr>` : ""}
     </table>
-    <p>Acesse a Intranet para mais detalhes e confirmar sua disponibilidade:</p>
+    <p>Acesse a Intranet para mais detalhes.</p>
     <p style="text-align:center;margin:24px 0;">
       <a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar a Intranet</a>
     </p>
