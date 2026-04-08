@@ -10,9 +10,10 @@ import { COLORS, FONTS } from "../../../styles/colors";
 
 const CATEGORIAS = { transporte: "Transporte", hospedagem: "Hospedagem", alimentacao: "Alimentacao", outro: "Outro" };
 const STATUS_STYLE = {
-  pendente: { label: "Pendente", color: "#d97706", bg: "#fffbeb" },
-  aprovado: { label: "Aprovado", color: "#15803d", bg: "#f0fdf4" },
-  aprovado_parcial: { label: "Aprovado parcial", color: "#0066cc", bg: "#eff6ff" },
+  pendente: { label: "Pendente aprovacao", color: "#d97706", bg: "#fffbeb" },
+  aprovado: { label: "Aprovado — aguardando pgto", color: "#0066cc", bg: "#eff6ff" },
+  aprovado_parcial: { label: "Aprovado parcial — aguardando pgto", color: "#0066cc", bg: "#eff6ff" },
+  pago: { label: "Pago", color: "#15803d", bg: "#f0fdf4" },
   rejeitado: { label: "Rejeitado", color: "#dc2626", bg: "#fef2f2" },
 };
 
@@ -72,11 +73,18 @@ export default function ReembolsosAdmin() {
     fetchData();
   };
 
-  const filtered = reembolsos.filter(r => !filtroStatus || r.status === filtroStatus);
+  const filtered = reembolsos.filter(r => {
+    if (!filtroStatus) return true;
+    if (filtroStatus === "aprovado") return r.status === "aprovado" || r.status === "aprovado_parcial";
+    return r.status === filtroStatus;
+  });
 
   const pendentes = reembolsos.filter(r => r.status === "pendente");
-  const totalAprovado = reembolsos.filter(r => r.status === "aprovado" || r.status === "aprovado_parcial").reduce((s, r) => s + ((r.valorAprovado ?? r.valor) || 0), 0);
+  const aguardandoPgto = reembolsos.filter(r => r.status === "aprovado" || r.status === "aprovado_parcial");
+  const pagos = reembolsos.filter(r => r.status === "pago");
   const totalPendente = pendentes.reduce((s, r) => s + (r.valor || 0), 0);
+  const totalAguardandoPgto = aguardandoPgto.reduce((s, r) => s + ((r.valorAprovado ?? r.valor) || 0), 0);
+  const totalPago = pagos.reduce((s, r) => s + ((r.valorAprovado ?? r.valor) || 0), 0);
 
   const card = { background: "#fff", borderRadius: 12, padding: "20px 24px", boxShadow: "0 1px 8px rgba(0,0,0,0.07)", marginBottom: 20 };
 
@@ -91,18 +99,18 @@ export default function ReembolsosAdmin() {
         </p>
 
         {/* Resumo */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 12, marginBottom: 20 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: 12, marginBottom: 20 }}>
           <div style={{ ...card, textAlign: "center", marginBottom: 0 }}>
             <div style={{ fontFamily: FONTS.heading, fontSize: 22, fontWeight: 900, color: "#d97706" }}>{pendentes.length}</div>
-            <div style={{ fontSize: 12, color: COLORS.gray }}>Pendentes</div>
+            <div style={{ fontSize: 11, color: COLORS.gray }}>Aguardando aprovacao</div>
           </div>
           <div style={{ ...card, textAlign: "center", marginBottom: 0 }}>
-            <div style={{ fontFamily: FONTS.heading, fontSize: 22, fontWeight: 900, color: "#d97706" }}>{fmt(totalPendente)}</div>
-            <div style={{ fontSize: 12, color: COLORS.gray }}>Valor pendente</div>
+            <div style={{ fontFamily: FONTS.heading, fontSize: 22, fontWeight: 900, color: "#0066cc" }}>{fmt(totalAguardandoPgto)}</div>
+            <div style={{ fontSize: 11, color: COLORS.gray }}>Aguardando pagamento</div>
           </div>
           <div style={{ ...card, textAlign: "center", marginBottom: 0 }}>
-            <div style={{ fontFamily: FONTS.heading, fontSize: 22, fontWeight: 900, color: "#15803d" }}>{fmt(totalAprovado)}</div>
-            <div style={{ fontSize: 12, color: COLORS.gray }}>Total aprovado</div>
+            <div style={{ fontFamily: FONTS.heading, fontSize: 22, fontWeight: 900, color: "#15803d" }}>{fmt(totalPago)}</div>
+            <div style={{ fontSize: 11, color: COLORS.gray }}>Total pago</div>
           </div>
         </div>
 
@@ -111,8 +119,9 @@ export default function ReembolsosAdmin() {
           <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
             style={{ padding: "7px 10px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, fontSize: 13 }}>
             <option value="">Todos</option>
-            <option value="pendente">Pendentes</option>
-            <option value="aprovado">Aprovados</option>
+            <option value="pendente">Aguardando aprovacao</option>
+            <option value="aprovado">Aguardando pagamento</option>
+            <option value="pago">Pagos</option>
             <option value="rejeitado">Rejeitados</option>
           </select>
           <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: COLORS.gray }}>
@@ -165,7 +174,7 @@ export default function ReembolsosAdmin() {
                   {r.status === "pendente" && (
                     <div style={{ display: "flex", gap: 6 }}>
                       <button onClick={() => handleAprovar(r.id, r.valor)} disabled={actionLoading === r.id}
-                        style={{ padding: "5px 14px", borderRadius: 6, border: "none", background: "#15803d", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                        style={{ padding: "5px 14px", borderRadius: 6, border: "none", background: "#0066cc", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                         Aprovar
                       </button>
                       <button onClick={() => handleRejeitar(r.id)} disabled={actionLoading === r.id}
@@ -173,6 +182,17 @@ export default function ReembolsosAdmin() {
                         Rejeitar
                       </button>
                     </div>
+                  )}
+                  {(r.status === "aprovado" || r.status === "aprovado_parcial") && (
+                    <button onClick={async () => {
+                      setActionLoading(r.id);
+                      await ReembolsosService.update(r.id, { status: "pago", pagoEm: new Date().toISOString() });
+                      setActionLoading(null);
+                      fetchData();
+                    }} disabled={actionLoading === r.id}
+                      style={{ padding: "5px 14px", borderRadius: 6, border: "none", background: "#15803d", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                      Marcar como pago
+                    </button>
                   )}
                 </div>
               </div>

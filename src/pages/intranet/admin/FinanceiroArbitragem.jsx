@@ -35,7 +35,7 @@ export default function FinanceiroArbitragem() {
 
       const assignments = (asgRes.data || []).filter(a => a.event);
       const anuidades = anRes.data || [];
-      const reembolsos = (reembRes.data || []).filter(r => r.status === "aprovado" || r.status === "aprovado_parcial");
+      const reembolsos = (reembRes.data || []).filter(r => r.status === "aprovado" || r.status === "aprovado_parcial" || r.status === "pago");
       const refMap = Object.fromEntries((refRes.data || []).map(r => [r.id, r]));
 
       // Receitas

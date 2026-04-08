@@ -18,9 +18,10 @@ const CATEGORIAS = [
   { value: "outro", label: "Outro" },
 ];
 const STATUS_STYLE = {
-  pendente: { label: "Pendente", color: "#d97706", bg: "#fffbeb" },
-  aprovado: { label: "Aprovado", color: "#15803d", bg: "#f0fdf4" },
-  aprovado_parcial: { label: "Aprovado parcial", color: "#0066cc", bg: "#eff6ff" },
+  pendente: { label: "Aguardando aprovacao", color: "#d97706", bg: "#fffbeb" },
+  aprovado: { label: "Aprovado — aguardando pgto", color: "#0066cc", bg: "#eff6ff" },
+  aprovado_parcial: { label: "Aprovado parcial — aguardando pgto", color: "#0066cc", bg: "#eff6ff" },
+  pago: { label: "Pago", color: "#15803d", bg: "#f0fdf4" },
   rejeitado: { label: "Rejeitado", color: "#dc2626", bg: "#fef2f2" },
 };
 
@@ -89,8 +90,8 @@ export default function MeusReembolsos() {
     fetchData();
   };
 
-  const totalAprovado = reembolsos.filter(r => r.status === "aprovado" || r.status === "aprovado_parcial").reduce((s, r) => s + ((r.valorAprovado ?? r.valor) || 0), 0);
-  const totalPendente = reembolsos.filter(r => r.status === "pendente").reduce((s, r) => s + (r.valor || 0), 0);
+  const totalPago = reembolsos.filter(r => r.status === "pago").reduce((s, r) => s + ((r.valorAprovado ?? r.valor) || 0), 0);
+  const totalPendente = reembolsos.filter(r => r.status === "pendente" || r.status === "aprovado" || r.status === "aprovado_parcial").reduce((s, r) => s + ((r.valorAprovado ?? r.valor) || 0), 0);
 
   const card = { background: "#fff", borderRadius: 12, padding: "18px 22px", marginBottom: 12, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" };
   const inp = { width: "100%", padding: "8px 12px", border: `1px solid ${COLORS.grayLight}`, borderRadius: 8, fontSize: 14, fontFamily: FONTS.body, boxSizing: "border-box" };
@@ -113,12 +114,12 @@ export default function MeusReembolsos() {
         {/* Resumo */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
           <div style={{ ...card, textAlign: "center", marginBottom: 0 }}>
-            <div style={{ fontFamily: FONTS.heading, fontSize: 20, fontWeight: 900, color: "#15803d" }}>{fmt(totalAprovado)}</div>
-            <div style={{ fontSize: 11, color: COLORS.gray }}>Aprovado</div>
+            <div style={{ fontFamily: FONTS.heading, fontSize: 20, fontWeight: 900, color: "#15803d" }}>{fmt(totalPago)}</div>
+            <div style={{ fontSize: 11, color: COLORS.gray }}>Pago</div>
           </div>
           <div style={{ ...card, textAlign: "center", marginBottom: 0 }}>
             <div style={{ fontFamily: FONTS.heading, fontSize: 20, fontWeight: 900, color: "#d97706" }}>{fmt(totalPendente)}</div>
-            <div style={{ fontSize: 11, color: COLORS.gray }}>Pendente</div>
+            <div style={{ fontSize: 11, color: COLORS.gray }}>Em andamento</div>
           </div>
           <div style={{ ...card, textAlign: "center", marginBottom: 0 }}>
             <div style={{ fontFamily: FONTS.heading, fontSize: 20, fontWeight: 900, color: COLORS.dark }}>{reembolsos.length}</div>
