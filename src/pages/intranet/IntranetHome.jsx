@@ -74,8 +74,9 @@ export default function IntranetHome() {
   const anoAtual = new Date().getFullYear();
 
   useEffect(() => {
+    if (!refereeId) return;
     RefereeEventsService.list({ upcoming: true }).then(r => { if (r.data) setEvents(r.data.slice(0, 5)); });
-    MuralAvisosService.list({ apenasAtivos: true }).then(r => { if (r.data) setAvisos(r.data); });
+    MuralAvisosService.list({ apenasAtivos: true }).then(r => { if (r.data) setAvisos(r.data); }).catch(() => {});
     if (canManage) {
       RefereesService.list().then(r => {
         if (r.data) setStats(s => ({ ...s, total: r.data.length, active: r.data.filter(x => x.status === "ativo").length }));
