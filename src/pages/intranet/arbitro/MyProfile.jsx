@@ -59,6 +59,7 @@ export default function MyProfile() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const [cropSrc, setCropSrc] = useState(null);
+  const [credencialUrl, setCredencialUrl] = useState(null);
   const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
   const [pwSaving, setPwSaving] = useState(false);
   const [pwMsg, setPwMsg] = useState("");
@@ -148,15 +149,34 @@ export default function MyProfile() {
               assinaturaUrl: cfg.assinaturaPresidenteUrl || "",
               presidenteNome: cfg.presidenteNome || "",
             });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a"); a.href = url;
-            a.download = `Credencial_${data.name.replace(/\s+/g, "_")}.pdf`;
-            a.click(); URL.revokeObjectURL(url);
+            setCredencialUrl(URL.createObjectURL(blob));
             setMsg("");
           }} style={{ padding: "4px 12px", borderRadius: 20, border: `1px solid ${COLORS.primary}`, background: "transparent", color: COLORS.primary, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FONTS.heading }}>
             Minha Credencial
           </button>
         </div>
+
+        {/* Modal credencial */}
+        {credencialUrl && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}
+            onClick={() => { URL.revokeObjectURL(credencialUrl); setCredencialUrl(null); }}>
+            <div style={{ background: "#fff", borderRadius: 14, padding: 20, maxWidth: 500, width: "95%", maxHeight: "90vh", display: "flex", flexDirection: "column" }}
+              onClick={e => e.stopPropagation()}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <span style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 800, color: COLORS.dark }}>Minha Credencial</span>
+                <button onClick={() => { URL.revokeObjectURL(credencialUrl); setCredencialUrl(null); }}
+                  style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: COLORS.gray }}>X</button>
+              </div>
+              <iframe src={credencialUrl} style={{ width: "100%", height: 340, border: "none", borderRadius: 8 }} />
+              <div style={{ display: "flex", gap: 8, marginTop: 12, justifyContent: "flex-end" }}>
+                <button onClick={() => { URL.revokeObjectURL(credencialUrl); setCredencialUrl(null); }}
+                  style={{ padding: "8px 18px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", fontSize: 13, cursor: "pointer" }}>Fechar</button>
+                <a href={credencialUrl} download={`Credencial_${data.name?.replace(/\s+/g, "_")}.pdf`}
+                  style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: COLORS.primary, color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none", fontFamily: FONTS.heading }}>Baixar PDF</a>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Foto 3x4 */}
         {cropSrc && (
