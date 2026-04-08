@@ -8,7 +8,7 @@ import { fmaLogo } from "../assets/permits";
 
 const CW = 85.6; // largura do cartão (mm) — padrão ISO 7810 (cartão de crédito)
 const CH = 54;    // altura do cartão (mm)
-const GAP = 2;    // espaço para linha de dobra
+const GAP = 0.5;  // espaço para linha de dobra (mínimo)
 
 const _cache = {};
 async function imgToBase64(url) {
