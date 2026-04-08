@@ -349,6 +349,7 @@ export default function TaxasConfigAdmin() {
             <ImageCropper
               imageSrc={cropSrc}
               aspect={5 / 2}
+              outputFormat="image/png"
               onCancel={() => setCropSrc(null)}
               onCropDone={async (blob) => {
                 setCropSrc(null);

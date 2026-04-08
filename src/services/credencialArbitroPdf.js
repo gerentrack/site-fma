@@ -167,20 +167,16 @@ export async function gerarCredencialPdf(dados) {
     }
   } catch {}
 
-  // Assinatura
+  // Assinatura + linha
+  const sigLineY = vy0 + CH - 4;
   if (dados.assinaturaUrl) {
     try {
       const sigData = await imgToBase64(dados.assinaturaUrl);
-      if (sigData) pdf.addImage(sigData, "PNG", vx + 3, vy0 + CH - 18, 25, 10);
+      if (sigData) pdf.addImage(sigData, "PNG", vx + 3, sigLineY - 10, 25, 10);
     } catch {}
   }
-
   pdf.setDrawColor(0); pdf.setLineWidth(0.15);
-  pdf.line(vx + 3, vy0 + CH - 6, vx + 35, vy0 + CH - 6);
-  pdf.setFontSize(4); pdf.setTextColor(0); pdf.setFont("helvetica", "normal");
-  pdf.text(dados.presidenteNome || "Presidente", vx + 3, vy0 + CH - 3.5);
-  pdf.setFontSize(3.5); pdf.setTextColor(100);
-  pdf.text("Presidente - FMA", vx + 3, vy0 + CH - 1.5);
+  pdf.line(vx + 3, sigLineY, vx + 35, sigLineY);
 
   // Barra inferior verso
   pdf.setFillColor(204, 0, 0);

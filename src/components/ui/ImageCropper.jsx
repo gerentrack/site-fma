@@ -16,7 +16,7 @@ function createImage(url) {
   });
 }
 
-async function getCroppedBlob(imageSrc, pixelCrop) {
+async function getCroppedBlob(imageSrc, pixelCrop, outputFormat = "image/jpeg") {
   const image = await createImage(imageSrc);
   const canvas = document.createElement("canvas");
   canvas.width = pixelCrop.width;
@@ -24,11 +24,11 @@ async function getCroppedBlob(imageSrc, pixelCrop) {
   const ctx = canvas.getContext("2d");
   ctx.drawImage(image, pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height, 0, 0, pixelCrop.width, pixelCrop.height);
   return new Promise((resolve) => {
-    canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.85);
+    canvas.toBlob((blob) => resolve(blob), outputFormat, outputFormat === "image/jpeg" ? 0.85 : undefined);
   });
 }
 
-export default function ImageCropper({ imageSrc, aspect = 3 / 4, onCropDone, onCancel }) {
+export default function ImageCropper({ imageSrc, aspect = 3 / 4, outputFormat = "image/jpeg", onCropDone, onCancel }) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
@@ -39,7 +39,7 @@ export default function ImageCropper({ imageSrc, aspect = 3 / 4, onCropDone, onC
 
   const handleConfirm = async () => {
     if (!croppedAreaPixels) return;
-    const blob = await getCroppedBlob(imageSrc, croppedAreaPixels);
+    const blob = await getCroppedBlob(imageSrc, croppedAreaPixels, outputFormat);
     onCropDone(blob);
   };
 

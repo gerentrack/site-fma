@@ -256,31 +256,19 @@ export async function gerarReciboPdf(dados) {
   pdf.text(`Belo Horizonte/MG, ${dataExtenso()}`, W / 2, y, { align: "center" });
   y += 20;
 
-  // Assinatura do presidente
+  // Assinatura do presidente + linha
+  const sigImgW = 50, sigImgH = 18;
   if (dados.assinaturaUrl) {
     try {
       const sigData = await imgToBase64(dados.assinaturaUrl);
-      if (sigData) {
-        pdf.addImage(sigData, "PNG", (W - 50) / 2, y - 8, 50, 20);
-        y += 14;
-      }
+      if (sigData) pdf.addImage(sigData, "PNG", (W - sigImgW) / 2, y - sigImgH + 2, sigImgW, sigImgH);
     } catch {}
   }
-
-  // Linha para assinatura
+  y += 4;
   pdf.setDrawColor(0);
   pdf.setLineWidth(0.3);
   const sigW = 70;
   pdf.line((W - sigW) / 2, y, (W + sigW) / 2, y);
-  y += 5;
-  pdf.setFontSize(9);
-  pdf.setFont(pdf.getFont().fontName, "bold");
-  pdf.text(dados.presidenteNome || "Federacao Mineira de Atletismo", W / 2, y, { align: "center" });
-  y += 4;
-  pdf.setFont(pdf.getFont().fontName, "normal");
-  pdf.text(dados.presidenteCargo || "CNPJ: 16.681.223/0001-00", W / 2, y, { align: "center" });
-  y += 4;
-  pdf.text("CNPJ: 16.681.223/0001-00", W / 2, y, { align: "center" });
 
   return pdf.output("blob");
 }

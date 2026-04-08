@@ -228,30 +228,19 @@ export async function gerarAnuidadeReciboPdf(dados) {
   pdf.text(`Belo Horizonte/MG, ${dataExtenso(dados.confirmadoEm)}`, W / 2, y, { align: "center" });
   y += 18;
 
-  // Assinatura do presidente
+  // Assinatura do presidente + linha
+  const sigImgW = 50, sigImgH = 18;
   if (dados.assinaturaUrl) {
     try {
       const sigData = await imgToBase64(dados.assinaturaUrl);
-      const sigW = 50, sigH = 20;
-      pdf.addImage(sigData, "PNG", (W - sigW) / 2, y - 14, sigW, sigH);
-      y += 8;
-    } catch { /* sem assinatura */ }
+      pdf.addImage(sigData, "PNG", (W - sigImgW) / 2, y - sigImgH + 2, sigImgW, sigImgH);
+    } catch {}
   }
-
-  // Linha de assinatura
+  y += 4;
   pdf.setDrawColor(0);
   pdf.setLineWidth(0.3);
   const sigW = 70;
   pdf.line((W - sigW) / 2, y, (W + sigW) / 2, y);
-  y += 4;
-  pdf.setFontSize(9);
-  pdf.setFont("helvetica", "bold");
-  pdf.text(dados.presidenteNome || "Presidente", W / 2, y, { align: "center" });
-  y += 3.5;
-  pdf.setFont("helvetica", "normal");
-  pdf.text(dados.presidenteCargo || "Presidente - Federacao Mineira de Atletismo", W / 2, y, { align: "center" });
-  y += 3.5;
-  pdf.text("CNPJ: 16.681.223/0001-00", W / 2, y, { align: "center" });
 
   return pdf.output("blob");
 }
