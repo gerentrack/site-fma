@@ -168,7 +168,7 @@ export const ADMIN_NAV = [
   // ── Gestão ──
   { label: "Usuários",               icon: "👤", path: "/admin/usuarios",          minLevel: "admin",                             group: "Gestão" },
   { label: "Formulários",            icon: "🔧", path: "/admin/formularios",       minLevel: "master" },
-  { label: "Taxas",                  icon: "💲", path: "/admin/taxas",             minLevel: "master" },
+  { label: "Taxas",                  icon: "💲", path: "/admin/taxas",             minLevel: "admin" },
   { label: "Limpeza do Storage",     icon: "🧹", path: "/admin/storage-cleanup",   minLevel: "master" },
 ];
 
