@@ -5,7 +5,7 @@
  * - Sidebar com nav responsiva ao role do usuário logado.
  * - Exporta também useIntranetGuard para proteção de rotas.
  */
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useIntranet } from "../../context/IntranetContext";
 import { useSessionTimeout } from "../../hooks/useSessionTimeout";
@@ -16,6 +16,7 @@ import {
   INTRANET_NAV_ADMIN,
   REFEREE_ROLES,
 } from "../../config/navigation";
+import { EnvioDocumentosService, AnuidadesService, RefereeAssignmentsService, RefereesService } from "../../services/index";
 
 const roleMap = Object.fromEntries(REFEREE_ROLES.map(r => [r.value, r]));
 
@@ -42,9 +43,11 @@ function NavLink({ item }) {
 }
 
 export default function IntranetLayout({ children, requireRole = null }) {
-  const { isAuthenticated, loading, logout, name, role, canManage, mustChangePassword, profileComplete } = useIntranet();
+  const { isAuthenticated, loading, logout, name, role, canManage, mustChangePassword, profileComplete, refereeId } = useIntranet();
   const navigate = useNavigate();
   const location = useLocation();
+  const [notifs, setNotifs] = useState([]);
+  const [showNotifs, setShowNotifs] = useState(false);
 
   const { warningSecondsLeft, dismiss } = useSessionTimeout({
     timeoutMinutes: 1440, // 24 horas
@@ -78,6 +81,29 @@ export default function IntranetLayout({ children, requireRole = null }) {
     }
   }, [isAuthenticated, loading, role]);
 
+  // Notificações
+  useEffect(() => {
+    if (!isAuthenticated || !refereeId || loading) return;
+    const items = [];
+    const ano = new Date().getFullYear();
+    Promise.all([
+      RefereesService.get(refereeId).then(r => {
+        const nv = r.data?.nivel || "";
+        return EnvioDocumentosService.listByReferee(refereeId, nv);
+      }),
+      AnuidadesService.getByRefereeAno(refereeId, ano),
+      RefereeAssignmentsService.getByReferee ? RefereeAssignmentsService.getByReferee(refereeId) : Promise.resolve({ data: [] }),
+    ]).then(([msgRes, anRes, asRes]) => {
+      const msgs = (msgRes.data || []).filter(d => d.remetenteId !== refereeId && !(d.leituras || {})[refereeId]);
+      if (msgs.length) items.push({ text: `${msgs.length} mensagem(ns) nao lida(s)`, to: "/intranet/mensagens", color: "#d97706" });
+      const an = anRes.data;
+      if (an && (an.status === "pendente" || an.status === "vencido")) items.push({ text: `Anuidade ${ano} ${an.status}`, to: "/intranet/anuidade", color: "#dc2626" });
+      const futuras = (asRes.data || []).filter(a => a.event?.date >= new Date().toISOString().slice(0, 10));
+      if (futuras.length) items.push({ text: `${futuras.length} escala(s) futura(s)`, to: "/intranet/escalas", color: "#0066cc" });
+      setNotifs(items);
+    }).catch(() => {});
+  }, [isAuthenticated, refereeId, loading, location.pathname]);
+
   if (loading || !isAuthenticated) {
     return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#1a1a1a", color: "#fff", fontFamily: FONTS.body }}>Verificando acesso...</div>;
   }
@@ -98,9 +124,39 @@ export default function IntranetLayout({ children, requireRole = null }) {
           </Link>
         </div>
 
-        {/* User info */}
+        {/* User info + Notificações */}
         <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ fontFamily: FONTS.body, fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontFamily: FONTS.body, fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{name}</div>
+            <div style={{ position: "relative" }}>
+              <button onClick={() => setShowNotifs(s => !s)}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: notifs.length > 0 ? "#fbbf24" : "rgba(255,255,255,0.4)", padding: "2px 4px", position: "relative" }}>
+                🔔
+                {notifs.length > 0 && (
+                  <span style={{ position: "absolute", top: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "#dc2626", color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{notifs.length}</span>
+                )}
+              </button>
+              {showNotifs && (
+                <div style={{ position: "absolute", right: 0, top: 28, width: 240, background: "#fff", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.2)", zIndex: 100, overflow: "hidden" }}>
+                  <div style={{ padding: "10px 14px", borderBottom: `1px solid ${COLORS.grayLight}`, fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark }}>
+                    Notificacoes
+                  </div>
+                  {notifs.length === 0 ? (
+                    <div style={{ padding: "14px", fontSize: 12, color: COLORS.gray, textAlign: "center" }}>Nenhuma notificacao.</div>
+                  ) : (
+                    notifs.map((n, i) => (
+                      <Link key={i} to={n.to} onClick={() => setShowNotifs(false)}
+                        style={{ display: "block", padding: "10px 14px", borderBottom: `1px solid ${COLORS.grayLight}`, textDecoration: "none", fontSize: 12, fontFamily: FONTS.body, color: n.color || COLORS.dark, transition: "background 0.1s" }}
+                        onMouseEnter={e => e.currentTarget.style.background = COLORS.offWhite}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        {n.text}
+                      </Link>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
           <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 20, fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, background: `${roleInfo.color}30`, color: roleInfo.color }}>
             {roleInfo.label}
           </span>

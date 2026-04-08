@@ -11,7 +11,9 @@ import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 import { FormField, SelectInput } from "../../components/ui/FormField";
 import { refereesAPI } from "../../data/api";
+import { TaxasConfigService } from "../../services/index";
 import { REFEREE_CATEGORIES, REFEREE_ROLES, REFEREE_STATUS } from "../../config/navigation";
+import { gerarDeclaracaoArbitroPdf } from "../../services/declaracaoArbitroPdf";
 import { COLORS, FONTS } from "../../styles/colors";
 
 const field = (label, value) => (
@@ -65,7 +67,37 @@ export default function ArbitroDetalheAdmin() {
           {nivelInfo && <Badge label={nivelInfo.label} bg={`${nivelInfo.color}15`} color={nivelInfo.color} />}
           <Badge label={data.profileComplete ? "Perfil completo" : "Perfil incompleto"} bg={data.profileComplete ? "#e6f9ee" : "#fef3c7"} color={data.profileComplete ? "#007733" : "#92400e"} />
           <Badge label={data.mustChangePassword ? "Senha pendente" : "Senha ok"} bg={data.mustChangePassword ? "#fef3c7" : "#e6f9ee"} color={data.mustChangePassword ? "#92400e" : "#007733"} />
+          <button
+            onClick={async () => {
+              const cRes = await TaxasConfigService.get();
+              const cfg = cRes.data || {};
+              const blob = await gerarDeclaracaoArbitroPdf({
+                nome: data.name,
+                cpf: data.cpf,
+                nivel: data.nivel,
+                registroCbat: data.registroCbat,
+                assinaturaUrl: cfg.assinaturaPresidenteUrl || "",
+                presidenteNome: cfg.presidenteNome || "",
+                presidenteCargo: cfg.presidenteCargo || "",
+              });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `Declaracao_${data.name.replace(/\s+/g, "_")}.pdf`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            style={{ padding: "4px 14px", borderRadius: 20, border: `1px solid ${COLORS.primary}`, background: "transparent", color: COLORS.primary, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FONTS.heading }}>
+            Gerar Declaracao
+          </button>
         </div>
+
+        {/* Foto */}
+        {data.foto && (
+          <div style={{ marginBottom: 20 }}>
+            <img src={data.foto} alt="Foto 3x4" style={{ width: 90, height: 120, objectFit: "cover", borderRadius: 8, border: `1px solid ${COLORS.grayLight}` }} />
+          </div>
+        )}
 
         {/* Dados Pessoais (read-only) */}
         <div style={card}>

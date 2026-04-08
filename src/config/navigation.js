@@ -161,6 +161,8 @@ export const ADMIN_NAV = [
 
   // ── Intranet ──
   { label: "Árbitros",               icon: "⚖️", path: "/admin/arbitros",          minLevel: "admin",                             group: "Intranet" },
+  { label: "Anuidades",              icon: "💳", path: "/admin/anuidades",         minLevel: "admin" },
+  { label: "Mensagens",              icon: "📨", path: "/admin/mensagens",        minLevel: "admin" },
   { label: "Escalas",                icon: "📅", path: "/admin/escalas",           minLevel: "admin" },
 
   // ── Gestão ──
@@ -171,13 +173,13 @@ export const ADMIN_NAV = [
 ];
 
 export const QUICK_ACCESS = [
-  { icon: "📰", label: "Notícias",         to: "/noticias" },
-  { icon: "🗓️", label: "Calendário",       to: "/calendario" },
-  { icon: "🗺️", label: "Mapa FMA",          to: "/mapa" },
-  { icon: "🏆", label: "Resultados",        to: "/resultados/corridas" },
-  { icon: "📊", label: "Rankings",          to: "/ranking" },
-  { icon: "👥", label: "Atletas Federados", to: "/atletas" },
-  { icon: "⚖️", label: "Árbitros",          to: "/arbitros" },
+  { label: "Notícias",         to: "/noticias" },
+  { label: "Calendário",       to: "/calendario" },
+  { label: "Mapa FMA",          to: "/mapa" },
+  { label: "Resultados",        to: "/resultados/corridas" },
+  { label: "Rankings",          to: "/ranking" },
+  { label: "Atletas Federados", to: "/atletas" },
+  { label: "Árbitros",          to: "/arbitros" },
 ];
 
 // ─── Categorias ───────────────────────────────────────────────────────────────
@@ -272,6 +274,9 @@ export const INTRANET_NAV_ARBITRO = [
   { label: "Início",              icon: "🏠", path: "/intranet" },
   { label: "Minha Disponibilidade", icon: "📅", path: "/intranet/disponibilidade" },
   { label: "Minhas Escalas",      icon: "📋", path: "/intranet/escalas" },
+  { label: "Calendario",          icon: "🗓️", path: "/intranet/calendario" },
+  { label: "Mensagens",           icon: "📨", path: "/intranet/mensagens" },
+  { label: "Minha Anuidade",      icon: "💳", path: "/intranet/anuidade" },
   { label: "Meus Dados",          icon: "👤", path: "/intranet/perfil" },
   { label: "Documentos",          icon: "📄", path: "/intranet/documentos" },
 ];
@@ -281,6 +286,11 @@ export const INTRANET_NAV_ADMIN = [
   { label: "Árbitros",            icon: "👥", path: "/intranet/admin/arbitros" },
   { label: "Eventos",             icon: "🗓️", path: "/intranet/admin/eventos" },
   { label: "Escalação",           icon: "📋", path: "/intranet/admin/escalacao" },
+  { label: "Historico",           icon: "📊", path: "/intranet/admin/historico" },
+  { label: "Avaliacoes",          icon: "⭐", path: "/intranet/admin/avaliacoes" },
+  { label: "Indicadores",         icon: "📈", path: "/intranet/admin/indicadores" },
+  { label: "Relatorio",           icon: "📑", path: "/intranet/admin/relatorio" },
+  { label: "Mensagens",           icon: "📨", path: "/intranet/mensagens" },
   { label: "Meus Dados",          icon: "👤", path: "/intranet/perfil" },
   { label: "Documentos",          icon: "📄", path: "/intranet/documentos" },
 ];
@@ -363,6 +373,13 @@ export const PAGAMENTO_STATUS = [
   { value: "comprovante_anexado", label: "Comprovante anexado", color: "#0066cc", bg: "#eff6ff", icon: "🧾" },
   { value: "confirmado",         label: "Confirmado",          color: "#15803d", bg: "#f0fdf4", icon: "✅" },
   { value: "isento",             label: "Isento",              color: "#6b7280", bg: "#f3f4f6", icon: "🔓" },
+];
+
+export const ANUIDADE_STATUS = [
+  { value: "pendente", label: "Pendente",  color: "#d97706", bg: "#fffbeb" },
+  { value: "pago",     label: "Pago",      color: "#15803d", bg: "#f0fdf4" },
+  { value: "vencido",  label: "Vencido",   color: "#dc2626", bg: "#fef2f2" },
+  { value: "isento",   label: "Isento",    color: "#6b7280", bg: "#f3f4f6" },
 ];
 
 export const PORTAL_NAV = [

@@ -428,6 +428,59 @@ export const refereeModel = {
   updatedAt: "",
 };
 
+// ─── 16b. Anuidade de Árbitro ────────────────────────────────────────────────
+/**
+ * Registro de anuidade individual. Um por árbitro/ano.
+ * Coleção: anuidades
+ */
+export const anuidadeModel = {
+  id: "",
+  refereeId: "",          // FK → referees
+  refereeName: "",        // snapshot para listagem
+  refereeNivel: "",       // "A" | "B" | "C" | "NI"
+  ano: 0,                 // ex: 2026
+  valor: 0,               // valor cobrado (R$)
+  status: "pendente",     // "pendente" | "pago" | "vencido" | "isento"
+  comprovanteUrl: "",     // URL do arquivo do comprovante
+  comprovantePath: "",    // path no Storage
+  observacao: "",         // nota do admin
+  pagamentoEm: "",        // data que o árbitro informou o pagamento
+  confirmadoPor: "",      // nome/email do admin que confirmou
+  confirmadoEm: "",      // ISO date da confirmação
+  createdAt: "",
+  updatedAt: "",
+};
+
+// ─── 16c. Envio de Documentos (entre todos os perfis) ────────────────────────
+/**
+ * Documento/mensagem enviada entre usuários da intranet.
+ * Coleção: envioDocumentos
+ * Suporta: upload (max 2MB), link a doc existente, ou só texto.
+ */
+export const envioDocumentoModel = {
+  id: "",
+  titulo: "",
+  descricao: "",
+  // ── Anexo (apenas UM dos modos abaixo) ──
+  anexoTipo: "",            // "upload" | "link" | "" (sem anexo)
+  fileUrl: "",              // URL do arquivo (upload ou link existente)
+  filePath: "",             // path no Storage (só upload)
+  fileName: "",             // nome original ou label do link
+  // ── Remetente ──
+  remetenteId: "",          // refereeId do remetente
+  remetenteNome: "",
+  remetenteRole: "",        // "admin" | "coordenador" | "arbitro"
+  // ── Destinatários ──
+  destinatariosTipo: "individual", // "todos" | "nivel" | "individual"
+  destinatariosNiveis: [],  // ex: ["A","B"] — quando tipo=nivel
+  destinatariosIds: [],     // IDs dos destinatários
+  destinatariosNomes: [],   // snapshot nomes para exibição
+  // ── Leitura ──
+  leituras: {},             // { [refereeId]: { lidoEm: "ISO", nome: "..." } }
+  createdAt: "",
+  updatedAt: "",
+};
+
 // ─── 17. EventoArbitro (Intranet) ────────────────────────────────────────────
 /**
  * Evento dentro da intranet de arbitragem.
@@ -491,6 +544,25 @@ export const refereeAssignmentModel = {
   refereeFunction: "percurso", // chefe|largada|chegada|percurso|pista|aferidor|juiz
   status: "confirmado",  // "confirmado" | "pendente" | "cancelado"
   notes: "",
+  createdAt: "",
+  updatedAt: "",
+};
+
+// ─── 19b. Avaliação pós-evento ────────────────────────────────────────────────
+export const avaliacaoArbitroModel = {
+  id: "",
+  assignmentId: "",      // FK → refereeAssignment.id
+  eventId: "",           // FK → refereeEvent.id
+  refereeId: "",         // FK → referee.id
+  refereeName: "",       // snapshot
+  eventTitle: "",        // snapshot
+  eventDate: "",         // snapshot
+  nota: 0,               // 1 a 5
+  pontualidade: "",      // "otima" | "boa" | "regular" | "ruim"
+  postura: "",           // "otima" | "boa" | "regular" | "ruim"
+  conhecimento: "",      // "otimo" | "bom" | "regular" | "ruim"
+  observacoes: "",
+  avaliadoPor: "",       // nome do admin
   createdAt: "",
   updatedAt: "",
 };

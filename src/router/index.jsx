@@ -82,6 +82,15 @@ import { UsuariosList, UsuariosEditor } from "../pages/admin/UsuariosAdmin";
 import ArbitrosVisaoAdmin from "../pages/admin/ArbitrosVisaoAdmin";
 import ArbitroDetalheAdmin from "../pages/admin/ArbitroDetalheAdmin";
 import EscalasVisaoAdmin from "../pages/admin/EscalasVisaoAdmin";
+import AnuidadesAdmin from "../pages/admin/AnuidadesAdmin";
+import MinhaAnuidade from "../pages/intranet/arbitro/MinhaAnuidade";
+import EnvioDocumentosAdmin from "../pages/admin/EnvioDocumentosAdmin";
+import MeusDocumentosRecebidos from "../pages/intranet/arbitro/MeusDocumentosRecebidos";
+import HistoricoEscalacoes from "../pages/intranet/admin/HistoricoEscalacoes";
+import AvaliacaoArbitro from "../pages/intranet/admin/AvaliacaoArbitro";
+import IndicadoresPanel from "../pages/intranet/admin/IndicadoresPanel";
+import RelatorioArbitros from "../pages/intranet/admin/RelatorioArbitros";
+import CalendarioEscalas from "../pages/intranet/arbitro/CalendarioEscalas";
 import ChangePasswordPage from "../pages/admin/ChangePasswordPage";
 
 // ── Layout público ────────────────────────────────────────────────────────────
@@ -146,6 +155,9 @@ export default function AppRouter() {
       <Route path="/intranet/escalas"            element={<MyAssignments />} />
       <Route path="/intranet/perfil"             element={<MyProfile />} />
       <Route path="/intranet/documentos"         element={<IntranetDocuments />} />
+      <Route path="/intranet/anuidade"          element={<MinhaAnuidade />} />
+      <Route path="/intranet/mensagens"          element={<MeusDocumentosRecebidos />} />
+      <Route path="/intranet/calendario"         element={<CalendarioEscalas />} />
       {/* Área do admin/coordenador */}
       <Route path="/intranet/admin/arbitros"          element={<IntranetRefereeList />} />
       <Route path="/intranet/admin/arbitros/:id"      element={<IntranetRefereeEditor />} />
@@ -153,6 +165,10 @@ export default function AppRouter() {
       <Route path="/intranet/admin/eventos/:id"       element={<IntranetEventEditor />} />
       <Route path="/intranet/admin/escalacao"         element={<AssignmentList />} />
       <Route path="/intranet/admin/escalacao/:eventId" element={<AssignmentEditor />} />
+      <Route path="/intranet/admin/historico"        element={<HistoricoEscalacoes />} />
+      <Route path="/intranet/admin/avaliacoes"       element={<AvaliacaoArbitro />} />
+      <Route path="/intranet/admin/indicadores"      element={<IndicadoresPanel />} />
+      <Route path="/intranet/admin/relatorio"        element={<RelatorioArbitros />} />
 
       {/* ── Galeria ── */}
       <Route path="/galeria"     element={<PublicLayout><GaleriaListagem /></PublicLayout>} />
@@ -236,7 +252,9 @@ export default function AppRouter() {
       {/* Visão da intranet no admin */}
       <Route path="/admin/arbitros"      element={<ArbitrosVisaoAdmin />} />
       <Route path="/admin/arbitros/:id"  element={<ArbitroDetalheAdmin />} />
-      <Route path="/admin/escalas"   element={<EscalasVisaoAdmin />} />
+      <Route path="/admin/escalas"      element={<EscalasVisaoAdmin />} />
+      <Route path="/admin/anuidades"          element={<AnuidadesAdmin />} />
+      <Route path="/admin/mensagens"          element={<EnvioDocumentosAdmin />} />
       <Route path="/admin/pistas"        element={<PistasList />} />
       <Route path="/admin/pistas/novo"  element={<PistasEditor />} />
       <Route path="/admin/pistas/:id"   element={<PistasEditor />} />

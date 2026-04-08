@@ -2,15 +2,17 @@
  * MyProfile.jsx — Perfil completo do árbitro com edição de todos os campos.
  * Rota: /intranet/perfil
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import IntranetLayout from "../IntranetLayout";
 import { useIntranet } from "../../../context/IntranetContext";
 import { RefereesService } from "../../../services/index";
 import { intranetAuthAPI } from "../../../data/api";
 import { useCep } from "../../../hooks/useCep";
+import { uploadFile } from "../../../services/storageService";
 import { COLORS, FONTS } from "../../../styles/colors";
 import { REFEREE_CATEGORIES, REFEREE_ROLES, REFEREE_STATUS } from "../../../config/navigation";
+import { validarCPF, validarNisPis, cpfJaExisteArbitro } from "../../../utils/cpfCnpj";
 
 const roleMap = Object.fromEntries((REFEREE_ROLES || []).map(r => [r.value, r]));
 const statusMap = Object.fromEntries((REFEREE_STATUS || []).map(s => [s.value, s]));
@@ -19,7 +21,7 @@ const UFS = ["AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","P
 const SEXO = [{ value: "masculino", label: "Masculino" }, { value: "feminino", label: "Feminino" }];
 const ESTADO_CIVIL = [{ value: "solteiro", label: "Solteiro(a)" }, { value: "casado", label: "Casado(a)" }, { value: "divorciado", label: "Divorciado(a)" }, { value: "viuvo", label: "Viúvo(a)" }, { value: "uniao_estavel", label: "União Estável" }];
 const COR = [{ value: "branca", label: "Branca" }, { value: "preta", label: "Preta" }, { value: "parda", label: "Parda" }, { value: "amarela", label: "Amarela" }, { value: "indigena", label: "Indígena" }];
-const ESCOLARIDADE = [{ value: "fundamental", label: "Ensino Fundamental" }, { value: "medio", label: "Ensino Médio" }, { value: "superior", label: "Ensino Superior" }, { value: "pos_graduacao", label: "Pós-Graduação" }];
+const ESCOLARIDADE = [{ value: "fundamental", label: "Ensino Fundamental" }, { value: "medio", label: "Ensino Médio" }, { value: "superior", label: "Ensino Superior" }, { value: "pos_graduacao", label: "Pós-Graduação" }, { value: "mestrado", label: "Mestrado" }, { value: "doutorado", label: "Doutorado" }, { value: "pos_doutorado", label: "Pós-Doutorado" }];
 const TIPO_CONTA = [{ value: "corrente", label: "Corrente" }, { value: "poupanca", label: "Poupança" }, { value: "pagamento", label: "Pagamento" }];
 const CHAVE_PIX_TIPO = [{ value: "cpf", label: "CPF" }, { value: "email", label: "E-mail" }, { value: "telefone", label: "Telefone" }, { value: "aleatoria", label: "Aleatória" }];
 const CAMISA = [{ value: "P", label: "P" }, { value: "M", label: "M" }, { value: "G", label: "G" }, { value: "GG", label: "GG" }, { value: "XG", label: "XG" }];
@@ -34,6 +36,13 @@ const BANCOS = [
   { value: "212", label: "212 - Banco Original" }, { value: "422", label: "422 - Safra" },
   { value: "000", label: "Outro" },
 ];
+
+function maskCpf(v) {
+  return (v || "").replace(/\D/g, "").slice(0, 11).replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+}
+function maskNis(v) {
+  return (v || "").replace(/\D/g, "").slice(0, 11).replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3}\.\d{5})(\d)/, "$1.$2").replace(/(\d{3}\.\d{5}\.\d{2})(\d)/, "$1-$2");
+}
 
 const inp = { width: "100%", padding: "10px 13px", borderRadius: 8, border: `1.5px solid #e8e8e8`, fontFamily: "'Barlow',sans-serif", fontSize: 14, outline: "none", boxSizing: "border-box" };
 const sel = { ...inp, cursor: "pointer" };
@@ -75,10 +84,21 @@ export default function MyProfile() {
 
   const saveProfile = async () => {
     setSaving(true); setMsg("");
+    const cpfRaw = (data.cpf || "").replace(/\D/g, "");
+    if (cpfRaw && !validarCPF(cpfRaw)) {
+      setSaving(false); setMsg("CPF inválido. Verifique os dígitos."); return;
+    }
+    if (cpfRaw && await cpfJaExisteArbitro(cpfRaw, refereeId)) {
+      setSaving(false); setMsg("Este CPF já está cadastrado por outro árbitro."); return;
+    }
+    const nisRaw = (data.nisPis || "").replace(/\D/g, "");
+    if (nisRaw && !validarNisPis(nisRaw)) {
+      setSaving(false); setMsg("NIS/PIS/NIT inválido. Verifique os dígitos."); return;
+    }
     const { id, password, ...payload } = data;
     const bancoInfo = BANCOS.find(b => b.value === payload.banco);
     if (bancoInfo) payload.bancoNome = bancoInfo.label.split(" - ")[1] || bancoInfo.label;
-    payload.cpf = (payload.cpf || "").replace(/\D/g, "");
+    payload.cpf = cpfRaw;
     const r = await RefereesService.update(refereeId, payload);
     setSaving(false);
     setMsg(r.error ? `Erro: ${r.error}` : "Dados atualizados com sucesso!");
@@ -114,6 +134,33 @@ export default function MyProfile() {
           {nivel && <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: `${nivel.color}15`, color: nivel.color }}>{nivel.label}</span>}
         </div>
 
+        {/* Foto 3x4 */}
+        <div style={{ ...card, display: "flex", alignItems: "center", gap: 20 }}>
+          <div style={{ width: 90, height: 120, borderRadius: 8, overflow: "hidden", background: COLORS.offWhite, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid ${COLORS.grayLight}` }}>
+            {data.foto ? (
+              <img src={data.foto} alt="Foto" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              <span style={{ fontSize: 11, color: COLORS.gray, textAlign: "center", fontFamily: FONTS.body }}>Sem foto</span>
+            )}
+          </div>
+          <div>
+            <div style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, marginBottom: 6 }}>Foto 3x4</div>
+            <input type="file" accept="image/*" onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              if (file.size > 2 * 1024 * 1024) { setMsg("Foto deve ter no maximo 2MB."); return; }
+              setMsg("Enviando foto...");
+              const r = await uploadFile(file, `arbitros/${refereeId}/foto`);
+              if (r.url) {
+                await RefereesService.update(refereeId, { foto: r.url });
+                set("foto", r.url);
+                setMsg("Foto atualizada!");
+              } else setMsg("Erro ao enviar foto.");
+            }} style={{ fontSize: 13 }} />
+            <div style={{ fontSize: 11, color: COLORS.gray, marginTop: 4 }}>JPG ou PNG, max 2MB. Recomendado: 300x400px.</div>
+          </div>
+        </div>
+
         {/* Dados Pessoais */}
         <div style={card}>
           {sectionTitle("Dados Pessoais")}
@@ -136,12 +183,12 @@ export default function MyProfile() {
         <div style={card}>
           {sectionTitle("Documentos")}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            <div>{label("CPF")}<input value={data.cpf || ""} onChange={e => set("cpf", e.target.value)} style={inp} /></div>
+            <div>{label("CPF")}<input value={maskCpf(data.cpf)} onChange={e => set("cpf", maskCpf(e.target.value))} placeholder="000.000.000-00" style={inp} /></div>
             <div>{label("RG")}<input value={data.rg || ""} onChange={e => set("rg", e.target.value)} style={inp} /></div>
             <div>{label("Órgão Expedidor")}<input value={data.rgOrgao || ""} onChange={e => set("rgOrgao", e.target.value)} style={inp} /></div>
             <div>{label("UF do RG")}<select value={data.rgUf || ""} onChange={e => set("rgUf", e.target.value)} style={sel}><option value="">Selecione...</option>{UFS.map(u => <option key={u} value={u}>{u}</option>)}</select></div>
             <div>{label("Data de Expedição")}<input type="date" value={data.rgDataExpedicao || ""} onChange={e => set("rgDataExpedicao", e.target.value)} style={inp} /></div>
-            <div>{label("NIS/PIS")}<input value={data.nisPis || ""} onChange={e => set("nisPis", e.target.value)} style={inp} /></div>
+            <div>{label("NIS/PIS/NIT")}<input value={maskNis(data.nisPis)} onChange={e => set("nisPis", maskNis(e.target.value))} placeholder="000.00000.00-0" style={inp} /></div>
           </div>
         </div>
 

@@ -9,10 +9,11 @@ import IntranetLayout from "./IntranetLayout";
 import { useIntranet } from "../../context/IntranetContext";
 import {
   RefereeEventsService, RefereeAvailabilityService,
-  RefereeAssignmentsService, RefereesService,
+  RefereeAssignmentsService, RefereesService, AnuidadesService,
+  EnvioDocumentosService,
 } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
-import { CALENDAR_CATEGORIES } from "../../config/navigation";
+import { CALENDAR_CATEGORIES, ANUIDADE_STATUS } from "../../config/navigation";
 
 const catMap = Object.fromEntries((CALENDAR_CATEGORIES || []).filter(c => c.value).map(c => [c.value, c]));
 
@@ -66,6 +67,10 @@ export default function IntranetHome() {
   const [stats, setStats] = useState({ total: 0, active: 0, assigned: 0 });
   const [myAvail, setMyAvail] = useState([]);
   const [myAssignments, setMyAssignments] = useState([]);
+  const [anuidade, setAnuidade] = useState(null);
+  const [docsNaoLidos, setDocsNaoLidos] = useState(0);
+
+  const anoAtual = new Date().getFullYear();
 
   useEffect(() => {
     RefereeEventsService.list({ upcoming: true }).then(r => { if (r.data) setEvents(r.data.slice(0, 5)); });
@@ -73,12 +78,25 @@ export default function IntranetHome() {
       RefereesService.list().then(r => {
         if (r.data) setStats(s => ({ ...s, total: r.data.length, active: r.data.filter(x => x.status === "ativo").length }));
       });
-      RefereeAssignmentsService.list().then(r => {
-        if (r.data) setStats(s => ({ ...s, assigned: r.data.length }));
+      Promise.all([
+        RefereeAssignmentsService.list(),
+        RefereeEventsService.list({ upcoming: true }),
+      ]).then(([aRes, eRes]) => {
+        const futureEventIds = new Set((eRes.data || []).map(e => e.id));
+        const ativas = (aRes.data || []).filter(a => futureEventIds.has(a.eventId));
+        setStats(s => ({ ...s, assigned: ativas.length }));
       });
     } else {
       RefereeAvailabilityService.list({ refereeId }).then(r => { if (r.data) setMyAvail(r.data); });
       RefereeAssignmentsService.getByReferee(refereeId).then(r => { if (r.data) setMyAssignments(r.data.filter(a => a.event?.date >= new Date().toISOString().slice(0, 10))); });
+      AnuidadesService.getByRefereeAno(refereeId, anoAtual).then(r => { if (r.data) setAnuidade(r.data); });
+      RefereesService.get(refereeId).then(rRef => {
+        const nv = rRef.data?.nivel || "";
+        EnvioDocumentosService.listByReferee(refereeId, nv).then(r => {
+          const naoLidos = (r.data || []).filter(d => !(d.leituras || {})[refereeId]).length;
+          setDocsNaoLidos(naoLidos);
+        });
+      });
     }
   }, [refereeId, canManage]);
 
@@ -116,6 +134,43 @@ export default function IntranetHome() {
           </div>
         )}
 
+        {/* Card anuidade — árbitro */}
+        {!canManage && anuidade && (() => {
+          const st = (ANUIDADE_STATUS || []).find(s => s.value === anuidade.status) || { label: anuidade.status, color: COLORS.gray, bg: "#f3f4f6" };
+          const pendente = anuidade.status === "pendente" || anuidade.status === "vencido";
+          return (
+            <Link to="/intranet/anuidade" style={{ textDecoration: "none", display: "block", marginBottom: 24 }}>
+              <div style={{
+                background: "#fff", borderRadius: 12, padding: "16px 22px",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                borderLeft: `4px solid ${st.color}`,
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                transition: "transform 0.15s",
+              }}
+                onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
+                onMouseLeave={e => e.currentTarget.style.transform = ""}>
+                <div>
+                  <div style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, color: COLORS.dark, textTransform: "uppercase" }}>
+                    Anuidade {anoAtual}
+                  </div>
+                  <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, marginTop: 2 }}>
+                    {pendente ? "Regularize sua anuidade para manter o cadastro ativo." : st.label}
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{
+                    padding: "4px 12px", borderRadius: 20, fontSize: 12,
+                    fontFamily: FONTS.heading, fontWeight: 700, color: st.color, background: st.bg,
+                  }}>{st.label}</span>
+                  <span style={{ fontFamily: FONTS.heading, fontSize: 18, fontWeight: 900, color: COLORS.dark }}>
+                    {(anuidade.valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  </span>
+                </div>
+              </div>
+            </Link>
+          );
+        })()}
+
         {/* Próximos eventos */}
         <div style={{ display: "grid", gridTemplateColumns: canManage ? "1fr 1fr" : "1fr", gap: 24 }}>
           <div style={{ background: "#fff", borderRadius: 12, padding: "22px 24px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
@@ -142,10 +197,13 @@ export default function IntranetHome() {
                 { to: "/intranet/admin/arbitros/novo", icon: "👤", label: "Cadastrar novo árbitro" },
                 { to: "/intranet/admin/eventos/novo", icon: "🗓️", label: "Criar evento manual" },
                 { to: "/intranet/admin/escalacao", icon: "📋", label: "Gerenciar escalações" },
+                { to: "/intranet/mensagens", icon: "📨", label: "Mensagens" },
                 { to: "/intranet/admin/eventos", icon: "📥", label: "Importar do calendário FMA" },
               ] : [
                 { to: "/intranet/disponibilidade", icon: "📅", label: "Registrar disponibilidade" },
                 { to: "/intranet/escalas", icon: "📋", label: "Ver minhas escalas" },
+                { to: "/intranet/mensagens", icon: "📨", label: docsNaoLidos > 0 ? `Mensagens (${docsNaoLidos} nova${docsNaoLidos > 1 ? "s" : ""})` : "Mensagens" },
+                { to: "/intranet/anuidade", icon: "💳", label: "Minha anuidade" },
                 { to: "/intranet/perfil", icon: "👤", label: "Atualizar meus dados" },
                 { to: "/intranet/documentos", icon: "📄", label: "Acessar documentos" },
               ]).map(a => (

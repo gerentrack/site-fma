@@ -14,7 +14,7 @@ import {
   organizerAuthAPI, organizersAPI, solicitacoesAPI,
   solicitacaoArquivosAPI, movimentacoesAPI, pagamentosAPI,
   resultadosAPI, equipesAPI,
-  taxasConfigAPI,
+  taxasConfigAPI, anuidadesAPI, envioDocumentosAPI, avaliacoesAPI,
 } from "../data/api";
 
 function slugify(str = "") {
@@ -651,4 +651,63 @@ export const TaxasConfigService = {
     return { data: { ...TAXAS_CONFIG_DEFAULT, ...r.data }, error: null };
   },
   update: (data) => taxasConfigAPI.update(data),
+};
+
+// ─── Anuidades ──────────────────────────────────────────────────────────────
+
+export const AnuidadesService = {
+  list: (filtros) => anuidadesAPI.list(filtros),
+  get: (id) => anuidadesAPI.get(id),
+  getByRefereeAno: (refereeId, ano) => anuidadesAPI.getByRefereeAno(refereeId, ano),
+  create: (data) => anuidadesAPI.create(data),
+  update: (id, data) => anuidadesAPI.update(id, data),
+  delete: (id) => anuidadesAPI.delete(id),
+
+  /** Gera anuidades para todos os árbitros ativos de um ano. */
+  gerarAnuidades: async (ano, config) => {
+    const refResult = await refereesAPI.list();
+    if (refResult.error) return refResult;
+    const ativos = (refResult.data || []).filter(r => r.status === "ativo" && r.profileComplete);
+    const existentes = await anuidadesAPI.list({ ano });
+    const jaGerados = new Set((existentes.data || []).map(a => a.refereeId));
+    const novos = [];
+    for (const ref of ativos) {
+      if (jaGerados.has(ref.id)) continue;
+      const valorNivel = config?.valoresPorNivel?.[ref.nivel];
+      const valor = valorNivel ?? config?.valorPadrao ?? 0;
+      const item = await anuidadesAPI.create({
+        refereeId: ref.id,
+        refereeName: ref.name,
+        refereeNivel: ref.nivel || "",
+        ano,
+        valor,
+        status: "pendente",
+      });
+      novos.push(item.data);
+    }
+    return { data: novos, error: null };
+  },
+};
+
+// ─── Envio de Documentos ────────────────────────────────────────────────────
+
+export const EnvioDocumentosService = {
+  list: () => envioDocumentosAPI.list(),
+  get: (id) => envioDocumentosAPI.get(id),
+  create: (data) => envioDocumentosAPI.create(data),
+  update: (id, data) => envioDocumentosAPI.update(id, data),
+  delete: (id) => envioDocumentosAPI.delete(id),
+  listByReferee: (refereeId, nivel) => envioDocumentosAPI.listByReferee(refereeId, nivel),
+  listEnviados: (remetenteId) => envioDocumentosAPI.listEnviados(remetenteId),
+  marcarLido: (docId, refereeId, nome) => envioDocumentosAPI.marcarLido(docId, refereeId, nome),
+};
+
+// ─── Avaliações ─────────────────────────────────────────────────────────────
+
+export const AvaliacoesService = {
+  list: (filtros) => avaliacoesAPI.list(filtros),
+  get: (id) => avaliacoesAPI.get(id),
+  create: (data) => avaliacoesAPI.create(data),
+  update: (id, data) => avaliacoesAPI.update(id, data),
+  delete: (id) => avaliacoesAPI.delete(id),
 };

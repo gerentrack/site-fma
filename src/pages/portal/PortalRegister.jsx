@@ -12,6 +12,7 @@ import { COLORS, FONTS } from "../../styles/colors";
 import PoliticaPrivacidade from "../public/PoliticaPrivacidade";
 import TermosUso from "../public/TermosUso";
 import { enviarBoasVindasOrganizador } from "../../services/emailService";
+import { validarCPF, validarCNPJ, cpfCnpjJaExisteOrganizador } from "../../utils/cpfCnpj";
 
 const ESTADOS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
@@ -100,14 +101,26 @@ export default function PortalRegister() {
   };
 
 
-  const validate = () => {
+  const validate = async () => {
     const e = {};
     if (!form.name.trim()) e.name = "Nome obrigatório";
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "E-mail inválido";
     if (form.password.length < 6) e.password = "Mínimo 6 caracteres";
     if (form.password !== form.confirmPassword) e.confirmPassword = "Senhas não coincidem";
     const cpfCnpjRaw = form.cpfCnpj.replace(/\D/g, "");
-    if (cpfCnpjRaw.length !== 14) e.cpfCnpj = "CNPJ inválido";
+    if (tipoPessoa === "pf") {
+      if (!validarCPF(cpfCnpjRaw)) {
+        e.cpfCnpj = "CPF inválido";
+      } else if (await cpfCnpjJaExisteOrganizador(cpfCnpjRaw)) {
+        e.cpfCnpj = "Este CPF já está cadastrado";
+      }
+    } else {
+      if (!validarCNPJ(cpfCnpjRaw)) {
+        e.cpfCnpj = "CNPJ inválido";
+      } else if (await cpfCnpjJaExisteOrganizador(cpfCnpjRaw)) {
+        e.cpfCnpj = "Este CNPJ já está cadastrado";
+      }
+    }
     if (!form.city.trim()) e.city = "Cidade obrigatória";
     if (!lgpdConsent) e.lgpd = "Você deve aceitar a Política de Privacidade e os Termos de Uso";
     return e;
@@ -116,7 +129,7 @@ export default function PortalRegister() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    const v = validate();
+    const v = await validate();
     if (Object.keys(v).length > 0) { setErrors(v); return; }
     setErrors({});
     setLoading(true);

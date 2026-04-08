@@ -20,6 +20,7 @@ import { COLORS, FONTS } from "../../styles/colors";
 import { SOLICITACAO_TIPOS } from "../../config/navigation";
 import { useCep } from "../../hooks/useCep";
 import CepField from "../../components/common/CepField";
+import { validarCPF, validarCNPJ } from "../../utils/cpfCnpj";
 import {
   defaultCamposTecnicosPermit, defaultCamposTecnicosChancela,
   novaModalidadeId, totalEstimativaInscritos,
@@ -283,7 +284,10 @@ export default function NovaSolicitacao() {
     // Validar dados do terceiro pagador
     if (enviar && pagadorTerceiro) {
       if (!pagadorNome.trim()) { setGlobalError("Informe o nome do terceiro pagador."); setSaving(false); return; }
-      if (!pagadorCpfCnpj.trim()) { setGlobalError("Informe o CPF/CNPJ do terceiro pagador."); setSaving(false); return; }
+      const pagadorDoc = pagadorCpfCnpj.replace(/\D/g, "");
+      if (!pagadorDoc) { setGlobalError("Informe o CPF/CNPJ do terceiro pagador."); setSaving(false); return; }
+      if (pagadorDoc.length <= 11 && !validarCPF(pagadorDoc)) { setGlobalError("CPF do terceiro pagador é inválido."); setSaving(false); return; }
+      if (pagadorDoc.length > 11 && !validarCNPJ(pagadorDoc)) { setGlobalError("CNPJ do terceiro pagador é inválido."); setSaving(false); return; }
       if (!pagadorEndereco.trim()) { setGlobalError("Informe o endereco do terceiro pagador."); setSaving(false); return; }
       if (!anuenciaAceita) { setGlobalError("Aceite a declaracao de anuencia para pagamento por terceiro."); setSaving(false); return; }
     }

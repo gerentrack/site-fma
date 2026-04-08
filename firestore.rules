@@ -107,6 +107,24 @@ service cloud.firestore {
       allow write: if isAuth();
     }
 
+    // ── Anuidades (leitura/escrita: admin ou referee) ──
+    match /anuidades/{docId} {
+      allow read: if isAuth();
+      allow write: if isAuth() && (isAdminRole() || "referee" in getUserData().roles || getUserData().role == "referee");
+    }
+
+    // ── Avaliações (leitura: autenticado; escrita: admin) ──
+    match /avaliacoes/{docId} {
+      allow read: if isAuth();
+      allow write: if isAdminRole();
+    }
+
+    // ── Mensagens / Envio de Documentos (leitura/escrita: qualquer autenticado da intranet) ──
+    match /envioDocumentos/{docId} {
+      allow read: if isAuth();
+      allow write: if isAuth();
+    }
+
     // ── Usuários (leitura: autenticado; escrita: master/admin) ──
     match /users/{docId} {
       allow read: if isAuth();

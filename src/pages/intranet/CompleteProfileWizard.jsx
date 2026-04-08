@@ -8,6 +8,9 @@ import { useIntranet } from "../../context/IntranetContext";
 import { refereesAPI } from "../../data/api";
 import { useCep } from "../../hooks/useCep";
 import { COLORS, FONTS } from "../../styles/colors";
+import { validarCPF, validarNisPis, cpfJaExisteArbitro } from "../../utils/cpfCnpj";
+import PoliticaPrivacidade from "../public/PoliticaPrivacidade";
+import TermosUso from "../public/TermosUso";
 
 // ── Opções de selects ─────────────────────────────────────────────────────────
 
@@ -16,7 +19,7 @@ const UFS = ["AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","P
 const SEXO_OPTIONS        = [{ value: "masculino", label: "Masculino" }, { value: "feminino", label: "Feminino" }];
 const ESTADO_CIVIL        = [{ value: "solteiro", label: "Solteiro(a)" }, { value: "casado", label: "Casado(a)" }, { value: "divorciado", label: "Divorciado(a)" }, { value: "viuvo", label: "Viúvo(a)" }, { value: "uniao_estavel", label: "União Estável" }];
 const COR_OPTIONS         = [{ value: "branca", label: "Branca" }, { value: "preta", label: "Preta" }, { value: "parda", label: "Parda" }, { value: "amarela", label: "Amarela" }, { value: "indigena", label: "Indígena" }];
-const ESCOLARIDADE        = [{ value: "fundamental", label: "Ensino Fundamental" }, { value: "medio", label: "Ensino Médio" }, { value: "superior", label: "Ensino Superior" }, { value: "pos_graduacao", label: "Pós-Graduação" }];
+const ESCOLARIDADE        = [{ value: "fundamental", label: "Ensino Fundamental" }, { value: "medio", label: "Ensino Médio" }, { value: "superior", label: "Ensino Superior" }, { value: "pos_graduacao", label: "Pós-Graduação" }, { value: "mestrado", label: "Mestrado" }, { value: "doutorado", label: "Doutorado" }, { value: "pos_doutorado", label: "Pós-Doutorado" }];
 const NIVEL_OPTIONS       = [{ value: "A", label: "Nível A" }, { value: "B", label: "Nível B" }, { value: "C", label: "Nível C" }, { value: "NI", label: "NI" }];
 const TIPO_CONTA          = [{ value: "corrente", label: "Corrente" }, { value: "poupanca", label: "Poupança" }, { value: "pagamento", label: "Pagamento" }];
 const CHAVE_PIX_TIPO      = [{ value: "cpf", label: "CPF" }, { value: "email", label: "E-mail" }, { value: "telefone", label: "Telefone" }, { value: "aleatoria", label: "Aleatória" }];
@@ -46,11 +49,11 @@ const BANCOS = [
 ];
 
 const STEPS = [
-  { key: "pessoal",      label: "Dados Pessoais",  icon: "👤" },
-  { key: "documentos",   label: "Documentos",      icon: "📄" },
-  { key: "endereco",     label: "Endereço",        icon: "📍" },
-  { key: "bancario",     label: "Dados Bancários", icon: "🏦" },
-  { key: "profissional", label: "Profissional",    icon: "⚖️" },
+  { key: "pessoal",      label: "Dados Pessoais" },
+  { key: "documentos",   label: "Documentos" },
+  { key: "endereco",     label: "Endereço" },
+  { key: "bancario",     label: "Dados Bancários" },
+  { key: "profissional", label: "Profissional" },
 ];
 
 // ── Styles helpers ────────────────────────────────────────────────────────────
@@ -83,7 +86,7 @@ function Input({ value, onChange, placeholder, type = "text", mask, maxLength, .
     let v = e.target.value;
     if (mask === "cpf") v = v.replace(/\D/g, "").slice(0, 11).replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
     if (mask === "phone") v = v.replace(/\D/g, "").slice(0, 11).replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2");
-    if (mask === "nis") v = v.replace(/\D/g, "").slice(0, 11);
+    if (mask === "nis") v = v.replace(/\D/g, "").slice(0, 11).replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3}\.\d{5})(\d)/, "$1.$2").replace(/(\d{3}\.\d{5}\.\d{2})(\d)/, "$1-$2");
     if (mask === "cep") v = v.replace(/\D/g, "").slice(0, 8).replace(/(\d{5})(\d)/, "$1-$2");
     onChange(v);
   };
@@ -108,13 +111,21 @@ export default function CompleteProfileWizard() {
   const [data, setData] = useState({});
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [draftMsg, setDraftMsg] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const [modal, setModal] = useState(null); // "privacidade" | "termos" | null
 
-  // Carregar dados existentes
+  // Carregar dados existentes e retomar etapa salva
   useEffect(() => {
     if (!session?.refereeId) return;
     refereesAPI.get(session.refereeId).then(r => {
-      if (r.data) setData(prev => ({ ...prev, ...r.data }));
+      if (r.data) {
+        setData(prev => ({ ...prev, ...r.data }));
+        if (typeof r.data.profileStep === "number" && r.data.profileStep > 0) {
+          setStep(r.data.profileStep);
+        }
+      }
       setLoaded(true);
     });
   }, [session?.refereeId]);
@@ -141,7 +152,7 @@ export default function CompleteProfileWizard() {
   };
 
   // ── Validação por etapa ──
-  const validateStep = () => {
+  const validateStep = async () => {
     const e = {};
     if (step === 0) {
       if (!data.name?.trim()) e.name = "Obrigatório";
@@ -156,13 +167,16 @@ export default function CompleteProfileWizard() {
       if (!data.nomeMae?.trim()) e.nomeMae = "Obrigatório";
     }
     if (step === 1) {
-      const cpfDigits = (data.cpf || "").replace(/\D/g, "");
-      if (cpfDigits.length !== 11) e.cpf = "CPF deve ter 11 dígitos";
+      if (!validarCPF(data.cpf)) {
+        e.cpf = "CPF inválido";
+      } else if (await cpfJaExisteArbitro(data.cpf, session?.refereeId)) {
+        e.cpf = "Este CPF já está cadastrado por outro árbitro";
+      }
       if (!data.rg?.trim()) e.rg = "Obrigatório";
       if (!data.rgOrgao?.trim()) e.rgOrgao = "Obrigatório";
       if (!data.rgUf) e.rgUf = "Obrigatório";
       if (!data.rgDataExpedicao) e.rgDataExpedicao = "Obrigatório";
-      if (!data.nisPis?.trim()) e.nisPis = "NIS/PIS deve ter 11 dígitos";
+      if (!validarNisPis(data.nisPis)) e.nisPis = "NIS/PIS/NIT inválido";
     }
     if (step === 2) {
       if (!data.cep || data.cep.replace(/\D/g, "").length !== 8) e.cep = "CEP inválido";
@@ -197,11 +211,25 @@ export default function CompleteProfileWizard() {
     return Object.keys(e).length === 0;
   };
 
-  const next = () => { if (validateStep()) setStep(s => s + 1); };
+  const next = async () => { if (await validateStep()) setStep(s => s + 1); };
   const prev = () => setStep(s => s - 1);
 
+  const handleSaveDraft = async () => {
+    setSavingDraft(true);
+    setDraftMsg("");
+    const { id, password, ...payload } = data;
+    payload.cpf = (payload.cpf || "").replace(/\D/g, "");
+    payload.profileStep = step;
+    const bancoInfo = BANCOS.find(b => b.value === payload.banco);
+    if (bancoInfo) payload.bancoNome = bancoInfo.label.split(" - ")[1] || bancoInfo.label;
+    const result = await refereesAPI.update(session.refereeId, payload);
+    setSavingDraft(false);
+    setDraftMsg(result.error ? `Erro: ${result.error}` : "Rascunho salvo com sucesso!");
+    setTimeout(() => setDraftMsg(""), 4000);
+  };
+
   const handleFinish = async () => {
-    if (!validateStep()) return;
+    if (!await validateStep()) return;
     setSaving(true);
 
     // Encontrar nome do banco
@@ -259,7 +287,6 @@ export default function CompleteProfileWizard() {
               cursor: i < step ? "pointer" : "default",
               transition: "all 0.2s",
             }} onClick={() => { if (i < step) setStep(i); }}>
-              <span style={{ fontSize: 16, display: "block", marginBottom: 2 }}>{s.icon}</span>
               {s.label}
             </div>
           ))}
@@ -302,7 +329,7 @@ export default function CompleteProfileWizard() {
               <Field label="Órgão Expedidor" required error={errors.rgOrgao}><Input value={data.rgOrgao || ""} onChange={v => set("rgOrgao", v)} placeholder="Ex: SSP, PC, IFP" /></Field>
               <Field label="UF do RG" required error={errors.rgUf}><Select value={data.rgUf || ""} onChange={v => set("rgUf", v)} options={UFS.map(u => ({ value: u, label: u }))} /></Field>
               <Field label="Data de Expedição" required error={errors.rgDataExpedicao}><Input type="date" value={data.rgDataExpedicao || ""} onChange={v => set("rgDataExpedicao", v)} /></Field>
-              <Field label="NIS / PIS" required error={errors.nisPis}><Input value={data.nisPis || ""} onChange={v => set("nisPis", v)} mask="nis" placeholder="11 dígitos" /></Field>
+              <Field label="NIS / PIS / NIT" required error={errors.nisPis}><Input value={data.nisPis || ""} onChange={v => set("nisPis", v)} mask="nis" placeholder="000.00000.00-0" /></Field>
             </div>
           )}
 
@@ -365,9 +392,9 @@ export default function CompleteProfileWizard() {
                     style={{ marginTop: 4, width: 18, height: 18, flexShrink: 0, accentColor: COLORS.primary }} />
                   <span>
                     Li e concordo com a{" "}
-                    <Link to="/privacidade" target="_blank" style={{ color: COLORS.primary, textDecoration: "underline" }}>Política de Privacidade</Link>
+                    <button type="button" onClick={(e) => { e.preventDefault(); setModal("privacidade"); }} style={{ background: "none", border: "none", padding: 0, color: COLORS.primary, textDecoration: "underline", cursor: "pointer", font: "inherit" }}>Política de Privacidade</button>
                     {" "}e os{" "}
-                    <Link to="/termos" target="_blank" style={{ color: COLORS.primary, textDecoration: "underline" }}>Termos de Uso</Link>
+                    <button type="button" onClick={(e) => { e.preventDefault(); setModal("termos"); }} style={{ background: "none", border: "none", padding: 0, color: COLORS.primary, textDecoration: "underline", cursor: "pointer", font: "inherit" }}>Termos de Uso</button>
                     {" "}da FMA, e autorizo o tratamento dos meus dados pessoais para as finalidades descritas.
                   </span>
                 </label>
@@ -392,7 +419,7 @@ export default function CompleteProfileWizard() {
                     Comprometo-me a não divulgar, compartilhar, reproduzir ou capturar (prints, gravações ou fotografias)
                     qualquer informação nela contida, sob pena de suspensão do acesso e responsabilização
                     administrativa, civil e criminal, conforme os{" "}
-                    <Link to="/termos" target="_blank" style={{ color: COLORS.primary, textDecoration: "underline" }}>Termos de Uso (seção 4.2)</Link>.
+                    <button type="button" onClick={(e) => { e.preventDefault(); setModal("termos"); }} style={{ background: "none", border: "none", padding: 0, color: COLORS.primary, textDecoration: "underline", cursor: "pointer", font: "inherit" }}>Termos de Uso (seção 4.2)</button>.
                   </span>
                 </label>
                 {errors.confidentialityConsent && <div style={errSt}>{errors.confidentialityConsent}</div>}
@@ -400,34 +427,76 @@ export default function CompleteProfileWizard() {
             </div>
           )}
 
+          {/* ── Mensagem de rascunho ── */}
+          {draftMsg && (
+            <div style={{
+              marginTop: 16, padding: "10px 14px", borderRadius: 8,
+              background: draftMsg.startsWith("Erro") ? "#fff0f0" : "#e6f9ee",
+              fontFamily: FONTS.body, fontSize: 13,
+              color: draftMsg.startsWith("Erro") ? COLORS.primary : "#007733",
+            }}>{draftMsg}</div>
+          )}
+
           {/* ── Navegação ── */}
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 28 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 28, gap: 12 }}>
             {step > 0 ? (
               <button onClick={prev} style={{
                 padding: "10px 24px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`,
                 background: "transparent", color: COLORS.gray, fontFamily: FONTS.heading,
                 fontSize: 13, fontWeight: 700, cursor: "pointer", textTransform: "uppercase",
-              }}>← Voltar</button>
+              }}>Voltar</button>
             ) : <div />}
 
-            {step < STEPS.length - 1 ? (
-              <button onClick={next} style={{
-                padding: "10px 24px", borderRadius: 8, border: "none",
-                background: COLORS.primary, color: "#fff", fontFamily: FONTS.heading,
-                fontSize: 13, fontWeight: 700, cursor: "pointer", textTransform: "uppercase",
-                letterSpacing: 0.5,
-              }}>Próximo →</button>
-            ) : (
-              <button onClick={handleFinish} disabled={saving} style={{
-                padding: "10px 28px", borderRadius: 8, border: "none",
-                background: saving ? COLORS.gray : "#007733", color: "#fff", fontFamily: FONTS.heading,
-                fontSize: 13, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer",
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <button onClick={handleSaveDraft} disabled={savingDraft} style={{
+                padding: "10px 24px", borderRadius: 8,
+                border: `1px solid ${COLORS.grayLight}`,
+                background: "transparent", color: COLORS.dark, fontFamily: FONTS.heading,
+                fontSize: 13, fontWeight: 700, cursor: savingDraft ? "not-allowed" : "pointer",
                 textTransform: "uppercase", letterSpacing: 0.5,
-              }}>{saving ? "Salvando..." : "Concluir Perfil ✓"}</button>
-            )}
+              }}>{savingDraft ? "Salvando..." : "Salvar Rascunho"}</button>
+
+              {step < STEPS.length - 1 ? (
+                <button onClick={next} style={{
+                  padding: "10px 24px", borderRadius: 8, border: "none",
+                  background: COLORS.primary, color: "#fff", fontFamily: FONTS.heading,
+                  fontSize: 13, fontWeight: 700, cursor: "pointer", textTransform: "uppercase",
+                  letterSpacing: 0.5,
+                }}>Proximo</button>
+              ) : (
+                <button onClick={handleFinish} disabled={saving} style={{
+                  padding: "10px 28px", borderRadius: 8, border: "none",
+                  background: saving ? COLORS.gray : "#007733", color: "#fff", fontFamily: FONTS.heading,
+                  fontSize: 13, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer",
+                  textTransform: "uppercase", letterSpacing: 0.5,
+                }}>{saving ? "Salvando..." : "Concluir Perfil"}</button>
+              )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* ── Modal Termos / Privacidade ── */}
+      {modal && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center",
+        }} onClick={() => setModal(null)}>
+          <div style={{
+            background: "#fff", borderRadius: 14, width: "90%", maxWidth: 860,
+            maxHeight: "85vh", overflow: "auto", position: "relative",
+          }} onClick={e => e.stopPropagation()}>
+            <button onClick={() => setModal(null)} style={{
+              position: "sticky", top: 12, float: "right", marginRight: 12,
+              background: COLORS.dark, color: "#fff", border: "none", borderRadius: 8,
+              width: 36, height: 36, fontSize: 18, cursor: "pointer", zIndex: 1,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>X</button>
+            {modal === "privacidade" && <PoliticaPrivacidade />}
+            {modal === "termos" && <TermosUso />}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

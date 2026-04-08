@@ -8,11 +8,12 @@
  *   - Visualizar tabela padrão de taxas (Art. 7)
  *   - Visualizar tabela de arbitragem (Art. 6, informativa)
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
 import { COLORS, FONTS } from "../../styles/colors";
 import { TaxasConfigService } from "../../services";
 import { TABELA_PADRAO, PRAZOS, TABELA_ARBITRAGEM, formatarMoeda, calcularTaxaModalidade } from "../../utils/taxaCalculator";
+import { uploadFile } from "../../services/storageService";
 
 export default function TaxasConfigAdmin() {
   const [config, setConfig] = useState(null);
@@ -20,6 +21,8 @@ export default function TaxasConfigAdmin() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [simInscritos, setSimInscritos] = useState(500);
+  const [uploadingAssinatura, setUploadingAssinatura] = useState(false);
+  const assinaturaRef = useRef(null);
 
   useEffect(() => {
     TaxasConfigService.get().then(r => {
@@ -119,6 +122,60 @@ export default function TaxasConfigAdmin() {
               <input style={input} value={config.dadosBancarios?.pix || ""} onChange={e => updateBancarios({ pix: e.target.value })} placeholder="CPF, CNPJ, e-mail ou chave aleatoria" />
             </div>
           </div>
+        </div>
+
+        {/* ── Anuidade de Arbitragem ──────────────────────────────── */}
+        <div style={card}>
+          <h3 style={{ margin: "0 0 12px", fontFamily: FONTS.heading, fontSize: 18, color: COLORS.primary }}>
+            Anuidade de Arbitragem
+          </h3>
+          <p style={{ fontSize: 12, color: COLORS.gray, margin: "0 0 16px" }}>
+            Configuracao do valor da anuidade cobrada dos arbitros. Pode ser valor unico ou diferenciado por nivel.
+          </p>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+            <div>
+              <span style={label}>Valor padrao (R$)</span>
+              <input type="number" min="0" step="0.01" style={input}
+                value={config.anuidade?.valorPadrao ?? ""}
+                onChange={e => setConfig(c => ({ ...c, anuidade: { ...c.anuidade, valorPadrao: Number(e.target.value) || 0 } }))} />
+            </div>
+            <div>
+              <span style={label}>Vencimento (dia/mes)</span>
+              <input style={input} placeholder="31/03"
+                value={config.anuidade?.vencimento ?? ""}
+                onChange={e => setConfig(c => ({ ...c, anuidade: { ...c.anuidade, vencimento: e.target.value } }))} />
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 14 }}>
+              <input type="checkbox"
+                checked={config.anuidade?.diferenciadoPorNivel ?? false}
+                onChange={e => setConfig(c => ({ ...c, anuidade: { ...c.anuidade, diferenciadoPorNivel: e.target.checked } }))}
+                style={{ width: 18, height: 18, accentColor: COLORS.primary }} />
+              <span style={{ fontWeight: 600 }}>Valor diferenciado por nivel</span>
+            </label>
+          </div>
+
+          {config.anuidade?.diferenciadoPorNivel && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12 }}>
+              {["A", "B", "C", "NI"].map(nivel => (
+                <div key={nivel}>
+                  <span style={label}>Nivel {nivel} (R$)</span>
+                  <input type="number" min="0" step="0.01" style={input}
+                    value={config.anuidade?.valoresPorNivel?.[nivel] ?? ""}
+                    onChange={e => setConfig(c => ({
+                      ...c,
+                      anuidade: {
+                        ...c.anuidade,
+                        valoresPorNivel: { ...c.anuidade?.valoresPorNivel, [nivel]: Number(e.target.value) || 0 },
+                      },
+                    }))} />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Tabela de taxas (Art. 7) ────────────────────────────── */}
@@ -252,6 +309,63 @@ export default function TaxasConfigAdmin() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* ── Assinatura do Presidente ─────────────────────────────── */}
+        <div style={card}>
+          <h3 style={{ margin: "0 0 12px", fontFamily: FONTS.heading, fontSize: 18, color: COLORS.primary }}>
+            Assinatura do Presidente
+          </h3>
+          <p style={{ fontSize: 12, color: COLORS.gray, margin: "0 0 16px" }}>
+            Imagem da assinatura utilizada em recibos, permits e demais documentos oficiais.
+            Recomendado: PNG com fundo transparente, resolucao minima 300x100px.
+          </p>
+
+          {config?.assinaturaPresidenteUrl && (
+            <div style={{ marginBottom: 12, padding: 12, background: COLORS.offWhite, borderRadius: 8, textAlign: "center" }}>
+              <img src={config.assinaturaPresidenteUrl} alt="Assinatura" style={{ maxHeight: 80, maxWidth: 300 }} />
+            </div>
+          )}
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+            <div>
+              <span style={label}>Nome do Presidente</span>
+              <input style={input}
+                value={config?.presidenteNome || ""}
+                onChange={e => updateConfig({ presidenteNome: e.target.value })}
+                placeholder="Nome completo" />
+            </div>
+            <div>
+              <span style={label}>Cargo / Titulo</span>
+              <input style={input}
+                value={config?.presidenteCargo || "Presidente"}
+                onChange={e => updateConfig({ presidenteCargo: e.target.value })} />
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <input type="file" ref={assinaturaRef} accept="image/png,image/jpeg" style={{ fontSize: 13 }} />
+            <button
+              disabled={uploadingAssinatura}
+              onClick={async () => {
+                const file = assinaturaRef.current?.files?.[0];
+                if (!file) return;
+                setUploadingAssinatura(true);
+                const r = await uploadFile(file, "config/assinatura");
+                setUploadingAssinatura(false);
+                if (r.url) {
+                  updateConfig({ assinaturaPresidenteUrl: r.url, assinaturaPresidentePath: r.path });
+                }
+                assinaturaRef.current.value = "";
+              }}
+              style={{
+                padding: "8px 18px", borderRadius: 8, border: "none",
+                background: COLORS.primary, color: "#fff", fontSize: 13, fontWeight: 600,
+                cursor: uploadingAssinatura ? "not-allowed" : "pointer",
+              }}>
+              {uploadingAssinatura ? "Enviando..." : "Enviar Assinatura"}
+            </button>
+          </div>
         </div>
 
         {/* ── Botão salvar ────────────────────────────────────────── */}

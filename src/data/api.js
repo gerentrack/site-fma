@@ -1034,6 +1034,79 @@ export const pagamentosAPI = {
   },
 };
 
+// ─── Envio de Documentos ────────────────────────────────────────────────────
+export const envioDocumentosAPI = {
+  list: async () => {
+    let items = await readCol("envioDocumentos");
+    items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return ok(items);
+  },
+  get: async (id) => { const item = await readDoc("envioDocumentos", id); return item ? ok(item) : err("Nao encontrado."); },
+  create: async (data) => { const item = await createDoc("envioDocumentos", { ...data, createdAt: now() }); return ok(item); },
+  update: async (id, data) => { const item = await patchDoc("envioDocumentos", id, data); return item ? ok(item) : err("Nao encontrado."); },
+  delete: async (id) => { await removeDoc("envioDocumentos", id); return ok(true); },
+  listByReferee: async (refereeId, nivel) => {
+    let items = await readCol("envioDocumentos");
+    items = items.filter(d => {
+      if (d.destinatariosTipo === "todos") return true;
+      if (d.destinatariosTipo === "nivel") return (d.destinatariosNiveis || []).includes(nivel);
+      if (d.destinatariosTipo === "individual") return (d.destinatariosIds || []).includes(refereeId);
+      return false;
+    });
+    items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return ok(items);
+  },
+  listEnviados: async (remetenteId) => {
+    let items = await readCol("envioDocumentos");
+    items = items.filter(d => d.remetenteId === remetenteId);
+    items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return ok(items);
+  },
+  marcarLido: async (docId, refereeId, nome) => {
+    const item = await readDoc("envioDocumentos", docId);
+    if (!item) return err("Nao encontrado.");
+    const leituras = { ...item.leituras, [refereeId]: { lidoEm: now(), nome } };
+    await patchDoc("envioDocumentos", docId, { leituras });
+    return ok(true);
+  },
+};
+
+// ─── Avaliações de Árbitros ──────────────────────────────────────────────────
+export const avaliacoesAPI = {
+  list: async (filtros = {}) => {
+    let items = await readCol("avaliacoes");
+    if (filtros.refereeId) items = items.filter(a => a.refereeId === filtros.refereeId);
+    if (filtros.eventId) items = items.filter(a => a.eventId === filtros.eventId);
+    items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return ok(items);
+  },
+  get: async (id) => { const item = await readDoc("avaliacoes", id); return item ? ok(item) : err("Nao encontrada."); },
+  create: async (data) => { const item = await createDoc("avaliacoes", { ...data, createdAt: now() }); return ok(item); },
+  update: async (id, data) => { const item = await patchDoc("avaliacoes", id, data); return item ? ok(item) : err("Nao encontrada."); },
+  delete: async (id) => { await removeDoc("avaliacoes", id); return ok(true); },
+};
+
+// ─── Anuidades ──────────────────────────────────────────────────────────────
+export const anuidadesAPI = {
+  list: async (filtros = {}) => {
+    let items = await readCol("anuidades");
+    if (filtros.ano) items = items.filter(a => a.ano === filtros.ano);
+    if (filtros.refereeId) items = items.filter(a => a.refereeId === filtros.refereeId);
+    if (filtros.status) items = items.filter(a => a.status === filtros.status);
+    items.sort((a, b) => (a.refereeName || "").localeCompare(b.refereeName || ""));
+    return ok(items);
+  },
+  get: async (id) => { const item = await readDoc("anuidades", id); return item ? ok(item) : err("Anuidade nao encontrada."); },
+  getByRefereeAno: async (refereeId, ano) => {
+    const items = await readCol("anuidades");
+    const found = items.find(a => a.refereeId === refereeId && a.ano === ano);
+    return ok(found || null);
+  },
+  create: async (data) => { const item = await createDoc("anuidades", { ...data, criadoEm: now() }); return ok(item); },
+  update: async (id, data) => { const item = await patchDoc("anuidades", id, data); return item ? ok(item) : err("Nao encontrado."); },
+  delete: async (id) => { await removeDoc("anuidades", id); return ok(true); },
+};
+
 export const movimentacoesAPI = {
   listBySolicitacao: async (id, opts={}) => {
     let items = await readCol("movimentacoes");

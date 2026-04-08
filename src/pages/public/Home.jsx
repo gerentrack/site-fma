@@ -200,7 +200,7 @@ export default function Home() {
                 onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.2)"; e.currentTarget.style.transform = "translateY(-4px)"; }}
                 onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.transform = "translateY(0)"; }}
               >
-                <span style={{ fontSize: 28 }}>{b.icon}</span>{b.label}
+                {b.label}
               </Link>
             ))}
           </div>
