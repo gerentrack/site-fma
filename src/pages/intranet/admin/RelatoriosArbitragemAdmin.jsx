@@ -67,7 +67,7 @@ export default function RelatoriosArbitragemAdmin() {
               {[
                 { label: "Horarios de chegada", value: selected.horariosChegada },
                 { label: "Tipo de evento", value: (selected.tipoEvento || []).join(", ") },
-                { label: "Inscritos x Concluintes", value: selected.inscritosConcluintes },
+                { label: "Inscritos x Concluintes", value: (selected.modalidadesData || []).map(m => `${m.nome}: ${m.inscritos || 0} inscritos / ${m.concluintes || 0} concluintes`).join("\n") || selected.inscritosConcluintes },
                 { label: "Link Resultados", value: selected.linkResultados, link: true },
                 { label: "Arena", value: (selected.arena || []).join("; ") },
                 { label: "Sinalizacao Arena", value: (selected.sinalizacaoArena || []).join("; ") },

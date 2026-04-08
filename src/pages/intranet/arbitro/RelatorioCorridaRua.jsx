@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import IntranetLayout from "../IntranetLayout";
 import { useIntranet } from "../../../context/IntranetContext";
-import { RelatoriosService, RefereeAssignmentsService, RefereesService } from "../../../services/index";
+import { RelatoriosService, RefereeAssignmentsService, RefereesService, SolicitacoesService } from "../../../services/index";
 import { uploadFile } from "../../../services/storageService";
 import { COLORS, FONTS } from "../../../styles/colors";
 
@@ -121,6 +121,7 @@ export default function RelatorioCorridaRua() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const [existingId, setExistingId] = useState(null);
+  const [modalidades, setModalidades] = useState([]);
 
   useEffect(() => {
     const fetch = async () => {
@@ -138,10 +139,31 @@ export default function RelatorioCorridaRua() {
       if (relRes.data) {
         setForm(relRes.data);
         setExistingId(relRes.data.id);
+        if (relRes.data.modalidadesData) setModalidades(relRes.data.modalidadesData.map(m => m.nome));
       } else {
         setForm({
           arbitrosPresentes: (allRes.data || []).filter(a => a.eventId === myAsgn.eventId).map(a => a.refereeId),
+          modalidadesData: [],
         });
+      }
+
+      // Buscar modalidades da solicitação vinculada
+      const evt = myAsgn.event || {};
+      if (evt.solicitacaoId) {
+        const solRes = await SolicitacoesService.get(evt.solicitacaoId);
+        const mods = solRes.data?.camposTecnicos?.modalidades || [];
+        if (mods.length > 0) setModalidades(mods.map(m => m.distancia || m.nome || `Modalidade ${m.id}`));
+      }
+      // Se não tem solicitação, tentar via calendarRef
+      if (!evt.solicitacaoId && evt.calendarRef) {
+        try {
+          const calRes = await SolicitacoesService.list();
+          const sol = (calRes.data || []).find(s => s.eventoCalendarioId === evt.calendarRef);
+          if (sol) {
+            const mods = sol.camposTecnicos?.modalidades || [];
+            if (mods.length > 0) setModalidades(mods.map(m => m.distancia || m.nome || `Modalidade ${m.id}`));
+          }
+        } catch {}
       }
       setLoading(false);
     };
@@ -236,7 +258,48 @@ export default function RelatorioCorridaRua() {
             <>
               <Field label="Tipo de evento"><CheckGroup options={TIPO_EVENTO} value={form.tipoEvento || []} onChange={v => set("tipoEvento", v)} /></Field>
               <Field label="Inscritos x Concluintes por modalidade">
-                <textarea style={textarea} value={form.inscritosConcluintes || ""} onChange={e => set("inscritosConcluintes", e.target.value)} placeholder="Ex: Inscritos 5km: 200, Concluintes: 180..." />
+                {modalidades.length > 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {modalidades.map((mod, i) => {
+                      const dados = (form.modalidadesData || [])[i] || {};
+                      const updateMod = (key, val) => {
+                        const arr = [...(form.modalidadesData || [])];
+                        arr[i] = { ...arr[i], nome: mod, [key]: val };
+                        set("modalidadesData", arr);
+                      };
+                      return (
+                        <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, alignItems: "center", padding: "8px 12px", background: COLORS.offWhite, borderRadius: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: COLORS.dark }}>{mod}</span>
+                          <input type="number" min="0" style={{ ...inp, padding: "6px 10px" }} placeholder="Inscritos" value={dados.inscritos || ""} onChange={e => updateMod("inscritos", Number(e.target.value) || 0)} />
+                          <input type="number" min="0" style={{ ...inp, padding: "6px 10px" }} placeholder="Concluintes" value={dados.concluintes || ""} onChange={e => updateMod("concluintes", Number(e.target.value) || 0)} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ fontSize: 12, color: COLORS.gray, marginBottom: 6 }}>Nenhuma modalidade encontrada. Adicione manualmente:</div>
+                    {(form.modalidadesData || [{ nome: "" }]).map((mod, i) => (
+                      <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 8, marginBottom: 6, alignItems: "center" }}>
+                        <input style={{ ...inp, padding: "6px 10px" }} placeholder="Modalidade (ex: 5km)" value={mod.nome || ""} onChange={e => {
+                          const arr = [...(form.modalidadesData || [{ nome: "" }])]; arr[i] = { ...arr[i], nome: e.target.value }; set("modalidadesData", arr);
+                        }} />
+                        <input type="number" min="0" style={{ ...inp, padding: "6px 10px" }} placeholder="Inscritos" value={mod.inscritos || ""} onChange={e => {
+                          const arr = [...(form.modalidadesData || [{ nome: "" }])]; arr[i] = { ...arr[i], inscritos: Number(e.target.value) || 0 }; set("modalidadesData", arr);
+                        }} />
+                        <input type="number" min="0" style={{ ...inp, padding: "6px 10px" }} placeholder="Concluintes" value={mod.concluintes || ""} onChange={e => {
+                          const arr = [...(form.modalidadesData || [{ nome: "" }])]; arr[i] = { ...arr[i], concluintes: Number(e.target.value) || 0 }; set("modalidadesData", arr);
+                        }} />
+                        <button onClick={() => { const arr = [...(form.modalidadesData || [])]; arr.splice(i, 1); set("modalidadesData", arr); }}
+                          style={{ border: "none", background: "transparent", color: "#dc2626", cursor: "pointer", fontSize: 16, padding: 0 }}>x</button>
+                      </div>
+                    ))}
+                    <button onClick={() => set("modalidadesData", [...(form.modalidadesData || []), { nome: "", inscritos: 0, concluintes: 0 }])}
+                      style={{ border: `1px solid ${COLORS.grayLight}`, background: "transparent", borderRadius: 6, padding: "4px 12px", fontSize: 12, cursor: "pointer", color: COLORS.primary, fontWeight: 600 }}>
+                      + Adicionar modalidade
+                    </button>
+                  </div>
+                )}
               </Field>
               <Field label="Link de acesso aos Resultados Oficiais">
                 <input style={inp} value={form.linkResultados || ""} onChange={e => set("linkResultados", e.target.value)} placeholder="https://..." />
