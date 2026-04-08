@@ -137,10 +137,10 @@ service cloud.firestore {
       allow write: if isAuth();
     }
 
-    // ── Usuários (leitura: autenticado; escrita: master/admin) ──
+    // ── Usuários (leitura: autenticado; escrita: admin do painel OU referee admin da intranet) ──
     match /users/{docId} {
       allow read: if isAuth();
-      allow write: if isAuth() && isAdminLevel(["master", "admin"]);
+      allow write: if isAuth() && (isAdminLevel(["master", "admin"]) || "referee" in getUserData().roles || getUserData().role == "referee");
     }
 
     // ── Mail (extensão Trigger Email from Firestore) ──
