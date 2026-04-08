@@ -311,21 +311,26 @@ export default function FinanceiroArbitragem() {
                             return (
                               <div key={a.id} style={{ background: COLORS.offWhite, borderRadius: 8, padding: "10px 14px", marginBottom: 8 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                                  <span style={{ fontWeight: 600, fontSize: 13 }}>{ref.name || a.refereeId}</span>
-                                  <button onClick={(ev) => {
-                                    ev.stopPropagation();
-                                    gerarEMostrarRecibo({
-                                      arbitroNome: ref.name, arbitroCpf: ref.cpf,
-                                      funcao: fnMap[a.refereeFunction] || a.refereeFunction,
-                                      evento: e.title, dataEvento: a.event?.date, cidade: a.event?.city,
-                                      valorDiaria: a.valorDiaria, transporte: a.transporte,
-                                      hospedagem: a.hospedagem, alimentacao: a.alimentacao,
-                                      reembolsos: reembs.map(r => ({ categoria: r.categoria, descricao: r.descricao, valor: (r.valorAprovado ?? r.valor) || 0 })),
-                                      assinaturaUrl: config.assinaturaPresidenteUrl || "",
-                                    }, setReciboPreview);
-                                  }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                                    Recibo
-                                  </button>
+                                  <span style={{ fontWeight: 600, fontSize: 13 }}>
+                                    {ref.name || a.refereeId}
+                                    {!a.diariaPaga && <span style={{ marginLeft: 6, fontSize: 10, color: "#d97706" }}>(pendente)</span>}
+                                  </span>
+                                  {a.diariaPaga && (
+                                    <button onClick={(ev) => {
+                                      ev.stopPropagation();
+                                      gerarEMostrarRecibo({
+                                        arbitroNome: ref.name, arbitroCpf: ref.cpf,
+                                        funcao: fnMap[a.refereeFunction] || a.refereeFunction,
+                                        evento: e.title, dataEvento: a.event?.date, cidade: a.event?.city,
+                                        valorDiaria: a.valorDiaria, transporte: a.transporte,
+                                        hospedagem: a.hospedagem, alimentacao: a.alimentacao,
+                                        reembolsos: reembs.filter(r => r.status === "pago").map(r => ({ categoria: r.categoria, descricao: r.descricao, valor: (r.valorAprovado ?? r.valor) || 0 })),
+                                        assinaturaUrl: config.assinaturaPresidenteUrl || "",
+                                      }, setReciboPreview);
+                                    }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                                      Recibo
+                                    </button>
+                                  )}
                                 </div>
                                 <div style={{ fontSize: 12, color: COLORS.gray, display: "flex", flexDirection: "column", gap: 2 }}>
                                   {(a.valorDiaria || 0) > 0 && <div>Diaria ({fnMap[a.refereeFunction] || a.refereeFunction}): <strong>{fmt(a.valorDiaria)}</strong></div>}
@@ -389,8 +394,11 @@ export default function FinanceiroArbitragem() {
                             return (
                               <div key={a.id} style={{ background: COLORS.offWhite, borderRadius: 8, padding: "10px 14px", marginBottom: 8 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                                  <span style={{ fontWeight: 600, fontSize: 13 }}>{evt.title || "—"} — {evt.date ? new Date(evt.date + "T12:00:00").toLocaleDateString("pt-BR") : ""}</span>
-                                  <button onClick={(ev) => {
+                                  <span style={{ fontWeight: 600, fontSize: 13 }}>
+                                    {evt.title || "—"} — {evt.date ? new Date(evt.date + "T12:00:00").toLocaleDateString("pt-BR") : ""}
+                                    {!a.diariaPaga && <span style={{ marginLeft: 6, fontSize: 10, color: "#d97706" }}>(pendente)</span>}
+                                  </span>
+                                  {a.diariaPaga && <button onClick={(ev) => {
                                     ev.stopPropagation();
                                     gerarEMostrarRecibo({
                                       arbitroNome: arb.nome, arbitroCpf: ref.cpf,
@@ -398,12 +406,12 @@ export default function FinanceiroArbitragem() {
                                       evento: evt.title, dataEvento: evt.date, cidade: evt.city,
                                       valorDiaria: a.valorDiaria, transporte: a.transporte,
                                       hospedagem: a.hospedagem, alimentacao: a.alimentacao,
-                                      reembolsos: reembs.map(r => ({ categoria: r.categoria, descricao: r.descricao, valor: (r.valorAprovado ?? r.valor) || 0 })),
+                                      reembolsos: reembs.filter(r => r.status === "pago").map(r => ({ categoria: r.categoria, descricao: r.descricao, valor: (r.valorAprovado ?? r.valor) || 0 })),
                                       assinaturaUrl: config.assinaturaPresidenteUrl || "",
                                     }, setReciboPreview);
                                   }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                                     Recibo
-                                  </button>
+                                  </button>}
                                 </div>
                                 <div style={{ fontSize: 12, color: COLORS.gray, display: "flex", flexDirection: "column", gap: 2 }}>
                                   {(a.valorDiaria || 0) > 0 && <div>Diaria ({fnMap[a.refereeFunction] || a.refereeFunction}): <strong>{fmt(a.valorDiaria)}</strong></div>}
