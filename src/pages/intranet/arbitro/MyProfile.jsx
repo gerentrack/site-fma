@@ -11,6 +11,8 @@ import { intranetAuthAPI } from "../../../data/api";
 import { useCep } from "../../../hooks/useCep";
 import { uploadFile } from "../../../services/storageService";
 import ImageCropper from "../../../components/ui/ImageCropper";
+import { gerarCredencialPdf } from "../../../services/credencialArbitroPdf";
+import { TaxasConfigService } from "../../../services/index";
 import { COLORS, FONTS } from "../../../styles/colors";
 import { REFEREE_CATEGORIES, REFEREE_ROLES, REFEREE_STATUS } from "../../../config/navigation";
 import { validarCPF, validarNisPis, cpfJaExisteArbitro } from "../../../utils/cpfCnpj";
@@ -134,6 +136,26 @@ export default function MyProfile() {
           <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: `${role.color}15`, color: role.color }}>{role.label}</span>
           <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: `${status.color}15`, color: status.color }}>{status.label}</span>
           {nivel && <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: `${nivel.color}15`, color: nivel.color }}>{nivel.label}</span>}
+          <button onClick={async () => {
+            setMsg("Gerando credencial...");
+            const cRes = await TaxasConfigService.get();
+            const cfg = cRes.data || {};
+            const blob = await gerarCredencialPdf({
+              nome: data.name, cpf: data.cpf, rg: data.rg, nivel: data.nivel,
+              registroCbat: data.registroCbat, fotoUrl: data.foto || "",
+              refereeId, siteUrl: window.location.origin,
+              validadeAno: new Date().getFullYear(),
+              assinaturaUrl: cfg.assinaturaPresidenteUrl || "",
+              presidenteNome: cfg.presidenteNome || "",
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a"); a.href = url;
+            a.download = `Credencial_${data.name.replace(/\s+/g, "_")}.pdf`;
+            a.click(); URL.revokeObjectURL(url);
+            setMsg("");
+          }} style={{ padding: "4px 12px", borderRadius: 20, border: `1px solid ${COLORS.primary}`, background: "transparent", color: COLORS.primary, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: FONTS.heading }}>
+            Minha Credencial
+          </button>
         </div>
 
         {/* Foto 3x4 */}
