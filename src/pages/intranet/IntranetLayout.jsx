@@ -50,7 +50,7 @@ export default function IntranetLayout({ children, requireRole = null }) {
   const location = useLocation();
   const [notifs, setNotifs] = useState([]);
   const [showNotifs, setShowNotifs] = useState(false);
-  const [notifsVistas, setNotifsVistas] = useState(false);
+  const [notifsVistaHash, setNotifsVistaHash] = useState("");
 
   const { warningSecondsLeft, dismiss } = useSessionTimeout({
     timeoutMinutes: 1440, // 24 horas
@@ -107,11 +107,7 @@ export default function IntranetLayout({ children, requireRole = null }) {
         const futuras = (asRes.data || []).filter(a => a.event?.date >= new Date().toISOString().slice(0, 10));
         if (futuras.length) items.push({ text: `${futuras.length} escala(s) futura(s)`, to: "/intranet/escalas", color: "#0066cc" });
       } catch {}
-      setNotifs(prev => {
-        const changed = prev.map(n => n.text).join("|") !== items.map(n => n.text).join("|");
-        if (changed) setNotifsVistas(false);
-        return items;
-      });
+      setNotifs(items);
     };
 
     // Listener em tempo real nas coleções que afetam notificações
@@ -147,12 +143,19 @@ export default function IntranetLayout({ children, requireRole = null }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ fontFamily: FONTS.body, fontSize: 13, fontWeight: 600, color: "#fff", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{name}</div>
             <div style={{ position: "relative" }}>
-              <button onClick={() => { setShowNotifs(s => !s); setNotifsVistas(true); }}
-                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: notifs.length > 0 && !notifsVistas ? "#fbbf24" : "rgba(255,255,255,0.4)", padding: "2px 4px", position: "relative" }}>
-                🔔
-                {notifs.length > 0 && !notifsVistas && (
-                  <span style={{ position: "absolute", top: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "#dc2626", color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{notifs.length}</span>
-                )}
+              {(() => {
+                const currentHash = notifs.map(n => n.text).join("|");
+                const hasNew = notifs.length > 0 && currentHash !== notifsVistaHash;
+                return (
+                  <button onClick={() => { setShowNotifs(s => !s); setNotifsVistaHash(currentHash); }}
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: hasNew ? "#fbbf24" : "rgba(255,255,255,0.4)", padding: "2px 4px", position: "relative" }}>
+                    🔔
+                    {hasNew && (
+                      <span style={{ position: "absolute", top: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "#dc2626", color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{notifs.length}</span>
+                    )}
+                  </button>
+                );
+              })()}
               </button>
               {showNotifs && (
                 <div style={{ position: "fixed", left: 8, top: 70, width: 210, background: "#fff", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.3)", zIndex: 9999, overflow: "hidden" }}>
