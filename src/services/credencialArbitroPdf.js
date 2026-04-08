@@ -1,17 +1,14 @@
 /**
  * FMA — Geração de Credencial/Carteirinha de Árbitro em PDF.
- * Página única: frente (esquerda) + verso (direita) com linha de dobra.
- * Imprimir, recortar, dobrar ao meio e plastificar.
+ * Página A4 landscape com cartão (frente + verso) centralizado em tamanho real.
+ * Imprimir em 100%, recortar, dobrar e plastificar.
  */
 import { jsPDF } from "jspdf";
 import { fmaLogo } from "../assets/permits";
 
-const CW = 85.6; // largura do cartão
-const CH = 54;    // altura do cartão
-const GAP = 2;    // espaço entre frente e verso
-const PAGE_W = CW * 2 + GAP;
-const PAGE_H = CH;
-const MARGIN = 0;
+const CW = 85.6; // largura do cartão (mm)
+const CH = 54;    // altura do cartão (mm)
+const GAP = 2;    // espaço para linha de dobra
 
 const _cache = {};
 async function imgToBase64(url) {
@@ -35,71 +32,59 @@ function formatCpf(cpf) {
   return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
 }
 
-/**
- * @param {object} dados
- * @param {string} dados.nome
- * @param {string} dados.cpf
- * @param {string} dados.rg
- * @param {string} dados.nivel
- * @param {string} dados.registroCbat
- * @param {string} dados.fotoUrl
- * @param {string} dados.refereeId
- * @param {string} dados.siteUrl
- * @param {number} dados.validadeAno
- * @param {string} [dados.assinaturaUrl]
- * @param {string} [dados.presidenteNome]
- */
 export async function gerarCredencialPdf(dados) {
-  const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: [PAGE_H, PAGE_W] });
+  const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   pdf.setFont("helvetica", "normal");
 
-  // Borda de corte (linha fina cinza ao redor de tudo)
-  pdf.setDrawColor(200);
-  pdf.setLineWidth(0.2);
-  pdf.rect(0, 0, CW, CH);
-  pdf.rect(CW + GAP, 0, CW, CH);
+  const A4W = 297, A4H = 210;
+  const totalW = CW * 2 + GAP;
+  const ox = (A4W - totalW) / 2; // offset X para centralizar
+  const oy = (A4H - CH) / 2;     // offset Y para centralizar
 
-  // Linha de dobra (tracejada no meio)
-  pdf.setDrawColor(180);
-  pdf.setLineWidth(0.15);
+  // Instrução
+  pdf.setFontSize(8); pdf.setTextColor(150);
+  pdf.text("Imprima em tamanho real (100%). Recorte pela borda, dobre na linha tracejada e plastifique.", A4W / 2, oy - 8, { align: "center" });
+
+  // Bordas de corte
+  pdf.setDrawColor(200); pdf.setLineWidth(0.2);
+  pdf.rect(ox, oy, CW, CH);
+  pdf.rect(ox + CW + GAP, oy, CW, CH);
+
+  // Linha de dobra tracejada
+  pdf.setDrawColor(180); pdf.setLineWidth(0.15);
   pdf.setLineDashPattern([1.5, 1], 0);
-  pdf.line(CW + GAP / 2, 2, CW + GAP / 2, CH - 2);
+  pdf.line(ox + CW + GAP / 2, oy + 2, ox + CW + GAP / 2, oy + CH - 2);
   pdf.setLineDashPattern([], 0);
+  pdf.setFontSize(3); pdf.setTextColor(180);
+  pdf.text("dobrar aqui", ox + CW + GAP / 2, oy + CH + 3, { align: "center" });
 
-  // Tesoura / instrução de dobra
-  pdf.setFontSize(3);
-  pdf.setTextColor(180);
-  pdf.text("dobrar aqui", CW + GAP / 2, CH - 0.5, { align: "center" });
+  // Pré-carregar logo
+  let logoData = null;
+  try { logoData = await imgToBase64(fmaLogo); } catch {}
 
-  // ════════════════════════════════════════════════════════════════════════════
-  // FRENTE (lado esquerdo: 0 a CW)
-  // ════════════════════════════════════════════════════════════════════════════
-  const FL = 0; // frente left offset
+  // ═══ FRENTE (esquerda) ═══
+  const fx = ox, fy = oy;
 
   // Header escuro
   pdf.setFillColor(26, 26, 26);
-  pdf.rect(FL, 0, CW, 18, "F");
+  pdf.rect(fx, fy, CW, 18, "F");
 
-  // Logo
-  let logoData = null;
-  try { logoData = await imgToBase64(fmaLogo); } catch {}
-  if (logoData) pdf.addImage(logoData, "PNG", FL + 3, 2, 14, 7);
-
+  if (logoData) pdf.addImage(logoData, "PNG", fx + 3, fy + 2, 14, 7);
   pdf.setFontSize(5.5); pdf.setTextColor(255); pdf.setFont("helvetica", "bold");
-  pdf.text("FEDERACAO MINEIRA DE ATLETISMO", FL + (logoData ? 19 : 3), 6);
+  pdf.text("FEDERACAO MINEIRA DE ATLETISMO", fx + (logoData ? 19 : 3), fy + 6);
   pdf.setFontSize(4); pdf.setFont("helvetica", "normal");
-  pdf.text("CNPJ: 16.681.223/0001-00", FL + (logoData ? 19 : 3), 9.5);
+  pdf.text("CNPJ: 16.681.223/0001-00", fx + (logoData ? 19 : 3), fy + 9.5);
 
   // Título
   pdf.setFontSize(7); pdf.setFont("helvetica", "bold"); pdf.setTextColor(204, 0, 0);
-  pdf.text("CREDENCIAL DE ARBITRO", FL + 3, 15.5);
+  pdf.text("CREDENCIAL DE ARBITRO", fx + 3, fy + 15.5);
 
   // Barra vermelha
   pdf.setFillColor(204, 0, 0);
-  pdf.rect(FL, 17.5, CW, 0.8, "F");
+  pdf.rect(fx, fy + 17.5, CW, 0.8, "F");
 
   // Foto
-  const fotoX = FL + 3, fotoY = 20, fotoW = 16, fotoH = 21;
+  const fotoX = fx + 3, fotoY = fy + 20, fotoW = 16, fotoH = 21;
   pdf.setFillColor(230, 230, 230);
   pdf.rect(fotoX, fotoY, fotoW, fotoH, "F");
   if (dados.fotoUrl) {
@@ -112,14 +97,14 @@ export async function gerarCredencialPdf(dados) {
     pdf.text("SEM FOTO", fotoX + 3, fotoY + 11);
   }
 
-  // Dados
-  const dataX = FL + 22;
+  // Dados ao lado da foto
+  const dataX = fx + 22;
   pdf.setTextColor(26, 26, 26);
   pdf.setFontSize(8); pdf.setFont("helvetica", "bold");
   const nomeLines = pdf.splitTextToSize(dados.nome || "", CW - 22 - 3);
-  pdf.text(nomeLines, dataX, 23);
+  pdf.text(nomeLines, dataX, fy + 23);
 
-  let dy = 23 + nomeLines.length * 3.5 + 1;
+  let dy = fy + 23 + nomeLines.length * 3.5 + 1;
 
   const nivelLabel = { A: "Nivel A", B: "Nivel B", C: "Nivel C", NI: "NI" }[dados.nivel] || dados.nivel;
   const nivelColor = { A: [204, 0, 0], B: [0, 102, 204], C: [0, 119, 51], NI: [107, 114, 128] }[dados.nivel] || [0, 0, 0];
@@ -138,38 +123,36 @@ export async function gerarCredencialPdf(dados) {
 
   // Validade
   pdf.setFontSize(5); pdf.setTextColor(100);
-  pdf.text(`Validade: 12/${dados.validadeAno || new Date().getFullYear()}`, FL + 3, CH - 2);
+  pdf.text(`Validade: 12/${dados.validadeAno || new Date().getFullYear()}`, fx + 3, fy + CH - 2);
 
   // Barra inferior frente
   pdf.setFillColor(204, 0, 0);
-  pdf.rect(FL, CH - 1, CW, 1, "F");
+  pdf.rect(fx, fy + CH - 1, CW, 1, "F");
 
-  // ════════════════════════════════════════════════════════════════════════════
-  // VERSO (lado direito: CW + GAP a PAGE_W)
-  // ════════════════════════════════════════════════════════════════════════════
-  const VL = CW + GAP; // verso left offset
+  // ═══ VERSO (direita) ═══
+  const vx = ox + CW + GAP, vy0 = oy;
 
   // Header
   pdf.setFillColor(26, 26, 26);
-  pdf.rect(VL, 0, CW, 6, "F");
+  pdf.rect(vx, vy0, CW, 6, "F");
   pdf.setFontSize(5); pdf.setTextColor(255); pdf.setFont("helvetica", "bold");
-  pdf.text("FEDERACAO MINEIRA DE ATLETISMO", VL + CW / 2, 4, { align: "center" });
+  pdf.text("FEDERACAO MINEIRA DE ATLETISMO", vx + CW / 2, vy0 + 4, { align: "center" });
 
   // Dados pessoais
-  let vy = 10;
+  let vy = vy0 + 10;
   pdf.setTextColor(26, 26, 26); pdf.setFontSize(5.5);
   for (const [label, value] of [["CPF:", formatCpf(dados.cpf)], ["RG:", dados.rg || "\u2014"]]) {
-    pdf.setFont("helvetica", "bold"); pdf.text(label, VL + 3, vy);
-    pdf.setFont("helvetica", "normal"); pdf.text(value, VL + 13, vy);
+    pdf.setFont("helvetica", "bold"); pdf.text(label, vx + 3, vy);
+    pdf.setFont("helvetica", "normal"); pdf.text(value, vx + 13, vy);
     vy += 4;
   }
 
   vy += 2;
   pdf.setFontSize(4.5); pdf.setTextColor(100);
-  pdf.text("Federacao Mineira de Atletismo", VL + 3, vy); vy += 3;
-  pdf.text("CNPJ: 16.681.223/0001-00", VL + 3, vy); vy += 3;
-  pdf.text("Av. Olegario Maciel, 311 - Sala 205", VL + 3, vy); vy += 3;
-  pdf.text("Centro - Belo Horizonte/MG", VL + 3, vy);
+  pdf.text("Federacao Mineira de Atletismo", vx + 3, vy); vy += 3;
+  pdf.text("CNPJ: 16.681.223/0001-00", vx + 3, vy); vy += 3;
+  pdf.text("Av. Olegario Maciel, 311 - Sala 205", vx + 3, vy); vy += 3;
+  pdf.text("Centro - Belo Horizonte/MG", vx + 3, vy);
 
   // QR Code
   const qrUrl = `${dados.siteUrl || "https://fma.org.br"}/arbitros/${dados.refereeId}`;
@@ -178,9 +161,9 @@ export async function gerarCredencialPdf(dados) {
     const qrData = await imgToBase64(qrApiUrl);
     if (qrData) {
       const qrSize = 18;
-      pdf.addImage(qrData, "PNG", VL + CW - qrSize - 3, 9, qrSize, qrSize);
+      pdf.addImage(qrData, "PNG", vx + CW - qrSize - 3, vy0 + 9, qrSize, qrSize);
       pdf.setFontSize(3.5); pdf.setTextColor(100);
-      pdf.text("Validar credencial", VL + CW - qrSize / 2 - 3, 9 + qrSize + 2.5, { align: "center" });
+      pdf.text("Validar credencial", vx + CW - qrSize / 2 - 3, vy0 + 9 + qrSize + 2.5, { align: "center" });
     }
   } catch {}
 
@@ -188,22 +171,20 @@ export async function gerarCredencialPdf(dados) {
   if (dados.assinaturaUrl) {
     try {
       const sigData = await imgToBase64(dados.assinaturaUrl);
-      if (sigData) pdf.addImage(sigData, "PNG", VL + 3, CH - 18, 25, 10);
+      if (sigData) pdf.addImage(sigData, "PNG", vx + 3, vy0 + CH - 18, 25, 10);
     } catch {}
   }
 
   pdf.setDrawColor(0); pdf.setLineWidth(0.15);
-  pdf.line(VL + 3, CH - 6, VL + 35, CH - 6);
+  pdf.line(vx + 3, vy0 + CH - 6, vx + 35, vy0 + CH - 6);
   pdf.setFontSize(4); pdf.setTextColor(0); pdf.setFont("helvetica", "normal");
-  pdf.text(dados.presidenteNome || "Presidente", VL + 3, CH - 3.5);
+  pdf.text(dados.presidenteNome || "Presidente", vx + 3, vy0 + CH - 3.5);
   pdf.setFontSize(3.5); pdf.setTextColor(100);
-  pdf.text("Presidente - FMA", VL + 3, CH - 1.5);
+  pdf.text("Presidente - FMA", vx + 3, vy0 + CH - 1.5);
 
   // Barra inferior verso
   pdf.setFillColor(204, 0, 0);
-  pdf.rect(VL, CH - 1, CW, 1, "F");
+  pdf.rect(vx, vy0 + CH - 1, CW, 1, "F");
 
-  return {
-    blob: pdf.output("blob"),
-  };
+  return { blob: pdf.output("blob") };
 }

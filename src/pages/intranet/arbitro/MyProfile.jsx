@@ -174,6 +174,11 @@ export default function MyProfile() {
               <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                 <button onClick={() => { URL.revokeObjectURL(credencialUrl); setCredencialUrl(null); }}
                   style={{ padding: "8px 18px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", fontSize: 13, cursor: "pointer" }}>Fechar</button>
+                <button onClick={() => {
+                  const win = window.open(credencialUrl);
+                  if (win) { win.onload = () => { win.focus(); win.print(); }; }
+                }}
+                  style={{ padding: "8px 18px", borderRadius: 8, border: `1px solid ${COLORS.primary}`, background: "transparent", color: COLORS.primary, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FONTS.heading }}>Imprimir</button>
                 <a href={credencialUrl} download={`Credencial_${data.name?.replace(/\s+/g, "_")}.pdf`}
                   style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: COLORS.primary, color: "#fff", fontSize: 13, fontWeight: 700, textDecoration: "none", fontFamily: FONTS.heading }}>Baixar PDF</a>
               </div>
