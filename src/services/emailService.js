@@ -407,3 +407,19 @@ export async function notificarDiariaPaga({ arbitroEmail, arbitroNome, evento, v
   `);
   return enviarEmail({ to: arbitroEmail, subject: `[FMA] Diaria paga: ${evento}`, html });
 }
+
+export async function notificarPendenciaRelatorio({ arbitroEmail, arbitroNome, evento, pendencia }) {
+  const html = templateBase(`
+    <p>Ola, <strong>${arbitroNome}</strong>!</p>
+    <p>Seu relatorio de arbitragem do evento <strong>${evento}</strong> possui uma pendencia que precisa ser corrigida:</p>
+    <div style="margin:20px 0;padding:14px 18px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;">
+      <p style="margin:0;font-weight:700;color:#92400e;">Observacao:</p>
+      <p style="margin:6px 0 0;color:#78350f;">${pendencia}</p>
+    </div>
+    <p>Acesse a Intranet, va em <strong>Minhas Escalas</strong> e clique no relatorio para corrigir e reenviar.</p>
+    <p style="text-align:center;margin:24px 0;">
+      <a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar a Intranet</a>
+    </p>
+  `);
+  return enviarEmail({ to: arbitroEmail, subject: `[FMA] Pendencia no relatorio: ${evento}`, html });
+}

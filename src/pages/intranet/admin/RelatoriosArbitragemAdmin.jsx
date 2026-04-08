@@ -5,8 +5,9 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import IntranetLayout from "../IntranetLayout";
-import { RelatoriosService } from "../../../services/index";
+import { RelatoriosService, RefereesService } from "../../../services/index";
 import { deleteFile } from "../../../services/storageService";
+import { notificarPendenciaRelatorio } from "../../../services/emailService";
 import { COLORS, FONTS } from "../../../styles/colors";
 
 const STATUS_MAP = {
@@ -47,6 +48,19 @@ export default function RelatoriosArbitragemAdmin() {
     if (!pendenciaTexto.trim()) return;
     setActionLoading(true);
     await RelatoriosService.update(id, { status: "pendencia", observacaoAdmin: pendenciaTexto.trim(), pendenciaEm: new Date().toISOString() });
+    // Notificar árbitro por email
+    const rel = relatorios.find(r => r.id === id);
+    if (rel?.refereeId) {
+      const refRes = await RefereesService.get(rel.refereeId);
+      if (refRes.data?.email) {
+        notificarPendenciaRelatorio({
+          arbitroEmail: refRes.data.email,
+          arbitroNome: refRes.data.name,
+          evento: rel.eventTitle,
+          pendencia: pendenciaTexto.trim(),
+        }).catch(() => {});
+      }
+    }
     setActionLoading(false);
     setSelected(prev => ({ ...prev, status: "pendencia", observacaoAdmin: pendenciaTexto.trim() }));
     setShowPendenciaForm(false);
