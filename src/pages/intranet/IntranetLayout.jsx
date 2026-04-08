@@ -84,10 +84,11 @@ export default function IntranetLayout({ children, requireRole = null }) {
     }
   }, [isAuthenticated, loading, role]);
 
-  // Notificações em tempo real (onSnapshot)
+  // Notificações em tempo real (onSnapshot) + fallback polling 30s
   useEffect(() => {
     if (!isAuthenticated || !refereeId || loading) return;
     const unsubs = [];
+    let debounceTimer = null;
 
     const recalcular = async () => {
       const items = [];
@@ -106,16 +107,31 @@ export default function IntranetLayout({ children, requireRole = null }) {
         if (an && (an.status === "pendente" || an.status === "vencido")) items.push({ text: `Anuidade ${ano} ${an.status}`, to: "/intranet/anuidade", color: "#dc2626" });
         const futuras = (asRes.data || []).filter(a => a.event?.date >= new Date().toISOString().slice(0, 10));
         if (futuras.length) items.push({ text: `${futuras.length} escala(s) futura(s)`, to: "/intranet/escalas", color: "#0066cc" });
-      } catch {}
+      } catch (e) { console.warn("Notifs:", e); }
       setNotifs(items);
     };
 
-    // Listener em tempo real nas coleções que afetam notificações
-    unsubs.push(onSnapshot(collection(db, "envioDocumentos"), () => recalcular()));
-    unsubs.push(onSnapshot(collection(db, "anuidades"), () => recalcular()));
-    unsubs.push(onSnapshot(collection(db, "refereeAssignments"), () => recalcular()));
+    // Debounce para não disparar múltiplas vezes seguidas
+    const debouncedRecalcular = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(recalcular, 500);
+    };
 
-    return () => unsubs.forEach(u => u());
+    // Listeners em tempo real
+    try {
+      unsubs.push(onSnapshot(collection(db, "envioDocumentos"), debouncedRecalcular, () => {}));
+      unsubs.push(onSnapshot(collection(db, "anuidades"), debouncedRecalcular, () => {}));
+      unsubs.push(onSnapshot(collection(db, "refereeAssignments"), debouncedRecalcular, () => {}));
+    } catch (e) { console.warn("onSnapshot setup:", e); }
+
+    // Fallback: polling a cada 30s caso onSnapshot falhe
+    const interval = setInterval(recalcular, 30000);
+
+    return () => {
+      unsubs.forEach(u => u());
+      clearInterval(interval);
+      if (debounceTimer) clearTimeout(debounceTimer);
+    };
   }, [isAuthenticated, refereeId, loading]);
 
   if (loading || !isAuthenticated) {
