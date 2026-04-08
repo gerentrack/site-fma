@@ -210,7 +210,18 @@ export default function RelatorioCorridaRua() {
         <p style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, margin: "0 0 4px" }}>
           {evt.title} — {evt.date ? new Date(evt.date + "T12:00:00").toLocaleDateString("pt-BR") : ""} — {evt.city}
         </p>
-        {form.status === "enviado" && <span style={{ padding: "3px 10px", borderRadius: 12, fontSize: 11, fontWeight: 700, background: "#f0fdf4", color: "#15803d" }}>Enviado</span>}
+        {form.status === "enviado" && <span style={{ padding: "3px 10px", borderRadius: 12, fontSize: 11, fontWeight: 700, background: "#f0fdf4", color: "#15803d" }}>Enviado — aguardando aprovacao</span>}
+        {form.status === "aprovado" && <span style={{ padding: "3px 10px", borderRadius: 12, fontSize: 11, fontWeight: 700, background: "#f0fdf4", color: "#15803d" }}>Aprovado</span>}
+        {form.status === "pendencia" && (
+          <div style={{ marginTop: 8 }}>
+            <span style={{ padding: "3px 10px", borderRadius: 12, fontSize: 11, fontWeight: 700, background: "#fffbeb", color: "#d97706" }}>Pendencia — corrija e reenvie</span>
+            {form.observacaoAdmin && (
+              <div style={{ marginTop: 8, padding: "10px 14px", borderRadius: 8, background: "#fffbeb", border: "1px solid #fde68a", fontSize: 13, color: COLORS.dark }}>
+                <strong style={{ color: "#d97706" }}>Observacao do admin:</strong> {form.observacaoAdmin}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Stepper */}
         <div style={{ display: "flex", gap: 4, margin: "20px 0" }}>
@@ -384,25 +395,31 @@ export default function RelatorioCorridaRua() {
           {msg && <div style={{ marginTop: 12, padding: "8px 12px", borderRadius: 8, background: msg.includes("Erro") ? "#fef2f2" : "#f0fdf4", color: msg.includes("Erro") ? "#dc2626" : "#15803d", fontSize: 13 }}>{msg}</div>}
 
           {/* Navegação */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 24, gap: 8 }}>
-            {step > 0 ? (
-              <button onClick={() => setStep(s => s - 1)} style={{ padding: "9px 20px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", color: COLORS.gray, fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Voltar</button>
-            ) : <div />}
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => save(false)} disabled={saving}
-                style={{ padding: "9px 20px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", color: COLORS.dark, fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                {saving ? "Salvando..." : "Salvar Rascunho"}
-              </button>
-              {step < STEPS.length - 1 ? (
-                <button onClick={() => setStep(s => s + 1)} style={{ padding: "9px 20px", borderRadius: 8, border: "none", background: COLORS.primary, color: "#fff", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Proximo</button>
-              ) : (
-                <button onClick={() => save(true)} disabled={saving}
-                  style={{ padding: "9px 24px", borderRadius: 8, border: "none", background: "#007733", color: "#fff", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                  {saving ? "Enviando..." : "Enviar Relatorio"}
-                </button>
-              )}
+          {form.status === "aprovado" ? (
+            <div style={{ marginTop: 20, padding: "10px 14px", borderRadius: 8, background: "#f0fdf4", fontSize: 13, color: "#15803d", fontWeight: 600, textAlign: "center" }}>
+              Relatorio aprovado. Nao e possivel editar.
             </div>
-          </div>
+          ) : (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 24, gap: 8 }}>
+              {step > 0 ? (
+                <button onClick={() => setStep(s => s - 1)} style={{ padding: "9px 20px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", color: COLORS.gray, fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Voltar</button>
+              ) : <div />}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => save(false)} disabled={saving}
+                  style={{ padding: "9px 20px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", color: COLORS.dark, fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                  {saving ? "Salvando..." : "Salvar Rascunho"}
+                </button>
+                {step < STEPS.length - 1 ? (
+                  <button onClick={() => setStep(s => s + 1)} style={{ padding: "9px 20px", borderRadius: 8, border: "none", background: COLORS.primary, color: "#fff", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Proximo</button>
+                ) : (
+                  <button onClick={() => save(true)} disabled={saving}
+                    style={{ padding: "9px 24px", borderRadius: 8, border: "none", background: "#007733", color: "#fff", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                    {saving ? "Enviando..." : form.status === "pendencia" ? "Reenviar Relatorio" : "Enviar Relatorio"}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </IntranetLayout>

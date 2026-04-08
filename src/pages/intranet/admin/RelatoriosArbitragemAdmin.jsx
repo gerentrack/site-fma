@@ -8,17 +8,58 @@ import IntranetLayout from "../IntranetLayout";
 import { RelatoriosService } from "../../../services/index";
 import { COLORS, FONTS } from "../../../styles/colors";
 
+const STATUS_MAP = {
+  enviado: { label: "Enviado", color: "#0066cc", bg: "#eff6ff" },
+  aprovado: { label: "Aprovado", color: "#15803d", bg: "#f0fdf4" },
+  pendencia: { label: "Pendencia", color: "#d97706", bg: "#fffbeb" },
+  rascunho: { label: "Rascunho", color: "#6b7280", bg: "#f3f4f6" },
+};
+
 export default function RelatoriosArbitragemAdmin() {
   const [relatorios, setRelatorios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
+  const [filtroStatus, setFiltroStatus] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    RelatoriosService.list({ status: "enviado" }).then(r => {
-      setRelatorios(r.data || []);
+  const fetchData = () => {
+    setLoading(true);
+    RelatoriosService.list().then(r => {
+      setRelatorios((r.data || []).filter(rel => rel.status !== "rascunho"));
       setLoading(false);
     });
-  }, []);
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  const handleAprovar = async (id) => {
+    setActionLoading(true);
+    await RelatoriosService.update(id, { status: "aprovado", aprovadoEm: new Date().toISOString() });
+    setActionLoading(false);
+    setSelected(prev => ({ ...prev, status: "aprovado" }));
+    fetchData();
+  };
+
+  const handlePendencia = async (id) => {
+    const obs = prompt("Descreva o que precisa ser corrigido:");
+    if (obs === null) return;
+    setActionLoading(true);
+    await RelatoriosService.update(id, { status: "pendencia", observacaoAdmin: obs, pendenciaEm: new Date().toISOString() });
+    setActionLoading(false);
+    setSelected(prev => ({ ...prev, status: "pendencia", observacaoAdmin: obs }));
+    fetchData();
+  };
+
+  const handleDevolver = async (id) => {
+    if (!confirm("Devolver o relatório? O árbitro precisará refazer do zero.")) return;
+    setActionLoading(true);
+    await RelatoriosService.delete(id);
+    setActionLoading(false);
+    setSelected(null);
+    fetchData();
+  };
+
+  const filtered = relatorios.filter(r => !filtroStatus || r.status === filtroStatus);
 
   const card = { background: "#fff", borderRadius: 12, padding: "20px 24px", boxShadow: "0 1px 8px rgba(0,0,0,0.07)", marginBottom: 16 };
 
@@ -28,30 +69,42 @@ export default function RelatoriosArbitragemAdmin() {
         <h1 style={{ fontFamily: FONTS.heading, fontSize: 22, fontWeight: 900, textTransform: "uppercase", color: COLORS.dark, margin: "0 0 6px" }}>
           Relatorios de Arbitragem
         </h1>
-        <p style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, margin: "0 0 24px" }}>
-          {relatorios.length} relatorio(s) enviado(s)
+        <p style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, margin: "0 0 16px" }}>
+          {filtered.length} relatorio(s)
         </p>
+        <div style={{ marginBottom: 20 }}>
+          <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
+            style={{ padding: "7px 10px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, fontSize: 13 }}>
+            <option value="">Todos</option>
+            <option value="enviado">Enviados</option>
+            <option value="aprovado">Aprovados</option>
+            <option value="pendencia">Com pendencia</option>
+          </select>
+        </div>
 
         {loading ? (
           <div style={{ padding: 40, textAlign: "center", color: COLORS.gray }}>Carregando...</div>
-        ) : relatorios.length === 0 ? (
-          <div style={{ ...card, textAlign: "center", color: COLORS.gray, fontSize: 14 }}>Nenhum relatorio enviado.</div>
+        ) : filtered.length === 0 ? (
+          <div style={{ ...card, textAlign: "center", color: COLORS.gray, fontSize: 14 }}>Nenhum relatorio encontrado.</div>
         ) : !selected ? (
-          relatorios.map(r => (
-            <div key={r.id} style={{ ...card, cursor: "pointer" }} onClick={() => setSelected(r)}
-              onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.12)"}
-              onMouseLeave={e => e.currentTarget.style.boxShadow = "0 1px 8px rgba(0,0,0,0.07)"}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontFamily: FONTS.heading, fontSize: 15, fontWeight: 700, color: COLORS.dark }}>{r.eventTitle}</div>
-                  <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 2 }}>
-                    {r.eventDate ? new Date(r.eventDate + "T12:00:00").toLocaleDateString("pt-BR") : ""} — {r.eventCity} — Por: {r.refereeName}
+          filtered.map(r => {
+            const st = STATUS_MAP[r.status] || STATUS_MAP.enviado;
+            return (
+              <div key={r.id} style={{ ...card, cursor: "pointer", borderLeft: `4px solid ${st.color}` }} onClick={() => setSelected(r)}
+                onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.12)"}
+                onMouseLeave={e => e.currentTarget.style.boxShadow = "0 1px 8px rgba(0,0,0,0.07)"}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontFamily: FONTS.heading, fontSize: 15, fontWeight: 700, color: COLORS.dark }}>{r.eventTitle}</div>
+                    <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 2 }}>
+                      {r.eventDate ? new Date(r.eventDate + "T12:00:00").toLocaleDateString("pt-BR") : ""} — {r.eventCity} — Por: {r.refereeName}
+                    </div>
                   </div>
+                  <span style={{ padding: "3px 10px", borderRadius: 12, fontSize: 11, fontWeight: 700, background: st.bg, color: st.color }}>{st.label}</span>
                 </div>
-                <span style={{ padding: "3px 10px", borderRadius: 12, fontSize: 11, fontWeight: 700, background: "#f0fdf4", color: "#15803d" }}>Enviado</span>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <div>
             <button onClick={() => setSelected(null)} style={{ background: "none", border: "none", color: COLORS.primary, cursor: "pointer", fontSize: 13, fontWeight: 600, marginBottom: 16 }}>
@@ -129,6 +182,37 @@ export default function RelatoriosArbitragemAdmin() {
                   </div>
                 </div>
               ))}
+
+              {/* Observação do admin (pendência) */}
+              {selected.observacaoAdmin && (
+                <div style={{ marginTop: 16, padding: "12px 16px", borderRadius: 8, background: "#fffbeb", border: "1px solid #fde68a" }}>
+                  <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, color: "#d97706", marginBottom: 4 }}>PENDENCIA REGISTRADA</div>
+                  <div style={{ fontSize: 13, fontFamily: FONTS.body, color: COLORS.dark }}>{selected.observacaoAdmin}</div>
+                </div>
+              )}
+
+              {/* Ações */}
+              {selected.status !== "aprovado" && (
+                <div style={{ marginTop: 20, padding: "16px 0", borderTop: `1px solid ${COLORS.grayLight}`, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button onClick={() => handleAprovar(selected.id)} disabled={actionLoading}
+                    style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "#15803d", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                    Aprovar Relatorio
+                  </button>
+                  <button onClick={() => handlePendencia(selected.id)} disabled={actionLoading}
+                    style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: "#d97706", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                    Inserir Pendencia
+                  </button>
+                  <button onClick={() => handleDevolver(selected.id)} disabled={actionLoading}
+                    style={{ padding: "8px 20px", borderRadius: 8, border: "1px solid #dc2626", background: "transparent", color: "#dc2626", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                    Devolver (refazer)
+                  </button>
+                </div>
+              )}
+              {selected.status === "aprovado" && (
+                <div style={{ marginTop: 16, padding: "10px 14px", borderRadius: 8, background: "#f0fdf4", fontSize: 13, color: "#15803d", fontWeight: 600 }}>
+                  Relatorio aprovado{selected.aprovadoEm ? ` em ${new Date(selected.aprovadoEm).toLocaleDateString("pt-BR")}` : ""}
+                </div>
+              )}
             </div>
           </div>
         )}
