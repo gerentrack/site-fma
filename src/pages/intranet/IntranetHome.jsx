@@ -11,6 +11,7 @@ import {
   RefereeEventsService, RefereeAvailabilityService,
   RefereeAssignmentsService, RefereesService, AnuidadesService,
   EnvioDocumentosService, MuralAvisosService,
+  ReembolsosService, RelatoriosService,
 } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
 import { CALENDAR_CATEGORIES, ANUIDADE_STATUS } from "../../config/navigation";
@@ -70,6 +71,7 @@ export default function IntranetHome() {
   const [anuidade, setAnuidade] = useState(null);
   const [docsNaoLidos, setDocsNaoLidos] = useState(0);
   const [avisos, setAvisos] = useState([]);
+  const [pendencias, setPendencias] = useState(null);
 
   const anoAtual = new Date().getFullYear();
 
@@ -84,10 +86,25 @@ export default function IntranetHome() {
       Promise.all([
         RefereeAssignmentsService.list(),
         RefereeEventsService.list({ upcoming: true }),
-      ]).then(([aRes, eRes]) => {
+        AnuidadesService.list({ ano: anoAtual }),
+        ReembolsosService.list({ status: "pendente" }),
+        RelatoriosService.list(),
+      ]).then(([aRes, eRes, anRes, reembRes, relRes]) => {
+        const allAsgn = aRes.data || [];
         const futureEventIds = new Set((eRes.data || []).map(e => e.id));
-        const ativas = (aRes.data || []).filter(a => futureEventIds.has(a.eventId));
+        const ativas = allAsgn.filter(a => futureEventIds.has(a.eventId));
         setStats(s => ({ ...s, assigned: ativas.length }));
+
+        const today = new Date().toISOString().slice(0, 10);
+        const passadas = allAsgn.filter(a => a.event?.date < today);
+        const relatorioIds = new Set((relRes.data || []).map(r => r.assignmentId));
+        const semRelatorio = passadas.filter(a => !relatorioIds.has(a.id)).length;
+        const anuidadesVencidas = (anRes.data || []).filter(a => a.status === "vencido").length;
+        const anuidadesPendentes = (anRes.data || []).filter(a => a.status === "pendente").length;
+        const reembolsosPendentes = (reembRes.data || []).length;
+        const diariasPendentes = passadas.filter(a => (a.valorDiaria || 0) > 0 && !a.diariaPaga).length;
+
+        setPendencias({ semRelatorio, anuidadesVencidas, anuidadesPendentes, reembolsosPendentes, diariasPendentes });
       });
     } else {
       RefereeAvailabilityService.list({ refereeId }).then(r => { if (r.data) setMyAvail(r.data); });
@@ -118,6 +135,42 @@ export default function IntranetHome() {
             {canManage ? "Painel de gerenciamento da intranet de árbitros." : "Sua área pessoal na intranet FMA."}
           </p>
         </div>
+
+        {/* Pendências do admin */}
+        {canManage && pendencias && (pendencias.semRelatorio > 0 || pendencias.anuidadesVencidas > 0 || pendencias.anuidadesPendentes > 0 || pendencias.reembolsosPendentes > 0 || pendencias.diariasPendentes > 0) && (
+          <div style={{ background: "#fff", borderRadius: 12, padding: "18px 22px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 24, borderLeft: `4px solid #d97706` }}>
+            <div style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: "#d97706", marginBottom: 10 }}>
+              Pendencias
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {pendencias.reembolsosPendentes > 0 && (
+                <Link to="/intranet/admin/reembolsos" style={{ fontSize: 13, color: COLORS.dark, textDecoration: "none", fontFamily: FONTS.body }}>
+                  <strong style={{ color: "#d97706" }}>{pendencias.reembolsosPendentes}</strong> reembolso(s) aguardando aprovacao
+                </Link>
+              )}
+              {pendencias.semRelatorio > 0 && (
+                <Link to="/intranet/admin/relatorios-arbitragem" style={{ fontSize: 13, color: COLORS.dark, textDecoration: "none", fontFamily: FONTS.body }}>
+                  <strong style={{ color: "#d97706" }}>{pendencias.semRelatorio}</strong> escalacao(oes) sem relatorio preenchido
+                </Link>
+              )}
+              {pendencias.diariasPendentes > 0 && (
+                <Link to="/intranet/admin/diarias" style={{ fontSize: 13, color: COLORS.dark, textDecoration: "none", fontFamily: FONTS.body }}>
+                  <strong style={{ color: "#d97706" }}>{pendencias.diariasPendentes}</strong> diaria(s) pendente(s) de pagamento
+                </Link>
+              )}
+              {pendencias.anuidadesVencidas > 0 && (
+                <Link to="/admin/anuidades" style={{ fontSize: 13, color: COLORS.dark, textDecoration: "none", fontFamily: FONTS.body }}>
+                  <strong style={{ color: "#dc2626" }}>{pendencias.anuidadesVencidas}</strong> anuidade(s) vencida(s)
+                </Link>
+              )}
+              {pendencias.anuidadesPendentes > 0 && (
+                <Link to="/admin/anuidades" style={{ fontSize: 13, color: COLORS.dark, textDecoration: "none", fontFamily: FONTS.body }}>
+                  <strong style={{ color: "#d97706" }}>{pendencias.anuidadesPendentes}</strong> anuidade(s) pendente(s)
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Mural de avisos */}
         {avisos.length > 0 && (
