@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import IntranetLayout from "../IntranetLayout";
 import { RelatoriosService } from "../../../services/index";
+import { deleteFile } from "../../../services/storageService";
 import { COLORS, FONTS } from "../../../styles/colors";
 
 const STATUS_MAP = {
@@ -51,8 +52,23 @@ export default function RelatoriosArbitragemAdmin() {
   };
 
   const handleDevolver = async (id) => {
-    if (!confirm("Devolver o relatório? O árbitro precisará refazer do zero.")) return;
+    if (!confirm("Devolver o relatório? O árbitro precisará refazer do zero. Todas as fotos serão excluídas.")) return;
     setActionLoading(true);
+    // Excluir fotos do Storage
+    const rel = relatorios.find(r => r.id === id);
+    if (rel) {
+      const fotoCampos = [
+        "sinalizacaoArenaFotos", "postoMedicoFotos", "zonaLargadaChegadaFotos",
+        "numeroPeitoFotos", "guardaVolumesFotos", "banheirosFotos",
+        "marcacaoPercursoFotos", "setorLargadaFotos", "cronometragemFotos",
+        "hidratacaoFotos", "podioFotos", "fotoEquipeArbitragem", "fotosAnotacao",
+      ];
+      for (const campo of fotoCampos) {
+        for (const url of (rel[campo] || [])) {
+          await deleteFile(url).catch(() => {});
+        }
+      }
+    }
     await RelatoriosService.delete(id);
     setActionLoading(false);
     setSelected(null);
