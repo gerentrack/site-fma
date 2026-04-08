@@ -74,8 +74,8 @@ function RadioGroup({ options, value, onChange }) {
   );
 }
 
-function PhotoUpload({ label, urls = [], onUpload }) {
-  const ref = useRef(null);
+function PhotoUpload({ label, urls = [], onUpload, folder }) {
+  const fileRef = useRef(null);
   return (
     <Field label={label}>
       {urls.length > 0 && (
@@ -85,19 +85,24 @@ function PhotoUpload({ label, urls = [], onUpload }) {
           ))}
         </div>
       )}
-      <input type="file" ref={ref} accept="image/*" multiple onChange={async (e) => {
+      <input type="file" ref={fileRef} accept="image/*" multiple onChange={async (e) => {
         const files = Array.from(e.target.files || []);
         if (!files.length) return;
         const newUrls = [];
         for (const f of files) {
-          const r = await uploadFile(f, "relatorios");
+          const r = await uploadFile(f, folder || "relatorios");
           if (r.url) newUrls.push(r.url);
         }
         onUpload([...urls, ...newUrls]);
-        if (ref.current) ref.current.value = "";
+        if (fileRef.current) fileRef.current.value = "";
       }} style={{ fontSize: 12 }} />
     </Field>
   );
+}
+
+function slugify(str) {
+  return (str || "sem-nome").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9\s-]/g, "").trim().replace(/\s+/g, "-").toLowerCase().slice(0, 50);
 }
 
 const inp = { width: "100%", padding: "8px 12px", border: `1px solid ${COLORS.grayLight}`, borderRadius: 8, fontSize: 14, fontFamily: FONTS.body, boxSizing: "border-box" };
@@ -172,6 +177,7 @@ export default function RelatorioCorridaRua() {
 
   const evt = assignment?.event || {};
   const escalados = allAssignments;
+  const uploadFolder = `relatorios/${slugify(evt.organizer)}-${slugify(evt.title)}`;
 
   return (
     <IntranetLayout>
@@ -243,29 +249,29 @@ export default function RelatorioCorridaRua() {
             <>
               <Field label="Arena do Evento"><CheckGroup options={ARENA} value={form.arena || []} onChange={v => set("arena", v)} /></Field>
               <Field label="Sinalizacao de Arena"><CheckGroup options={SINALIZACAO_ARENA} value={form.sinalizacaoArena || []} onChange={v => set("sinalizacaoArena", v)} /></Field>
-              <PhotoUpload label="Fotos — Sinalizacao da Arena" urls={form.sinalizacaoArenaFotos || []} onUpload={v => set("sinalizacaoArenaFotos", v)} />
+              <PhotoUpload folder={uploadFolder} label="Fotos — Sinalizacao da Arena" urls={form.sinalizacaoArenaFotos || []} onUpload={v => set("sinalizacaoArenaFotos", v)} />
               <Field label="Sonorizacao da Arena"><CheckGroup options={SONORIZACAO} value={form.sonorizacao || []} onChange={v => set("sonorizacao", v)} /></Field>
               <Field label="Posto Medico" required><CheckGroup options={POSTO_MEDICO} value={form.postoMedico || []} onChange={v => set("postoMedico", v)} /></Field>
-              <PhotoUpload label="Fotos — Servicos Medicos" urls={form.postoMedicoFotos || []} onUpload={v => set("postoMedicoFotos", v)} />
-              <PhotoUpload label="Fotos — Zona de Largada / Chegada" urls={form.zonaLargadaChegadaFotos || []} onUpload={v => set("zonaLargadaChegadaFotos", v)} />
-              <PhotoUpload label="Fotos — Numero de Peito" urls={form.numeroPeitoFotos || []} onUpload={v => set("numeroPeitoFotos", v)} />
+              <PhotoUpload folder={uploadFolder} label="Fotos — Servicos Medicos" urls={form.postoMedicoFotos || []} onUpload={v => set("postoMedicoFotos", v)} />
+              <PhotoUpload folder={uploadFolder} label="Fotos — Zona de Largada / Chegada" urls={form.zonaLargadaChegadaFotos || []} onUpload={v => set("zonaLargadaChegadaFotos", v)} />
+              <PhotoUpload folder={uploadFolder} label="Fotos — Numero de Peito" urls={form.numeroPeitoFotos || []} onUpload={v => set("numeroPeitoFotos", v)} />
               <Field label="Guarda Volumes"><RadioGroup options={GUARDA_VOLUMES} value={form.guardaVolumes || ""} onChange={v => set("guardaVolumes", v)} /></Field>
-              <PhotoUpload label="Fotos — Guarda Volumes" urls={form.guardaVolumesFotos || []} onUpload={v => set("guardaVolumesFotos", v)} />
-              <PhotoUpload label="Fotos — Banheiros / Banheiro Quimico" urls={form.banheirosFotos || []} onUpload={v => set("banheirosFotos", v)} />
+              <PhotoUpload folder={uploadFolder} label="Fotos — Guarda Volumes" urls={form.guardaVolumesFotos || []} onUpload={v => set("guardaVolumesFotos", v)} />
+              <PhotoUpload folder={uploadFolder} label="Fotos — Banheiros / Banheiro Quimico" urls={form.banheirosFotos || []} onUpload={v => set("banheirosFotos", v)} />
             </>
           )}
 
           {/* ── Etapa 4: Percurso ── */}
           {step === 3 && (
             <>
-              <PhotoUpload label="Fotos — Marcacao do Percurso" urls={form.marcacaoPercursoFotos || []} onUpload={v => set("marcacaoPercursoFotos", v)} />
+              <PhotoUpload folder={uploadFolder} label="Fotos — Marcacao do Percurso" urls={form.marcacaoPercursoFotos || []} onUpload={v => set("marcacaoPercursoFotos", v)} />
               <Field label="Largada e Chegada"><CheckGroup options={COMENTARIOS_LARGADA} value={form.comentariosLargadaChegada || []} onChange={v => set("comentariosLargadaChegada", v)} /></Field>
-              <PhotoUpload label="Fotos — Setor de Largada" urls={form.setorLargadaFotos || []} onUpload={v => set("setorLargadaFotos", v)} />
+              <PhotoUpload folder={uploadFolder} label="Fotos — Setor de Largada" urls={form.setorLargadaFotos || []} onUpload={v => set("setorLargadaFotos", v)} />
               <Field label="Divisao de Elite"><CheckGroup options={DIVISAO_ELITE} value={form.divisaoElite || []} onChange={v => set("divisaoElite", v)} /></Field>
               <Field label="Cronometragem Eletronica">
                 <textarea style={textarea} value={form.cronometragemEletronica || ""} onChange={e => set("cronometragemEletronica", e.target.value)} placeholder="Informe o nome da empresa e o nome do operador do sistema." />
               </Field>
-              <PhotoUpload label="Fotos — Cronometragem" urls={form.cronometragemFotos || []} onUpload={v => set("cronometragemFotos", v)} />
+              <PhotoUpload folder={uploadFolder} label="Fotos — Cronometragem" urls={form.cronometragemFotos || []} onUpload={v => set("cronometragemFotos", v)} />
               <Field label="Medicao do Percurso"><RadioGroup options={MEDICAO_PERCURSO} value={form.medicaoPercurso || ""} onChange={v => set("medicaoPercurso", v)} /></Field>
               <Field label="Trajeto do Percurso"><CheckGroup options={TRAJETO_PERCURSO} value={form.trajetoPercurso || []} onChange={v => set("trajetoPercurso", v)} /></Field>
               <Field label="Sinalizacao do Percurso"><CheckGroup options={SINALIZACAO_PERCURSO} value={form.sinalizacaoPercurso || []} onChange={v => set("sinalizacaoPercurso", v)} /></Field>
@@ -276,13 +282,13 @@ export default function RelatorioCorridaRua() {
           {step === 4 && (
             <>
               <Field label="Hidratacao"><CheckGroup options={HIDRATACAO} value={form.hidratacao || []} onChange={v => set("hidratacao", v)} /></Field>
-              <PhotoUpload label="Fotos — Hidratacao" urls={form.hidratacaoFotos || []} onUpload={v => set("hidratacaoFotos", v)} />
+              <PhotoUpload folder={uploadFolder} label="Fotos — Hidratacao" urls={form.hidratacaoFotos || []} onUpload={v => set("hidratacaoFotos", v)} />
               <Field label="Podio / Back-Drop"><CheckGroup options={PODIO_BACKDROP} value={form.podioBackdrop || []} onChange={v => set("podioBackdrop", v)} /></Field>
-              <PhotoUpload label="Fotos — Podio / Back-Drop" urls={form.podioFotos || []} onUpload={v => set("podioFotos", v)} />
+              <PhotoUpload folder={uploadFolder} label="Fotos — Podio / Back-Drop" urls={form.podioFotos || []} onUpload={v => set("podioFotos", v)} />
               <Field label="Premiacao"><CheckGroup options={PREMIACAO} value={form.premiacao || []} onChange={v => set("premiacao", v)} /></Field>
               <Field label="Classificacao"><CheckGroup options={CLASSIFICACAO} value={form.classificacao || []} onChange={v => set("classificacao", v)} /></Field>
-              <PhotoUpload label="Foto Equipe de Arbitragem" urls={form.fotoEquipeArbitragem || []} onUpload={v => set("fotoEquipeArbitragem", v)} />
-              <PhotoUpload label="Fotos Anotacao Arbitragem" urls={form.fotosAnotacao || []} onUpload={v => set("fotosAnotacao", v)} />
+              <PhotoUpload folder={uploadFolder} label="Foto Equipe de Arbitragem" urls={form.fotoEquipeArbitragem || []} onUpload={v => set("fotoEquipeArbitragem", v)} />
+              <PhotoUpload folder={uploadFolder} label="Fotos Anotacao Arbitragem" urls={form.fotosAnotacao || []} onUpload={v => set("fotosAnotacao", v)} />
             </>
           )}
 
