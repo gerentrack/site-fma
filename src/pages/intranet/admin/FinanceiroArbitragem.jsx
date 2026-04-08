@@ -42,6 +42,9 @@ export default function FinanceiroArbitragem() {
   const [config, setConfig] = useState({});
   const [expandido, setExpandido] = useState(null);
   const [reciboPreview, setReciboPreview] = useState(null); // { url, nome }
+  const [modalRecibo, setModalRecibo] = useState(null); // { type, id, numero, data, existente }
+  const [reciboNumeroInput, setReciboNumeroInput] = useState("");
+  const [gerandoRecibo, setGerandoRecibo] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
@@ -323,17 +326,23 @@ export default function FinanceiroArbitragem() {
                                   {a.diariaPaga && (
                                     <button onClick={(ev) => {
                                       ev.stopPropagation();
-                                      gerarEMostrarRecibo({
-                                        arbitroNome: ref.name, arbitroCpf: ref.cpf,
-                                        funcao: fnMap[a.refereeFunction] || a.refereeFunction,
-                                        evento: e.title, dataEvento: a.event?.date, cidade: a.event?.city,
-                                        valorDiaria: a.valorDiaria, transporte: a.transporte,
-                                        hospedagem: a.hospedagem, alimentacao: a.alimentacao,
-                                        reembolsos: reembs.filter(r => r.status === "pago").map(r => ({ categoria: r.categoria, descricao: r.descricao, valor: (r.valorAprovado ?? r.valor) || 0 })),
-                                        assinaturaUrl: config.assinaturaPresidenteUrl || "",
-                                      }, setReciboPreview);
-                                    }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                                      Recibo
+                                      setModalRecibo({
+                                        type: "diaria", id: a.id,
+                                        numero: a.reciboNumero || "", data: a.reciboData || "",
+                                        existente: !!a.reciboNumero,
+                                        dados: {
+                                          arbitroNome: ref.name, arbitroCpf: ref.cpf,
+                                          funcao: fnMap[a.refereeFunction] || a.refereeFunction,
+                                          evento: e.title, dataEvento: a.event?.date, cidade: a.event?.city,
+                                          valorDiaria: a.valorDiaria, transporte: a.transporte,
+                                          hospedagem: a.hospedagem, alimentacao: a.alimentacao,
+                                          reembolsos: reembs.filter(r => r.status === "pago").map(r => ({ categoria: r.categoria, descricao: r.descricao, valor: (r.valorAprovado ?? r.valor) || 0 })),
+                                          assinaturaUrl: config.assinaturaPresidenteUrl || "",
+                                        },
+                                      });
+                                      setReciboNumeroInput(a.reciboNumero || "");
+                                    }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: a.reciboNumero ? "#15803d" : COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                                      {a.reciboNumero ? `${a.reciboNumero}` : "Gerar Recibo"}
                                     </button>
                                   )}
                                 </div>
@@ -405,17 +414,23 @@ export default function FinanceiroArbitragem() {
                                   </span>
                                   {a.diariaPaga && <button onClick={(ev) => {
                                     ev.stopPropagation();
-                                    gerarEMostrarRecibo({
-                                      arbitroNome: arb.nome, arbitroCpf: ref.cpf,
-                                      funcao: fnMap[a.refereeFunction] || a.refereeFunction,
-                                      evento: evt.title, dataEvento: evt.date, cidade: evt.city,
-                                      valorDiaria: a.valorDiaria, transporte: a.transporte,
-                                      hospedagem: a.hospedagem, alimentacao: a.alimentacao,
-                                      reembolsos: reembs.filter(r => r.status === "pago").map(r => ({ categoria: r.categoria, descricao: r.descricao, valor: (r.valorAprovado ?? r.valor) || 0 })),
-                                      assinaturaUrl: config.assinaturaPresidenteUrl || "",
-                                    }, setReciboPreview);
-                                  }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                                    Recibo
+                                    setModalRecibo({
+                                      type: "diaria", id: a.id,
+                                      numero: a.reciboNumero || "", data: a.reciboData || "",
+                                      existente: !!a.reciboNumero,
+                                      dados: {
+                                        arbitroNome: arb.nome, arbitroCpf: ref.cpf,
+                                        funcao: fnMap[a.refereeFunction] || a.refereeFunction,
+                                        evento: evt.title, dataEvento: evt.date, cidade: evt.city,
+                                        valorDiaria: a.valorDiaria, transporte: a.transporte,
+                                        hospedagem: a.hospedagem, alimentacao: a.alimentacao,
+                                        reembolsos: reembs.filter(r => r.status === "pago").map(r => ({ categoria: r.categoria, descricao: r.descricao, valor: (r.valorAprovado ?? r.valor) || 0 })),
+                                        assinaturaUrl: config.assinaturaPresidenteUrl || "",
+                                      },
+                                    });
+                                    setReciboNumeroInput(a.reciboNumero || "");
+                                  }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: a.reciboNumero ? "#15803d" : COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                                    {a.reciboNumero ? `${a.reciboNumero}` : "Gerar Recibo"}
                                   </button>}
                                 </div>
                                 <div style={{ fontSize: 12, color: COLORS.gray, display: "flex", flexDirection: "column", gap: 2 }}>
@@ -463,26 +478,23 @@ export default function FinanceiroArbitragem() {
                             <td style={td}>{a.confirmadoEm ? new Date(a.confirmadoEm).toLocaleDateString("pt-BR") : "—"}</td>
                             <td style={td}><span style={{ fontSize: 12, color: a.reciboNumero ? "#15803d" : COLORS.gray }}>{a.reciboNumero || "—"}</span></td>
                             <td style={td}>
-                              <button onClick={async () => {
-                                let numero = a.reciboNumero;
-                                if (!numero) {
-                                  const seq = await reservarNumeroRecibo(ano);
-                                  numero = formatarNumeroRecibo(seq, ano);
-                                  await AnuidadesService.update(a.id, { reciboNumero: numero });
-                                }
-                                const blob = await gerarAnuidadeReciboPdf({
-                                  reciboNumero: numero,
-                                  arbitroNome: a.refereeName || ref.name,
-                                  arbitroCpf: ref.cpf || "",
-                                  arbitroNivel: a.refereeNivel,
-                                  ano: a.ano, valor: a.valor,
-                                  confirmadoEm: a.confirmadoEm,
-                                  confirmadoPor: a.confirmadoPor,
-                                  assinaturaUrl: config.assinaturaPresidenteUrl || "",
+                              <button onClick={() => {
+                                setModalRecibo({
+                                  type: "anuidade", id: a.id,
+                                  numero: a.reciboNumero || "", data: "",
+                                  existente: !!a.reciboNumero,
+                                  dados: {
+                                    arbitroNome: a.refereeName || ref.name, arbitroCpf: ref.cpf || "",
+                                    funcao: `Anuidade ${a.ano}`, evento: `Anuidade de Arbitragem ${a.ano}`,
+                                    dataEvento: a.confirmadoEm?.slice(0, 10), cidade: "",
+                                    valorDiaria: a.valor, transporte: 0, hospedagem: 0, alimentacao: 0,
+                                    reembolsos: [],
+                                    assinaturaUrl: config.assinaturaPresidenteUrl || "",
+                                  },
                                 });
-                                setReciboPreview({ url: URL.createObjectURL(blob), nome: `Recibo_Anuidade_${(a.refereeName || "arbitro").replace(/\s+/g, "_")}_${ano}.pdf` });
-                              }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                                Recibo
+                                setReciboNumeroInput(a.reciboNumero || "");
+                              }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: a.reciboNumero ? "#15803d" : COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                                {a.reciboNumero || "Gerar Recibo"}
                               </button>
                             </td>
                           </tr>
@@ -494,20 +506,89 @@ export default function FinanceiroArbitragem() {
               </div>
             )}
 
+      {/* Modal recibo — geração ou consulta */}
+      {modalRecibo && !reciboPreview && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={() => setModalRecibo(null)}>
+          <div style={{ background: "#fff", borderRadius: 14, padding: 24, width: 400 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 800, color: COLORS.dark, margin: "0 0 16px" }}>
+              {modalRecibo.existente ? "Consultar Recibo" : "Gerar Recibo"}
+            </h3>
+
+            {modalRecibo.existente ? (
+              <div>
+                <div style={{ fontSize: 14, marginBottom: 8 }}>Recibo: <strong>{modalRecibo.numero}</strong></div>
+                {modalRecibo.data && <div style={{ fontSize: 13, color: COLORS.gray, marginBottom: 16 }}>Gerado em: {modalRecibo.data.split("-").reverse().join("/")}</div>}
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                  <button onClick={async () => {
+                    if (!confirm("Excluir recibo? Um novo numero sera gerado na proxima emissao.")) return;
+                    if (modalRecibo.type === "diaria") await RefereeAssignmentsService.update(modalRecibo.id, { reciboNumero: "", reciboData: "" });
+                    else if (modalRecibo.type === "anuidade") await AnuidadesService.update(modalRecibo.id, { reciboNumero: "" });
+                    setModalRecibo(null); fetchData();
+                  }} style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #dc2626", background: "transparent", color: "#dc2626", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                    Excluir Recibo
+                  </button>
+                  <button onClick={async () => {
+                    setGerandoRecibo(true);
+                    const blob = await gerarReciboPagamentoArbitroPdf({ ...modalRecibo.dados, reciboNumero: modalRecibo.numero });
+                    setReciboPreview({ url: URL.createObjectURL(blob), nome: `Recibo_${modalRecibo.numero.replace("/", "-")}.pdf` });
+                    setGerandoRecibo(false);
+                  }} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: COLORS.primary, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                    Visualizar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: COLORS.grayDark, display: "block", marginBottom: 4 }}>Numero do recibo</label>
+                  <input value={reciboNumeroInput} onChange={e => setReciboNumeroInput(e.target.value)}
+                    placeholder="Vazio = gerar automatico"
+                    style={{ width: "100%", padding: "10px 12px", border: `1px solid ${COLORS.grayLight}`, borderRadius: 8, fontSize: 14, boxSizing: "border-box" }} />
+                  <div style={{ fontSize: 11, color: COLORS.gray, marginTop: 4 }}>Deixe vazio para gerar numero sequencial automatico. Ou digite caso tenha emitido fora do sistema.</div>
+                </div>
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                  <button onClick={() => setModalRecibo(null)} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", fontSize: 13, cursor: "pointer" }}>Cancelar</button>
+                  <button disabled={gerandoRecibo} onClick={async () => {
+                    setGerandoRecibo(true);
+                    let numero = reciboNumeroInput.trim();
+                    if (!numero) {
+                      const seq = await reservarNumeroRecibo(new Date().getFullYear());
+                      numero = formatarNumeroRecibo(seq, new Date().getFullYear());
+                    }
+                    const dataHoje = new Date().toISOString().slice(0, 10);
+                    // Salvar no registro
+                    if (modalRecibo.type === "diaria") await RefereeAssignmentsService.update(modalRecibo.id, { reciboNumero: numero, reciboData: dataHoje });
+                    else if (modalRecibo.type === "anuidade") await AnuidadesService.update(modalRecibo.id, { reciboNumero: numero });
+                    // Gerar PDF
+                    const blob = await gerarReciboPagamentoArbitroPdf({ ...modalRecibo.dados, reciboNumero: numero });
+                    setReciboPreview({ url: URL.createObjectURL(blob), nome: `Recibo_${numero.replace("/", "-")}.pdf` });
+                    setGerandoRecibo(false);
+                    fetchData();
+                  }} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#15803d", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                    {gerandoRecibo ? "Gerando..." : "Gerar Recibo"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Modal preview recibo */}
       {reciboPreview && (
         <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center" }}
-          onClick={() => { URL.revokeObjectURL(reciboPreview.url); setReciboPreview(null); }}>
+          onClick={() => { URL.revokeObjectURL(reciboPreview.url); setReciboPreview(null); setModalRecibo(null); }}>
           <div style={{ background: "#fff", borderRadius: 14, padding: 24, maxWidth: 700, width: "95%", maxHeight: "90vh", overflow: "auto" }}
             onClick={e => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <span style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 800, color: COLORS.dark }}>Recibo de Pagamento</span>
-              <button onClick={() => { URL.revokeObjectURL(reciboPreview.url); setReciboPreview(null); }}
+              <button onClick={() => { URL.revokeObjectURL(reciboPreview.url); setReciboPreview(null); setModalRecibo(null); }}
                 style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: COLORS.gray }}>X</button>
             </div>
             <iframe src={`${reciboPreview.url}#zoom=page-width`} style={{ width: "100%", height: 500, border: `1px solid ${COLORS.grayLight}`, borderRadius: 8, background: "#f4f4f4" }} />
             <div style={{ display: "flex", gap: 8, marginTop: 12, justifyContent: "flex-end" }}>
-              <button onClick={() => { URL.revokeObjectURL(reciboPreview.url); setReciboPreview(null); }}
+              <button onClick={() => { URL.revokeObjectURL(reciboPreview.url); setReciboPreview(null); setModalRecibo(null); }}
                 style={{ padding: "8px 18px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", fontSize: 13, cursor: "pointer" }}>Fechar</button>
               <button onClick={() => {
                 const win = window.open(reciboPreview.url);
