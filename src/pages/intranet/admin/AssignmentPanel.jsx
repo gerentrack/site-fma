@@ -39,8 +39,11 @@ function getDiariaByFunction(fn, nivel) {
 
 const smallInp = { padding: "5px 8px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, fontSize: 12, fontFamily: FONTS.body, width: 80, boxSizing: "border-box" };
 
+const FUNCOES_CUMULAVEIS = ["coordenador_ev", "representante"];
+
 function RefereeRow({ ref_, tab, isAssigned, assign, saving }) {
-  const [selFn, setSelFn] = useState("percurso");
+  const [selFn, setSelFn] = useState("auxiliar");
+  const [selFnExtra, setSelFnExtra] = useState("");
   const [diaria, setDiaria] = useState({ valorDiaria: 0, transporte: 0, hospedagem: 0, alimentacao: 0 });
   const [showDiaria, setShowDiaria] = useState(false);
   const alreadyAssigned = isAssigned(ref_.id);
@@ -49,6 +52,7 @@ function RefereeRow({ ref_, tab, isAssigned, assign, saving }) {
     setSelFn(fn);
     const valor = getDiariaByFunction(fn, ref_.nivel);
     setDiaria(d => ({ ...d, valorDiaria: valor }));
+    if (!FUNCOES_CUMULAVEIS.includes(fn)) setSelFnExtra("");
   };
 
   const total = (diaria.valorDiaria || 0) + (diaria.transporte || 0) + (diaria.hospedagem || 0) + (diaria.alimentacao || 0);
@@ -66,16 +70,25 @@ function RefereeRow({ ref_, tab, isAssigned, assign, saving }) {
         {alreadyAssigned ? (
           <span style={{ padding: "5px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: "#e6f9ee", color: "#007733" }}>Ja escalado</span>
         ) : (
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
             <select value={selFn} onChange={e => handleFnChange(e.target.value)}
               style={{ padding: "7px 10px", borderRadius: 7, border: `1.5px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 13, outline: "none", cursor: "pointer" }}>
               {fnOpts.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
             </select>
+            {FUNCOES_CUMULAVEIS.includes(selFn) && (
+              <select value={selFnExtra} onChange={e => setSelFnExtra(e.target.value)}
+                style={{ padding: "7px 10px", borderRadius: 7, border: `1.5px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 12, outline: "none", cursor: "pointer" }}>
+                <option value="">+ Cumular com...</option>
+                {fnOpts.filter(f => f.value !== selFn && (f.value === "chefe" || FUNCOES_CUMULAVEIS.includes(f.value))).map(f => (
+                  <option key={f.value} value={f.value}>{f.label}</option>
+                ))}
+              </select>
+            )}
             <button onClick={() => setShowDiaria(!showDiaria)}
               style={{ padding: "7px 10px", borderRadius: 7, border: `1px solid ${COLORS.grayLight}`, background: showDiaria ? COLORS.offWhite : "transparent", cursor: "pointer", fontSize: 11, fontFamily: FONTS.heading, fontWeight: 600, color: COLORS.gray }}>
               R$
             </button>
-            <button onClick={() => assign(ref_.id, selFn, diaria)} disabled={saving === ref_.id}
+            <button onClick={() => assign(ref_.id, selFn, diaria, selFnExtra)} disabled={saving === ref_.id}
               style={{ padding: "8px 16px", borderRadius: 7, background: saving === ref_.id ? COLORS.gray : "#007733", color: "#fff", border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
               {saving === ref_.id ? "..." : "Escalar"}
             </button>
@@ -212,10 +225,11 @@ export function AssignmentEditor() {
   const isAssigned = (refereeId) => assignments.some(a => a.refereeId === refereeId);
   const getAssignment = (refereeId) => assignments.find(a => a.refereeId === refereeId);
 
-  const assign = async (refereeId, refFn, diariaData = {}) => {
+  const assign = async (refereeId, refFn, diariaData = {}, funcaoExtra = "") => {
     setSaving(refereeId);
     await RefereeAssignmentsService.assign({
-      eventId, refereeId, refereeFunction: refFn, status: "confirmado",
+      eventId, refereeId, refereeFunction: refFn, funcaoExtra: funcaoExtra || "",
+      status: "confirmado",
       valorDiaria: diariaData.valorDiaria || 0,
       transporte: diariaData.transporte || 0,
       hospedagem: diariaData.hospedagem || 0,
@@ -228,13 +242,16 @@ export function AssignmentEditor() {
       const dataFormatada = event.date
         ? new Date(event.date + "T12:00:00").toLocaleDateString("pt-BR")
         : "A confirmar";
+      const fnLabel = fnOpts.find(f => f.value === refFn)?.label || refFn;
+      const fnExtraLabel = funcaoExtra ? fnOpts.find(f => f.value === funcaoExtra)?.label : "";
+      const funcaoTexto = fnExtraLabel ? `${fnLabel} / ${fnExtraLabel}` : fnLabel;
       notificarEscalacaoArbitro({
         arbitroEmail: referee.email,
         arbitroNome:  referee.name,
         evento:       event.title,
         data:         dataFormatada,
         local:        event.city || event.location || "A confirmar",
-        funcao:       refFn,
+        funcao:       funcaoTexto,
         observacao:   event.description || "",
       }).catch(e => console.warn("Email escalação:", e));
     }

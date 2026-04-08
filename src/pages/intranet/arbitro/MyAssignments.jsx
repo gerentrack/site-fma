@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import IntranetLayout from "../IntranetLayout";
 import { useIntranet } from "../../../context/IntranetContext";
-import { RefereeAssignmentsService } from "../../../services/index";
+import { RefereeAssignmentsService, RefereesService } from "../../../services/index";
 import { COLORS, FONTS } from "../../../styles/colors";
 import { CALENDAR_CATEGORIES, REFEREE_FUNCTIONS } from "../../../config/navigation";
 
@@ -21,12 +21,20 @@ const STATUS_STYLE = {
 export default function MyAssignments() {
   const { refereeId } = useIntranet();
   const [assignments, setAssignments] = useState([]);
+  const [allAssignments, setAllAssignments] = useState([]);
+  const [referees, setReferees] = useState({});
   const [loading, setLoading] = useState(true);
   const [showPast, setShowPast] = useState(false);
 
   useEffect(() => {
-    RefereeAssignmentsService.getByReferee(refereeId).then(r => {
-      if (r.data) setAssignments(r.data);
+    Promise.all([
+      RefereeAssignmentsService.getByReferee(refereeId),
+      RefereeAssignmentsService.list(),
+      RefereesService.list(),
+    ]).then(([myR, allR, refR]) => {
+      if (myR.data) setAssignments(myR.data);
+      if (allR.data) setAllAssignments(allR.data);
+      if (refR.data) setReferees(Object.fromEntries(refR.data.map(r => [r.id, r])));
       setLoading(false);
     });
   }, [refereeId]);
@@ -89,10 +97,36 @@ export default function MyAssignments() {
                       <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 4 }}>
                         📍 {evt.city}{evt.location ? ` — ${evt.location}` : ""}{evt.time ? ` • ${evt.time}` : ""}
                       </div>
-                      <div style={{ fontFamily: FONTS.heading, fontSize: 13, color: COLORS.primary, marginTop: 8, background: `${COLORS.primary}10`, display: "inline-block", padding: "4px 12px", borderRadius: 20 }}>
-                        ⚖️ Função: {fnMap[asgn.refereeFunction] || asgn.refereeFunction}
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                        <span style={{ fontFamily: FONTS.heading, fontSize: 13, color: COLORS.primary, background: `${COLORS.primary}10`, display: "inline-block", padding: "4px 12px", borderRadius: 20 }}>
+                          Funcao: {fnMap[asgn.refereeFunction] || asgn.refereeFunction}
+                        </span>
+                        {asgn.funcaoExtra && (
+                          <span style={{ fontFamily: FONTS.heading, fontSize: 13, color: "#0066cc", background: "#eff6ff", display: "inline-block", padding: "4px 12px", borderRadius: 20 }}>
+                            + {fnMap[asgn.funcaoExtra] || asgn.funcaoExtra}
+                          </span>
+                        )}
                       </div>
                       {asgn.notes && <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 6, fontStyle: "italic" }}>Obs: {asgn.notes}</div>}
+                      {/* Colegas escalados */}
+                      {(() => {
+                        const colegas = allAssignments.filter(a => a.eventId === asgn.eventId && a.refereeId !== refereeId);
+                        if (colegas.length === 0) return null;
+                        return (
+                          <div style={{ marginTop: 10, padding: "8px 12px", background: COLORS.offWhite, borderRadius: 8 }}>
+                            <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, marginBottom: 4 }}>Equipe escalada</div>
+                            {colegas.map(c => {
+                              const ref = referees[c.refereeId] || {};
+                              const fn = c.refereeFunction === "representante" ? "Coordenacao" : (fnMap[c.refereeFunction] || c.refereeFunction);
+                              return (
+                                <div key={c.id} style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.dark, padding: "2px 0" }}>
+                                  {ref.name || "Arbitro"} — <span style={{ color: COLORS.gray }}>{fn}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

@@ -261,13 +261,10 @@ export const REFEREE_STATUS = [
 ];
 
 export const REFEREE_FUNCTIONS = [
-  { value: "chefe",     label: "Árbitro Chefe" },
-  { value: "largada",   label: "Árbitro de Largada" },
-  { value: "chegada",   label: "Árbitro de Chegada" },
-  { value: "percurso",  label: "Árbitro de Percurso" },
-  { value: "pista",     label: "Árbitro de Pista" },
-  { value: "aferidor",  label: "Aferidor de Cronômetro" },
-  { value: "juiz",      label: "Juiz de Prova" },
+  { value: "chefe",          label: "Árbitro Chefe" },
+  { value: "auxiliar",       label: "Árbitro Auxiliar" },
+  { value: "coordenador_ev", label: "Coordenador" },
+  { value: "representante",  label: "Representante da FMA", restrito: true },
 ];
 
 export const INTRANET_NAV_ARBITRO = [
