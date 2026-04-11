@@ -147,7 +147,6 @@ export default function Footer() {
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
           <Link to="/privacidade" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none", fontSize: 11 }}>Política de Privacidade</Link>
           <Link to="/termos" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none", fontSize: 11 }}>Termos de Uso</Link>
-          <span style={{ color: "rgba(255,255,255,0.25)", fontSize: 11 }}>DPO/LGPD: mg@cbat.org.br</span>
           <Link to="/transparencia/ouvidoria" style={{ color: "rgba(255,255,255,0.35)", textDecoration: "none", fontSize: 11 }}>Ouvidoria</Link>
           <Link to="/admin" style={{ color: "rgba(255,255,255,0.2)", textDecoration: "none", fontSize: 11 }}>Painel Admin</Link>
         </div>
