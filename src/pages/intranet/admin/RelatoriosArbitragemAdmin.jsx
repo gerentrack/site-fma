@@ -216,6 +216,25 @@ export default function RelatoriosArbitragemAdmin() {
                 </div>
               ))}
 
+              {/* Assinatura digital */}
+              {selected.assinaturaDigital && (
+                <div style={{ marginTop: 16, padding: "14px 16px", borderRadius: 8, background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                  <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#15803d", marginBottom: 8 }}>Assinatura Digital</div>
+                  <div style={{ background: "#fff", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, padding: 8, display: "inline-block" }}>
+                    <img src={selected.assinaturaDigital} alt="Assinatura" style={{ height: 80, display: "block" }} />
+                  </div>
+                  {selected.assinaturaEvidencia && (
+                    <div style={{ marginTop: 10, fontSize: 11, fontFamily: FONTS.body, color: COLORS.gray, lineHeight: 1.6 }}>
+                      <div><strong>Assinado por:</strong> {selected.assinaturaEvidencia.refereeName}</div>
+                      <div><strong>Data/hora:</strong> {selected.assinaturaEvidencia.assinadoEm ? new Date(selected.assinaturaEvidencia.assinadoEm).toLocaleString("pt-BR") : "—"}</div>
+                      <div><strong>ID:</strong> {selected.assinaturaEvidencia.refereeId}</div>
+                      <div><strong>Dispositivo:</strong> {(selected.assinaturaEvidencia.userAgent || "").slice(0, 80)}...</div>
+                      <div><strong>Base legal:</strong> {selected.assinaturaEvidencia.baseLegal}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Observação do admin (pendência) */}
               {selected.observacaoAdmin && (
                 <div style={{ marginTop: 16, padding: "12px 16px", borderRadius: 8, background: "#fffbeb", border: "1px solid #fde68a" }}>
