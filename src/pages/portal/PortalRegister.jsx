@@ -14,6 +14,7 @@ import TermosUso from "../public/TermosUso";
 import { enviarBoasVindasOrganizador } from "../../services/emailService";
 import { validarCPF, validarCNPJ, cpfCnpjJaExisteOrganizador } from "../../utils/cpfCnpj";
 import { LGPD_VERSIONS } from "../../config/navigation";
+import { useCep } from "../../hooks/useCep";
 
 const ESTADOS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
@@ -70,6 +71,15 @@ export default function PortalRegister() {
   const [cnpjValidated, setCnpjValidated] = useState(false);
   const [cnpjFound, setCnpjFound] = useState(false);
   const [legalModal, setLegalModal] = useState(null); // "privacidade" | "termos" | null
+
+  const { setCep: setCepHook, loading: cepLoading } = useCep((result) => {
+    setForm(f => ({
+      ...f,
+      address: [result.logradouro, result.bairro].filter(Boolean).join(", ") || f.address,
+      city: result.cidade || f.city,
+      state: result.estado || f.state,
+    }));
+  });
 
   useEffect(() => {
     if (isAuthenticated) navigate("/portal", { replace: true });
@@ -245,7 +255,20 @@ export default function PortalRegister() {
               </Field>
               <div />
 
-              {/* Endereço completo */}
+              {/* Endereço — via CEP quando CNPJ não encontrado */}
+              {!cnpjFound && (
+                <div style={{ gridColumn: "1/-1" }}>
+                  <Field label="CEP">
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <input value={form.cep || ""}
+                        onChange={e => { const v = e.target.value; set("cep", v); setCepHook(v); }}
+                        placeholder="00000-000" maxLength={9}
+                        style={{ ...inpStyle, maxWidth: 160 }} />
+                      {cepLoading && <span style={{ fontSize: 12, color: COLORS.gray }}>Buscando...</span>}
+                    </div>
+                  </Field>
+                </div>
+              )}
               <div style={{ gridColumn: "1/-1" }}>
                 <Field label="Endereço">
                   <input value={cnpjFound ? (form.address || "—") : form.address} readOnly={cnpjFound}
