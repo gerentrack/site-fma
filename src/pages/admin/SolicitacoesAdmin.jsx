@@ -1031,7 +1031,7 @@ export function SolicitacaoEditor() {
                 <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, display: "block", marginBottom: 5 }}>
                   Número de protocolo
                   <span style={{ fontFamily: FONTS.body, fontSize: 10, fontWeight: 400, textTransform: "none", marginLeft: 6 }}>
-                    (gerado automaticamente ao iniciar análise)
+                    (gerado automaticamente no envio da solicitacao)
                   </span>
                 </label>
                 {sol.protocoloFMA ? (
@@ -1056,7 +1056,7 @@ export function SolicitacaoEditor() {
                     fontFamily: FONTS.body, fontSize: 12, color: "#92400e",
                     display: "flex", alignItems: "center", gap: 8,
                   }}>
-                    ⏳ Será gerado automaticamente ao mudar o status para <strong>Em análise</strong>.
+                    Sera gerado automaticamente quando o organizador enviar a solicitacao.
                   </div>
                 )}
               </div>
