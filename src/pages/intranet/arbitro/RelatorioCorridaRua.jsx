@@ -9,6 +9,7 @@ import IntranetLayout from "../IntranetLayout";
 import { useIntranet } from "../../../context/IntranetContext";
 import { RelatoriosService, RefereeAssignmentsService, RefereesService, SolicitacoesService } from "../../../services/index";
 import { uploadFile } from "../../../services/storageService";
+import { notificarFmaRelatorioEnviado } from "../../../services/emailService";
 import { COLORS, FONTS } from "../../../styles/colors";
 import SignaturePad, { gerarEvidenciaAssinatura } from "../../../components/ui/SignaturePad";
 
@@ -204,6 +205,14 @@ export default function RelatorioCorridaRua() {
       if (r.data) setExistingId(r.data.id);
     }
     setSaving(false);
+    // Notificar FMA quando relatório é enviado
+    if (enviar) {
+      notificarFmaRelatorioEnviado({
+        arbitroNome: name || "Árbitro",
+        evento: evt.title || "Evento",
+        eventoData: evt.date || "",
+      }).catch(() => {});
+    }
     setMsg(enviar ? "Relatorio enviado!" : "Rascunho salvo!");
     if (enviar) setTimeout(() => navigate("/intranet/escalas"), 2000);
     else setTimeout(() => setMsg(""), 3000);

@@ -479,3 +479,206 @@ export async function notificarPendenciaRelatorio({ arbitroEmail, arbitroNome, e
   `);
   return enviarEmail({ to: arbitroEmail, subject: `[FMA] Pendencia no relatorio: ${evento}`, html });
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 10. Notificações do Portal do Organizador
+// ═════════════════════════════════════════════════════════════════════════════
+
+export async function notificarPagamentoConfirmado({ organizadorEmail, organizadorNome, protocolo, evento, valor }) {
+  const html = templateBase(`
+    <p>Ola, <strong>${organizadorNome}</strong>!</p>
+    <p>O pagamento da sua solicitacao foi <strong style="color:#15803d;">confirmado</strong>.</p>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Protocolo</td><td style="padding:10px 14px;border:1px solid #eee;">${protocolo || "—"}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Evento</td><td style="padding:10px 14px;border:1px solid #eee;">${evento}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Valor</td><td style="padding:10px 14px;border:1px solid #eee;">R$ ${(valor || 0).toFixed(2)}</td></tr>
+    </table>
+    <p style="text-align:center;margin:24px 0;"><a href="${PORTAL_LINK}" style="display:inline-block;padding:12px 28px;background:#0066cc;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar o Portal</a></p>
+  `);
+  return enviarEmail({ to: organizadorEmail, subject: `[FMA] Pagamento confirmado — ${evento}`, html });
+}
+
+export async function notificarCobrancaPagamento({ organizadorEmail, organizadorNome, protocolo, evento, valor }) {
+  const html = templateBase(`
+    <p>Ola, <strong>${organizadorNome}</strong>!</p>
+    <p>Sua solicitacao possui um <strong style="color:#d97706;">pagamento pendente</strong>.</p>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Protocolo</td><td style="padding:10px 14px;border:1px solid #eee;">${protocolo || "—"}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Evento</td><td style="padding:10px 14px;border:1px solid #eee;">${evento}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Valor</td><td style="padding:10px 14px;border:1px solid #eee;">R$ ${(valor || 0).toFixed(2)}</td></tr>
+    </table>
+    <p>Acesse o Portal para anexar o comprovante de pagamento.</p>
+    <p style="text-align:center;margin:24px 0;"><a href="${PORTAL_LINK}" style="display:inline-block;padding:12px 28px;background:#d97706;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar o Portal</a></p>
+  `);
+  return enviarEmail({ to: organizadorEmail, subject: `[FMA] Pagamento pendente — ${evento}`, html });
+}
+
+export async function notificarArquivoFmaEnviado({ organizadorEmail, organizadorNome, protocolo, evento, nomeArquivo }) {
+  const html = templateBase(`
+    <p>Ola, <strong>${organizadorNome}</strong>!</p>
+    <p>A FMA enviou um novo documento referente a sua solicitacao:</p>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Protocolo</td><td style="padding:10px 14px;border:1px solid #eee;">${protocolo || "—"}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Evento</td><td style="padding:10px 14px;border:1px solid #eee;">${evento}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Arquivo</td><td style="padding:10px 14px;border:1px solid #eee;">${nomeArquivo}</td></tr>
+    </table>
+    <p style="text-align:center;margin:24px 0;"><a href="${PORTAL_LINK}" style="display:inline-block;padding:12px 28px;background:#0066cc;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver no Portal</a></p>
+  `);
+  return enviarEmail({ to: organizadorEmail, subject: `[FMA] Novo documento — ${evento}`, html });
+}
+
+export async function notificarPermitGerado({ organizadorEmail, organizadorNome, protocolo, evento, tipo }) {
+  const tipoLabel = tipo === "chancela" ? "Chancela" : "Permit";
+  const html = templateBase(`
+    <p>Ola, <strong>${organizadorNome}</strong>!</p>
+    <p>O <strong>${tipoLabel}</strong> do seu evento foi gerado e esta disponivel para download:</p>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Protocolo</td><td style="padding:10px 14px;border:1px solid #eee;">${protocolo || "—"}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Evento</td><td style="padding:10px 14px;border:1px solid #eee;">${evento}</td></tr>
+    </table>
+    <p style="text-align:center;margin:24px 0;"><a href="${PORTAL_LINK}" style="display:inline-block;padding:12px 28px;background:#15803d;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Baixar ${tipoLabel}</a></p>
+  `);
+  return enviarEmail({ to: organizadorEmail, subject: `[FMA] ${tipoLabel} gerado — ${evento}`, html });
+}
+
+export async function notificarResultadoStatus({ organizadorEmail, organizadorNome, evento, status }) {
+  const aprovado = status === "aprovado";
+  const html = templateBase(`
+    <p>Ola, <strong>${organizadorNome}</strong>!</p>
+    <p>O resultado do evento <strong>${evento}</strong> foi <strong style="color:${aprovado ? "#15803d" : "#dc2626"};">${aprovado ? "aprovado e publicado" : "rejeitado"}</strong>.</p>
+    ${!aprovado ? `<p>Acesse o Portal para enviar um novo resultado corrigido.</p>` : ""}
+    <p style="text-align:center;margin:24px 0;"><a href="${PORTAL_LINK}" style="display:inline-block;padding:12px 28px;background:#0066cc;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar o Portal</a></p>
+  `);
+  return enviarEmail({ to: organizadorEmail, subject: `[FMA] Resultado ${aprovado ? "aprovado" : "rejeitado"} — ${evento}`, html });
+}
+
+export async function notificarContaStatus({ organizadorEmail, organizadorNome, ativo, motivo }) {
+  const html = templateBase(`
+    <p>Ola, <strong>${organizadorNome}</strong>!</p>
+    ${ativo
+      ? `<p>Sua conta no Portal FMA foi <strong style="color:#15803d;">reativada</strong>. Voce ja pode acessar normalmente.</p>`
+      : `<p>Sua conta no Portal FMA foi <strong style="color:#dc2626;">desativada</strong>.</p>
+         ${motivo ? `<p><strong>Motivo:</strong> ${motivo}</p>` : ""}
+         <p>Para mais informacoes, entre em contato: mg@cbat.org.br</p>`
+    }
+  `);
+  return enviarEmail({ to: organizadorEmail, subject: `[FMA] Conta ${ativo ? "reativada" : "desativada"}`, html });
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 11. Notificações da Intranet de Árbitros (novas)
+// ═════════════════════════════════════════════════════════════════════════════
+
+export async function notificarAnuidadeVencendo({ arbitroEmail, arbitroNome, ano, valor, vencimento }) {
+  const html = templateBase(`
+    <p>Ola, <strong>${arbitroNome}</strong>!</p>
+    <p>Sua anuidade de <strong>${ano}</strong> esta <strong style="color:#d97706;">pendente</strong>.</p>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Ano</td><td style="padding:10px 14px;border:1px solid #eee;">${ano}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Valor</td><td style="padding:10px 14px;border:1px solid #eee;">R$ ${(valor || 0).toFixed(2)}</td></tr>
+      ${vencimento ? `<tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Vencimento</td><td style="padding:10px 14px;border:1px solid #eee;">${vencimento}</td></tr>` : ""}
+    </table>
+    <p>Regularize sua anuidade para manter o cadastro ativo.</p>
+    <p style="text-align:center;margin:24px 0;"><a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#d97706;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar a Intranet</a></p>
+  `);
+  return enviarEmail({ to: arbitroEmail, subject: `[FMA] Anuidade ${ano} pendente`, html });
+}
+
+export async function notificarAnuidadeConfirmada({ arbitroEmail, arbitroNome, ano, valor }) {
+  const html = templateBase(`
+    <p>Ola, <strong>${arbitroNome}</strong>!</p>
+    <p>Sua anuidade de <strong>${ano}</strong> foi <strong style="color:#15803d;">confirmada</strong>.</p>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Ano</td><td style="padding:10px 14px;border:1px solid #eee;">${ano}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Valor</td><td style="padding:10px 14px;border:1px solid #eee;">R$ ${(valor || 0).toFixed(2)}</td></tr>
+    </table>
+    <p style="text-align:center;margin:24px 0;"><a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#15803d;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar a Intranet</a></p>
+  `);
+  return enviarEmail({ to: arbitroEmail, subject: `[FMA] Anuidade ${ano} confirmada`, html });
+}
+
+export async function notificarRelatorioAprovado({ arbitroEmail, arbitroNome, evento }) {
+  const html = templateBase(`
+    <p>Ola, <strong>${arbitroNome}</strong>!</p>
+    <p>Seu relatorio de arbitragem do evento <strong>${evento}</strong> foi <strong style="color:#15803d;">aprovado</strong>.</p>
+    <p style="text-align:center;margin:24px 0;"><a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#15803d;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar a Intranet</a></p>
+  `);
+  return enviarEmail({ to: arbitroEmail, subject: `[FMA] Relatorio aprovado — ${evento}`, html });
+}
+
+export async function notificarEventoCancelado({ arbitroEmail, arbitroNome, evento, data, cidade }) {
+  const html = templateBase(`
+    <p>Ola, <strong>${arbitroNome}</strong>!</p>
+    <p>O evento <strong>${evento}</strong> para o qual voce estava escalado(a) foi <strong style="color:#dc2626;">cancelado</strong>.</p>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Evento</td><td style="padding:10px 14px;border:1px solid #eee;">${evento}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Data</td><td style="padding:10px 14px;border:1px solid #eee;">${data || "—"}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Local</td><td style="padding:10px 14px;border:1px solid #eee;">${cidade || "—"}</td></tr>
+    </table>
+  `);
+  return enviarEmail({ to: arbitroEmail, subject: `[FMA] Evento cancelado — ${evento}`, html });
+}
+
+export async function notificarAvaliacaoRecebida({ arbitroEmail, arbitroNome, evento, avaliador }) {
+  const html = templateBase(`
+    <p>Ola, <strong>${arbitroNome}</strong>!</p>
+    <p>Voce recebeu uma nova <strong>avaliacao</strong> referente ao evento <strong>${evento}</strong>.</p>
+    ${avaliador ? `<p>Avaliador: ${avaliador}</p>` : ""}
+    <p>Acesse a Intranet para ver os detalhes.</p>
+    <p style="text-align:center;margin:24px 0;"><a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#0066cc;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar a Intranet</a></p>
+  `);
+  return enviarEmail({ to: arbitroEmail, subject: `[FMA] Nova avaliacao — ${evento}`, html });
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 12. Notificações para a FMA (admin)
+// ═════════════════════════════════════════════════════════════════════════════
+
+export async function notificarFmaComprovanteAnexado({ organizadorNome, evento, protocolo, solicitacaoId }) {
+  const html = templateBase(`
+    <p>O organizador <strong>${organizadorNome}</strong> anexou um comprovante de pagamento:</p>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Protocolo</td><td style="padding:10px 14px;border:1px solid #eee;">${protocolo || "—"}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Evento</td><td style="padding:10px 14px;border:1px solid #eee;">${evento}</td></tr>
+    </table>
+    <p style="text-align:center;margin:24px 0;"><a href="${BASE_URL}/admin/solicitacoes/${solicitacaoId}" style="display:inline-block;padding:12px 28px;background:#0066cc;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver solicitacao</a></p>
+  `);
+  return enviarEmail({ to: "mg@cbat.org.br", subject: `[FMA] Comprovante anexado — ${evento}`, html });
+}
+
+export async function notificarFmaResultadoEnviado({ organizadorNome, evento, protocolo, solicitacaoId }) {
+  const html = templateBase(`
+    <p>O organizador <strong>${organizadorNome}</strong> enviou o resultado do evento:</p>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Protocolo</td><td style="padding:10px 14px;border:1px solid #eee;">${protocolo || "—"}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Evento</td><td style="padding:10px 14px;border:1px solid #eee;">${evento}</td></tr>
+    </table>
+    <p style="text-align:center;margin:24px 0;"><a href="${BASE_URL}/admin/solicitacoes/${solicitacaoId}" style="display:inline-block;padding:12px 28px;background:#0066cc;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver solicitacao</a></p>
+  `);
+  return enviarEmail({ to: "mg@cbat.org.br", subject: `[FMA] Resultado enviado — ${evento}`, html });
+}
+
+export async function notificarFmaRelatorioEnviado({ arbitroNome, evento, eventoData }) {
+  const html = templateBase(`
+    <p>O arbitro <strong>${arbitroNome}</strong> enviou um relatorio de arbitragem:</p>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Evento</td><td style="padding:10px 14px;border:1px solid #eee;">${evento}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Data</td><td style="padding:10px 14px;border:1px solid #eee;">${eventoData || "—"}</td></tr>
+    </table>
+    <p style="text-align:center;margin:24px 0;"><a href="${BASE_URL}/intranet/admin/relatorios-arbitragem" style="display:inline-block;padding:12px 28px;background:#0066cc;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver relatorios</a></p>
+  `);
+  return enviarEmail({ to: "mg@cbat.org.br", subject: `[FMA] Relatorio de arbitragem — ${evento}`, html });
+}
+
+export async function notificarFmaExclusaoLgpd({ nome, tipo, email }) {
+  const html = templateBase(`
+    <p>Uma solicitacao de exclusao de dados (LGPD) foi registrada:</p>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Titular</td><td style="padding:10px 14px;border:1px solid #eee;">${nome}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Tipo</td><td style="padding:10px 14px;border:1px solid #eee;">${tipo === "arbitro" ? "Arbitro" : "Organizador"}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">E-mail</td><td style="padding:10px 14px;border:1px solid #eee;">${email}</td></tr>
+    </table>
+    <p style="color:#dc2626;font-weight:700;">Prazo legal: 15 dias para processar a exclusao.</p>
+  `);
+  return enviarEmail({ to: "mg@cbat.org.br", subject: `[FMA] Solicitacao de exclusao LGPD — ${nome}`, html });
+}

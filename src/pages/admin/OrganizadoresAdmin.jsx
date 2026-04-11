@@ -24,6 +24,7 @@ import { SOLICITACAO_STATUS, SOLICITACAO_TIPOS } from "../../config/navigation";
 import { OrganizersService, SolicitacoesService, ArquivosService, MovimentacoesService } from "../../services/index";
 import { deleteFile } from "../../services/storageService";
 import { calcularTaxaModalidade, formatarMoeda, TABELA_PADRAO } from "../../utils/taxaCalculator";
+import { notificarContaStatus } from "../../services/emailService";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const statusMap = Object.fromEntries(SOLICITACAO_STATUS.map(s => [s.value, s]));
@@ -247,7 +248,16 @@ export function OrganizadorEditor() {
       return;
     }
     const r = await OrganizersService.setActive(id, true);
-    if (r.data) { flash("Conta ativada com sucesso.", "ok"); load(); }
+    if (r.data) {
+      if (organizer.email) {
+        notificarContaStatus({
+          organizadorEmail: organizer.email,
+          organizadorNome: organizer.name || "Organizador",
+          ativo: true,
+        }).catch(() => {});
+      }
+      flash("Conta ativada com sucesso.", "ok"); load();
+    }
     else flash(r.error, "err");
   };
 
@@ -256,7 +266,17 @@ export function OrganizadorEditor() {
     const r = await OrganizersService.setActive(id, false, deactivateMotivo);
     setDeactivating(false);
     setShowDeactivateModal(false);
-    if (r.data) { flash("Conta desativada com sucesso.", "ok"); load(); }
+    if (r.data) {
+      if (organizer.email) {
+        notificarContaStatus({
+          organizadorEmail: organizer.email,
+          organizadorNome: organizer.name || "Organizador",
+          ativo: false,
+          motivo: deactivateMotivo || "",
+        }).catch(() => {});
+      }
+      flash("Conta desativada com sucesso.", "ok"); load();
+    }
     else flash(r.error, "err");
   };
 

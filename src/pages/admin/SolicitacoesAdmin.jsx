@@ -33,7 +33,7 @@ import { normalizarCamposTecnicos, totalEstimativaInscritos, modalidadesLabel } 
 import { calcularTaxaTotal, formatarMoeda, TABELA_PADRAO, TABELA_ARBITRAGEM, PRAZOS } from "../../utils/taxaCalculator";
 import { reservarNumeroRecibo, formatarNumeroRecibo } from "../../utils/reciboCounter";
 import { gerarReciboPdf } from "../../services/reciboPdfService";
-import { notificarStatusSolicitacao } from "../../services/emailService";
+import { notificarStatusSolicitacao, notificarPagamentoConfirmado, notificarCobrancaPagamento, notificarArquivoFmaEnviado, notificarPermitGerado, notificarResultadoStatus } from "../../services/emailService";
 import { getProximoNumero, reservarNumeros, setContador, formatarNumero } from "../../utils/permitCounter";
 import { gerarPermitPdf, gerarChancelaPdf, preloadAssets } from "../../services/permitPdfService";
 
@@ -618,6 +618,17 @@ export function SolicitacaoEditor() {
         }
       }
 
+      // Notificar organizador: permit/chancela gerado
+      if (sol.organizadorEmail || sol.organizerEmail) {
+        notificarPermitGerado({
+          organizadorEmail: sol.organizadorEmail || sol.organizerEmail,
+          organizadorNome:  sol.organizadorNome  || sol.organizerName || "Organizador",
+          protocolo:        sol.protocoloFMA || sol.id,
+          evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
+          tipo:             sol.tipo || "permit",
+        }).catch(() => {});
+      }
+
       flash(`${permitNumbers.length} ${tipoDoc === "chancela" ? "chancela(s)" : "permit(s)"} gerado(s) e solicitação aprovada!`, "ok");
       load();
     } catch (err) {
@@ -658,6 +669,15 @@ export function SolicitacaoEditor() {
         autor: "fma", autorNome: analise.responsavelFMA || "Equipe FMA",
         autorId: "admin", visivel: true,
       });
+      // Notificar organizador: resultado aprovado
+      if (sol.organizadorEmail || sol.organizerEmail) {
+        notificarResultadoStatus({
+          organizadorEmail: sol.organizadorEmail || sol.organizerEmail,
+          organizadorNome:  sol.organizadorNome  || sol.organizerName || "Organizador",
+          evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
+          status:           "aprovado",
+        }).catch(() => {});
+      }
       flash("Resultado aprovado e publicado no calendário!", "ok");
       load();
     } catch (err) {
@@ -681,6 +701,15 @@ export function SolicitacaoEditor() {
         autor: "fma", autorNome: analise.responsavelFMA || "Equipe FMA",
         autorId: "admin", visivel: true,
       });
+      // Notificar organizador: resultado rejeitado
+      if (sol.organizadorEmail || sol.organizerEmail) {
+        notificarResultadoStatus({
+          organizadorEmail: sol.organizadorEmail || sol.organizerEmail,
+          organizadorNome:  sol.organizadorNome  || sol.organizerName || "Organizador",
+          evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
+          status:           "rejeitado",
+        }).catch(() => {});
+      }
       flash("Resultado rejeitado. O organizador pode enviar novamente.", "ok");
       load();
     } catch (err) {
@@ -720,6 +749,16 @@ export function SolicitacaoEditor() {
         autor: "fma", autorNome: analise.responsavelFMA || "Equipe FMA",
         autorId: "admin", visivel: true,
       });
+      // Notificar organizador: arquivo enviado pela FMA
+      if (sol.organizadorEmail || sol.organizerEmail) {
+        notificarArquivoFmaEnviado({
+          organizadorEmail: sol.organizadorEmail || sol.organizerEmail,
+          organizadorNome:  sol.organizadorNome  || sol.organizerName || "Organizador",
+          protocolo:        sol.protocoloFMA || sol.id,
+          evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
+          nomeArquivo:      file.name,
+        }).catch(() => {});
+      }
       setUploadDesc("");
       load();
       flash(`"${file.name}" enviado com sucesso.`, "ok");
@@ -2153,6 +2192,17 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
       autor: "fma", autorNome: "Equipe FMA", autorId: "admin", visivel: true,
     });
 
+    // Notificar organizador: pagamento confirmado
+    if (sol.organizadorEmail || sol.organizerEmail) {
+      notificarPagamentoConfirmado({
+        organizadorEmail: sol.organizadorEmail || sol.organizerEmail,
+        organizadorNome:  sol.organizadorNome  || sol.organizerName || organizer?.name || "Organizador",
+        protocolo:        sol.protocoloFMA || sol.id,
+        evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
+        valor,
+      }).catch(() => {});
+    }
+
     flash("Pagamento registrado!");
     setSaving(false);
     setNovoAberto(false);
@@ -2281,6 +2331,17 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
       descricao: `Cobranca de pagamento: ${formatarMoeda(saldo > 0 ? saldo : taxaTotal)}. Por favor, anexe o comprovante.`,
       autor: "fma", autorNome: "Equipe FMA", autorId: "admin", visivel: true,
     });
+    // Notificar organizador: cobrança de pagamento
+    if (sol.organizadorEmail || sol.organizerEmail) {
+      notificarCobrancaPagamento({
+        organizadorEmail: sol.organizadorEmail || sol.organizerEmail,
+        organizadorNome:  sol.organizadorNome  || sol.organizerName || organizer?.name || "Organizador",
+        protocolo:        sol.protocoloFMA || sol.id,
+        evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
+        valor:            saldo > 0 ? saldo : taxaTotal,
+      }).catch(() => {});
+    }
+
     flash("Cobranca registrada e visivel ao organizador.");
     setSaving(false);
     onSaved();

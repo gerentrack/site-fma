@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useOrganizer } from "../../context/OrganizerContext";
 import { OrganizersService } from "../../services/index";
+import { notificarFmaExclusaoLgpd } from "../../services/emailService";
 import { COLORS, FONTS } from "../../styles/colors";
 
 function maskPhone(v = "") {
@@ -312,6 +313,11 @@ export default function MeusDados() {
                   lgpdExclusaoSolicitadaEm: new Date().toISOString(),
                   lgpdExclusaoStatus: "solicitada",
                 });
+                notificarFmaExclusaoLgpd({
+                  nome: organizer?.name || "Organizador",
+                  tipo: "organizador",
+                  email: organizer?.email || "",
+                }).catch(() => {});
                 setSuccess("Solicitacao de exclusao registrada. A FMA tera ate 15 dias para processar.");
                 load();
               }}

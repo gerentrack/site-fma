@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 import IntranetLayout from "../IntranetLayout";
 import { RelatoriosService, RefereesService } from "../../../services/index";
 import { deleteFile } from "../../../services/storageService";
-import { notificarPendenciaRelatorio } from "../../../services/emailService";
+import { notificarPendenciaRelatorio, notificarRelatorioAprovado } from "../../../services/emailService";
 import { COLORS, FONTS } from "../../../styles/colors";
 
 const STATUS_MAP = {
@@ -39,6 +39,19 @@ export default function RelatoriosArbitragemAdmin() {
   const handleAprovar = async (id) => {
     setActionLoading(true);
     await RelatoriosService.update(id, { status: "aprovado", aprovadoEm: new Date().toISOString() });
+    // Notificar árbitro: relatório aprovado
+    const rel = relatorios.find(r => r.id === id);
+    if (rel?.refereeId) {
+      RefereesService.get(rel.refereeId).then(refRes => {
+        if (refRes.data?.email) {
+          notificarRelatorioAprovado({
+            arbitroEmail: refRes.data.email,
+            arbitroNome: refRes.data.name || rel.refereeName || "Árbitro",
+            evento: rel.eventTitle || "Evento",
+          }).catch(() => {});
+        }
+      }).catch(() => {});
+    }
     setActionLoading(false);
     setSelected(prev => ({ ...prev, status: "aprovado" }));
     fetchData();

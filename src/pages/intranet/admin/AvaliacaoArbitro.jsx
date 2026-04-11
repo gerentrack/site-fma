@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import IntranetLayout from "../IntranetLayout";
 import { AvaliacoesService, RefereeAssignmentsService, RefereesService } from "../../../services/index";
+import { notificarAvaliacaoRecebida } from "../../../services/emailService";
 import { COLORS, FONTS } from "../../../styles/colors";
 
 const CONCEITO = [
@@ -58,6 +59,15 @@ export default function AvaliacaoArbitro() {
       ...form,
       avaliadoPor: "Admin",
     });
+    // Notificar árbitro: avaliação recebida
+    if (ref.email) {
+      notificarAvaliacaoRecebida({
+        arbitroEmail: ref.email,
+        arbitroNome: ref.name || "Árbitro",
+        evento: selected.event?.title || "Evento",
+        avaliador: "Admin",
+      }).catch(() => {});
+    }
     setSaving(false);
     setView("list");
     setSelected(null);

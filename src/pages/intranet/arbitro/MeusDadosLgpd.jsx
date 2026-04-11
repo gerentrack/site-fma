@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import IntranetLayout from "../IntranetLayout";
 import { useIntranet } from "../../../context/IntranetContext";
 import { RefereesService } from "../../../services/index";
+import { notificarFmaExclusaoLgpd } from "../../../services/emailService";
 import { COLORS, FONTS } from "../../../styles/colors";
 
 const card = { background: "#fff", borderRadius: 12, padding: 24, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 20 };
@@ -119,6 +120,12 @@ export default function MeusDadosLgpd() {
       lgpdExclusaoSolicitadaEm: new Date().toISOString(),
       lgpdExclusaoStatus: "solicitada",
     });
+    // Notificar FMA sobre solicitação LGPD
+    notificarFmaExclusaoLgpd({
+      nome: data?.name || "Árbitro",
+      tipo: "arbitro",
+      email: data?.email || "",
+    }).catch(() => {});
     setExclusaoSolicitada(true);
     setConfirmExclusao(false);
   };

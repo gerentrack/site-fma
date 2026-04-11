@@ -6,8 +6,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import IntranetLayout from "../IntranetLayout";
-import { RefereeEventsService } from "../../../services/index";
+import { RefereeEventsService, RefereeAssignmentsService, RefereesService } from "../../../services/index";
 import { uploadFile } from "../../../services/storageService";
+import { notificarEventoCancelado } from "../../../services/emailService";
 import { COLORS, FONTS } from "../../../styles/colors";
 import { CALENDAR_CATEGORIES } from "../../../config/navigation";
 
@@ -57,6 +58,24 @@ export function IntranetEventList() {
 
   const handleDelete = async (evt) => {
     if (!confirm(`Excluir o evento "${evt.title}"?`)) return;
+    // Notificar árbitros escalados antes de excluir
+    RefereeAssignmentsService.getByEvent(evt.id).then(async (aRes) => {
+      const assignments = aRes.data || [];
+      for (const a of assignments) {
+        if (a.refereeId) {
+          const refRes = await RefereesService.get(a.refereeId).catch(() => ({}));
+          if (refRes.data?.email) {
+            notificarEventoCancelado({
+              arbitroEmail: refRes.data.email,
+              arbitroNome: refRes.data.name || "Árbitro",
+              evento: evt.title || "Evento",
+              data: evt.date || "",
+              cidade: evt.city || "",
+            }).catch(() => {});
+          }
+        }
+      }
+    }).catch(() => {});
     await RefereeEventsService.delete(evt.id);
     load();
   };

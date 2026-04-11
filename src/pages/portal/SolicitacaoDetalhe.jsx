@@ -17,6 +17,7 @@ import { getFieldsBySection, initFormConfig } from "../../utils/formSchema";
 import { defaultCamposTecnicosPermit, defaultCamposTecnicosChancela, novaModalidadeId } from "../../utils/permitDefaults";
 import { formatarMoeda } from "../../utils/taxaCalculator";
 import { PAGAMENTO_STATUS } from "../../config/navigation";
+import { notificarFmaComprovanteAnexado, notificarFmaResultadoEnviado } from "../../services/emailService";
 
 const statusMap     = Object.fromEntries(SOLICITACAO_STATUS.map(s => [s.value, s]));
 const tipoMap       = Object.fromEntries(SOLICITACAO_TIPOS.map(t => [t.value, t]));
@@ -209,6 +210,13 @@ function ArquivoUploader({ solicitacaoId, organizerId, organizerName, nomeEvento
     const r = await ArquivosService.create({ solicitacaoId, nome:nomeRenomeado, tamanho:file.size, tipo:file.type, descricao:descricao||file.name, categoria, enviadoPor:"organizador", enviadoById:organizerId, enviadoPorNome:organizerName, url, storagePath:path });
     if (r.error) { setError(r.error); setUploading(false); return; }
     await MovimentacoesService.registrar({ solicitacaoId, tipoEvento:"arquivo_enviado", statusAnterior:"", statusNovo:"", descricao:`Arquivo enviado: ${nomeRenomeado}`, autor:"organizador", autorNome:organizerName, autorId:organizerId, visivel:true });
+    // Notificar FMA: comprovante/arquivo anexado pelo organizador
+    notificarFmaComprovanteAnexado({
+      organizadorNome: organizerName,
+      evento: nomeEvento || "Evento",
+      protocolo: "",
+      solicitacaoId,
+    }).catch(() => {});
     setFile(null); setDescricao(""); setCategoria("complementar");
     if (inputRef.current) inputRef.current.value="";
     setUploading(false); onUploaded();
@@ -450,6 +458,14 @@ function ResultadosTab({ sol, organizerId, organizerName, onUpdated }) {
       autorId: organizerId,
       visivel: true,
     });
+
+    // Notificar FMA: resultado enviado pelo organizador
+    notificarFmaResultadoEnviado({
+      organizadorNome: organizerName,
+      evento: sol.nomeEvento || sol.titulo || "Evento",
+      protocolo: sol.protocoloFMA || sol.id,
+      solicitacaoId: sol.id,
+    }).catch(() => {});
 
     setUploading(false);
     setFile(null);

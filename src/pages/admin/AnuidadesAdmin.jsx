@@ -11,8 +11,9 @@ import { useState, useEffect } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
 import IntranetLayout from "../../pages/intranet/IntranetLayout";
 import { COLORS, FONTS } from "../../styles/colors";
-import { AnuidadesService, TaxasConfigService } from "../../services/index";
+import { AnuidadesService, TaxasConfigService, RefereesService } from "../../services/index";
 import { ANUIDADE_STATUS } from "../../config/navigation";
+import { notificarAnuidadeConfirmada } from "../../services/emailService";
 
 const statusMap = Object.fromEntries(ANUIDADE_STATUS.map(s => [s.value, s]));
 
@@ -83,6 +84,21 @@ export default function AnuidadesAdmin({ useIntranet = false }) {
     }
     if (obs !== undefined) patch.observacao = obs;
     await AnuidadesService.update(id, patch);
+
+    // Notificar árbitro quando anuidade confirmada como paga
+    if (status === "pago" && detail?.refereeId) {
+      RefereesService.get(detail.refereeId).then(refRes => {
+        if (refRes.data?.email) {
+          notificarAnuidadeConfirmada({
+            arbitroEmail: refRes.data.email,
+            arbitroNome: detail.refereeName || refRes.data.name || "Árbitro",
+            ano: detail.ano,
+            valor: detail.valor || 0,
+          }).catch(() => {});
+        }
+      }).catch(() => {});
+    }
+
     setActionLoading(false);
     setDetail(null);
     fetchData();
