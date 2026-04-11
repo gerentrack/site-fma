@@ -17,7 +17,7 @@ import { getFieldsBySection, initFormConfig } from "../../utils/formSchema";
 import { defaultCamposTecnicosPermit, defaultCamposTecnicosChancela, novaModalidadeId } from "../../utils/permitDefaults";
 import { formatarMoeda } from "../../utils/taxaCalculator";
 import { PAGAMENTO_STATUS } from "../../config/navigation";
-import { notificarFmaComprovanteAnexado, notificarFmaResultadoEnviado } from "../../services/emailService";
+import { notificarFmaComprovanteAnexado, notificarFmaResultadoEnviado, notificarFmaPendenciaRespondida } from "../../services/emailService";
 
 const statusMap     = Object.fromEntries(SOLICITACAO_STATUS.map(s => [s.value, s]));
 const tipoMap       = Object.fromEntries(SOLICITACAO_TIPOS.map(t => [t.value, t]));
@@ -709,12 +709,22 @@ export default function SolicitacaoDetalhe() {
                     autor: "organizador", autorNome: organizerName, autorId: organizerId, visivel: true,
                   });
                   await SolicitacoesService.changeStatus(id, "enviada");
+                  await SolicitacoesService.update(id, { pendenciaRespondidaEm: new Date().toISOString(), pendenciaResposta: respostaPendencia.trim() });
                   await MovimentacoesService.registrar({
                     solicitacaoId: id, tipoEvento: "enviada",
                     statusAnterior: "pendencia", statusNovo: "enviada",
                     descricao: "Solicitacao reenviada apos correcao da pendencia.",
                     autor: "organizador", autorNome: organizerName, autorId: organizerId, visivel: true,
                   });
+                  // Notificar FMA por e-mail
+                  notificarFmaPendenciaRespondida({
+                    organizadorNome: organizerName,
+                    evento: sol.nomeEvento || "",
+                    protocolo: sol.protocoloFMA || "",
+                    resposta: respostaPendencia.trim(),
+                    nomeArquivo: file?.name || "",
+                    solicitacaoId: id,
+                  }).catch(() => {});
                   setRespostaPendencia("");
                   if (respostaFileRef.current) respostaFileRef.current.value = "";
                   setEnviandoResposta(false);

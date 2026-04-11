@@ -113,6 +113,33 @@ export async function notificarStatusSolicitacao({
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
+// 1a-2. Notificação à FMA — Pendência respondida
+// ═════════════════════════════════════════════════════════════════════════════
+
+export async function notificarFmaPendenciaRespondida({
+  organizadorNome, evento, protocolo, resposta, nomeArquivo, solicitacaoId,
+}) {
+  const html = templateBase(`
+    <p>O organizador <strong>${organizadorNome}</strong> respondeu a pendencia e reenviou a solicitacao:</p>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Protocolo</td><td style="padding:10px 14px;border:1px solid #eee;">${protocolo || "—"}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Evento</td><td style="padding:10px 14px;border:1px solid #eee;">${evento}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Resposta</td><td style="padding:10px 14px;border:1px solid #eee;white-space:pre-line;">${resposta.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}</td></tr>
+      ${nomeArquivo ? `<tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Documento anexado</td><td style="padding:10px 14px;border:1px solid #eee;">${nomeArquivo}</td></tr>` : ""}
+    </table>
+    <p style="text-align:center;margin:24px 0;">
+      <a href="${BASE_URL}/admin/solicitacoes/${solicitacaoId}" style="display:inline-block;padding:12px 28px;background:#0066cc;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver solicitacao</a>
+    </p>
+  `);
+
+  return enviarEmail({
+    to: "mg@cbat.org.br",
+    subject: `[FMA] Pendencia respondida — ${evento} (${protocolo})`,
+    html,
+  });
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
 // 1b. Notificação à FMA — Solicitação enviada para análise
 // ═════════════════════════════════════════════════════════════════════════════
 

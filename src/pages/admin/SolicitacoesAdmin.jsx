@@ -298,7 +298,14 @@ export function SolicitacoesList() {
                           {org?.organization && <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>{org.organization}</div>}
                         </td>
                         <td style={{ padding: "12px", fontFamily: FONTS.body, fontSize: 13, color: COLORS.grayDark, whiteSpace: "nowrap" }}>{fmt(item.dataEvento)}</td>
-                        <td style={{ padding: "12px" }}><StatusBadge status={item.status} /></td>
+                        <td style={{ padding: "12px" }}>
+                          <StatusBadge status={item.status} />
+                          {item.pendenciaRespondidaEm && item.status === "enviada" && (
+                            <div style={{ marginTop: 4, fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, color: "#d97706", background: "#fffbeb", padding: "2px 8px", borderRadius: 10, display: "inline-block" }}>
+                              Pendencia respondida
+                            </div>
+                          )}
+                        </td>
                         <td style={{ padding: "12px", whiteSpace: "nowrap" }}>
                           {item.protocoloFMA ? (
                             <span style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800,
