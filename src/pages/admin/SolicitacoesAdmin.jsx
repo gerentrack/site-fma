@@ -2227,12 +2227,27 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
     onSaved();
   };
 
-  const handleGerarRecibo = async (pag) => {
+  const [reciboModalPag, setReciboModalPag] = useState(null);
+  const [reciboNumInput, setReciboNumInput] = useState("");
+
+  const abrirModalRecibo = async (pag) => {
+    if (pag.reciboNumero) {
+      // Já tem recibo — abrir PDF direto
+      handleGerarRecibo(pag, pag.reciboNumero);
+      return;
+    }
+    const ano = new Date().getFullYear();
+    // Buscar próximo número sugerido
+    const num = await reservarNumeroRecibo(ano);
+    const sugerido = formatarNumeroRecibo(num, ano);
+    setReciboNumInput(sugerido);
+    setReciboModalPag(pag);
+  };
+
+  const handleGerarRecibo = async (pag, numeroCustom) => {
     setSaving(true);
     try {
-      const ano = new Date().getFullYear();
-      const num = await reservarNumeroRecibo(ano);
-      const reciboNumero = formatarNumeroRecibo(num, ano);
+      const reciboNumero = (numeroCustom || "").trim();
 
       // Buscar config para assinatura
       const cfgRes = await TaxasConfigService.get();
@@ -2464,9 +2479,9 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
                     </button>
                   </span>
                 ) : (
-                  <button onClick={() => handleGerarRecibo(pag)} disabled={saving}
+                  <button onClick={() => abrirModalRecibo(pag)} disabled={saving}
                     style={{ padding: "5px 12px", borderRadius: 6, border: "none", background: "#0066cc", color: "#fff", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                    📄 Gerar recibo
+                    Gerar recibo
                   </button>
                 )}
               </div>
@@ -2523,6 +2538,37 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
               style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
               Cancelar
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de número do recibo */}
+      {reciboModalPag && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+          onClick={() => setReciboModalPag(null)}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: "#fff", borderRadius: 14, padding: 24, maxWidth: 420, width: "100%" }}>
+            <h3 style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 800, color: COLORS.dark, margin: "0 0 16px", textTransform: "uppercase" }}>Gerar Recibo</h3>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: COLORS.grayDark, display: "block", marginBottom: 4 }}>Numero do recibo</label>
+              <input value={reciboNumInput} onChange={e => setReciboNumInput(e.target.value)}
+                style={{ width: "100%", padding: "10px 12px", border: `1px solid ${COLORS.grayLight}`, borderRadius: 8, fontSize: 14, boxSizing: "border-box" }} />
+              <div style={{ fontSize: 11, color: COLORS.gray, marginTop: 4 }}>Proximo numero sugerido. Altere se necessario (ex: recibo emitido fora do sistema).</div>
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => setReciboModalPag(null)}
+                style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", fontSize: 13, cursor: "pointer" }}>
+                Cancelar
+              </button>
+              <button disabled={saving || !reciboNumInput.trim()} onClick={async () => {
+                const pag = reciboModalPag;
+                setReciboModalPag(null);
+                await handleGerarRecibo(pag, reciboNumInput.trim());
+              }}
+                style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: saving ? COLORS.gray : "#15803d", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                Gerar
+              </button>
+            </div>
           </div>
         </div>
       )}
