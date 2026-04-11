@@ -455,6 +455,15 @@ export default function FinanceiroArbitragem() {
                                     <div key={ri} style={{ color: "#0066cc" }}>Reembolso — {r.categoria}{r.descricao ? `: ${r.descricao}` : ""}: {fmt((r.valorAprovado ?? r.valor) || 0)}</div>
                                   ))}
                                   <div style={{ marginTop: 4, fontWeight: 700, color: COLORS.dark }}>Total: {fmt(totalEvt)}</div>
+                                  {a.reciboAssinadoEm && (
+                                    <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8 }}>
+                                      <span style={{ fontSize: 11, color: "#15803d", fontWeight: 700 }}>Recibo assinado pelo arbitro em {new Date(a.reciboAssinadoEm).toLocaleDateString("pt-BR")}</span>
+                                      {a.reciboAssinatura && <img src={a.reciboAssinatura} alt="Assinatura" style={{ height: 30, borderRadius: 4, border: "1px solid #e5e7eb" }} />}
+                                    </div>
+                                  )}
+                                  {a.diariaPaga && !a.reciboAssinadoEm && (
+                                    <div style={{ marginTop: 6, fontSize: 11, color: "#d97706", fontWeight: 600 }}>Aguardando assinatura do arbitro</div>
+                                  )}
                                 </div>
                               </div>
                             );
