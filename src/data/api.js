@@ -914,12 +914,16 @@ export const organizerAuthAPI = {
     // Duplicidade de e-mail é verificada pelo Firebase Auth (createUserWithEmailAndPassword)
     try {
       const cred = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      // Criar users doc ANTES do organizers (para que as rules reconheçam o role)
+      const tempUserId = cred.user.uid;
+      await setDoc(doc(db, "users", tempUserId), {
+        uid: tempUserId, email: data.email,
+        roles: ["organizer"], name: data.name, refId: "", createdAt: now(),
+      });
       const { password: _pw, ...dataWithoutPassword } = data;
       const item = await createDoc("organizers", { ...dataWithoutPassword, status: "ativo", active: true });
-      await setDoc(doc(db, "users", cred.user.uid), {
-        uid: cred.user.uid, email: data.email,
-        roles: ["organizer"], name: data.name, refId: item.id, createdAt: now(),
-      });
+      // Atualizar users doc com refId do organizer criado
+      await updateDoc(doc(db, "users", tempUserId), { refId: item.id });
       await signOut(auth);
       const { password: _, ...safe } = item;
       return ok(safe);
