@@ -19,6 +19,51 @@ const STATUS_STYLE = {
   cancelado:  { bg: "#fff5f5", color: "#cc0000", label: "Cancelado" },
 };
 
+const CHECKLIST_ITEMS = [
+  "Uniforme completo (camisa, calca, tenis)",
+  "Credencial de arbitro",
+  "Documento com foto (RG/CNH)",
+  "Apito e cronometro",
+  "Protetor solar e agua",
+  "Carregador de celular",
+];
+
+function Checklist({ assignmentId }) {
+  const storageKey = `checklist_${assignmentId}`;
+  const [checked, setChecked] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(storageKey)) || []; } catch { return []; }
+  });
+  const [open, setOpen] = useState(false);
+
+  const toggle = (idx) => {
+    const next = checked.includes(idx) ? checked.filter(i => i !== idx) : [...checked, idx];
+    setChecked(next);
+    localStorage.setItem(storageKey, JSON.stringify(next));
+  };
+
+  const done = checked.length;
+  const total = CHECKLIST_ITEMS.length;
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      <button onClick={() => setOpen(!open)}
+        style={{ background: done === total ? "#f0fdf4" : "#fffbeb", border: `1px solid ${done === total ? "#86efac" : "#fde68a"}`, borderRadius: 6, padding: "4px 12px", fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, color: done === total ? "#15803d" : "#92400e", cursor: "pointer" }}>
+        {done === total ? "Checklist completo" : `Checklist (${done}/${total})`} {open ? "▲" : "▼"}
+      </button>
+      {open && (
+        <div style={{ marginTop: 8, padding: "8px 12px", background: "#fafafa", borderRadius: 8, border: `1px solid ${COLORS.grayLight}` }}>
+          {CHECKLIST_ITEMS.map((item, i) => (
+            <label key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", cursor: "pointer", fontFamily: FONTS.body, fontSize: 12, color: checked.includes(i) ? "#15803d" : COLORS.dark }}>
+              <input type="checkbox" checked={checked.includes(i)} onChange={() => toggle(i)} />
+              <span style={{ textDecoration: checked.includes(i) ? "line-through" : "none" }}>{item}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function MyAssignments() {
   const { refereeId } = useIntranet();
   const [assignments, setAssignments] = useState([]);
@@ -190,6 +235,8 @@ export default function MyAssignments() {
                         </div>
                       )}
                       {asgn.notes && <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 6, fontStyle: "italic" }}>Obs: {asgn.notes}</div>}
+                      {/* Checklist pré-evento (apenas escalas futuras) */}
+                      {!showPast && <Checklist assignmentId={asgn.id} />}
                       {/* Relatório (eventos passados, chefe ou coordenador) */}
                       {evt.date <= today && (
                         asgn.refereeFunction === "chefe" || asgn.refereeFunction === "coordenador_ev" ||

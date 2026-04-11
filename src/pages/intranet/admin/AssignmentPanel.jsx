@@ -65,8 +65,15 @@ function RefereeRow({ ref_, tab, isAssigned, assign, saving }) {
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 700, color: COLORS.dark }}>{ref_.name}</div>
-          <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>{ref_.city} • {ref_.nivel || "—"}</div>
-          {tab === "available" && ref_.availability?.notes && (
+          <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>
+            {ref_.city} • {ref_.nivel || "—"}
+            {tab === "sugestoes" && ref_.score !== undefined && (
+              <span style={{ marginLeft: 8, padding: "1px 8px", borderRadius: 10, fontSize: 10, fontWeight: 700, background: ref_.disponivel ? "#e6f9ee" : "#fef3c7", color: ref_.disponivel ? "#007733" : "#92400e" }}>
+                {ref_.disponivel ? "Disponível" : "Sem disponibilidade"} • Score: {ref_.score}
+              </span>
+            )}
+          </div>
+          {(tab === "available" || tab === "sugestoes") && ref_.availability?.notes && (
             <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, fontStyle: "italic" }}>{ref_.availability.notes}</div>
           )}
         </div>
@@ -311,7 +318,34 @@ export function AssignmentEditor() {
   if (!event) return null;
 
   const cat = catMap[event.category] || { color: COLORS.gray, icon: "📅", label: event.category };
-  const tabList = tab === "available" ? available : allRefs.filter(r => !isAssigned(r.id) || tab === "all");
+  // Sugestão inteligente: pontuar disponibilidade + cidade + nível
+  const sugestoes = (() => {
+    if (tab !== "sugestoes") return [];
+    const nivelScore = { A: 3, B: 2, C: 1, NI: 0 };
+    const cidadeEvento = (event.city || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const availIds = new Set(available.map(a => a.id));
+    return allRefs
+      .filter(r => !isAssigned(r.id))
+      .map(r => {
+        let score = 0;
+        // Disponível = +50
+        if (availIds.has(r.id)) score += 50;
+        // Mesma cidade = +30
+        const cidadeRef = (r.city || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if (cidadeEvento && cidadeRef && cidadeEvento === cidadeRef) score += 30;
+        // Mesmo estado = +10
+        if (event.city && r.state && (r.state === "MG" || cidadeRef.includes(cidadeEvento.slice(0, 3)))) score += 10;
+        // Nível = +0 a +3
+        score += nivelScore[r.nivel] || 0;
+        // Deslocamento amplo = +5
+        if (r.disponibilidadeDeslocamento === "estadual" || r.disponibilidadeDeslocamento === "nacional") score += 5;
+        return { ...r, score, disponivel: availIds.has(r.id) };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 20);
+  })();
+
+  const tabList = tab === "available" ? available : tab === "sugestoes" ? sugestoes : allRefs.filter(r => !isAssigned(r.id) || tab === "all");
   const displayList = tab === "assigned" ? assignments : tabList;
 
   return (
@@ -344,6 +378,7 @@ export function AssignmentEditor() {
         <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
           {[
             { key: "available", label: `✅ Disponíveis (${available.length})` },
+            { key: "sugestoes", label: `💡 Sugestões` },
             { key: "all",       label: `👥 Todos os Ativos (${allRefs.length})` },
             { key: "assigned",  label: `📋 Escalados (${assignments.length})` },
           ].map(t => (
@@ -359,6 +394,7 @@ export function AssignmentEditor() {
           <div style={{ padding: "40px 0", textAlign: "center" }}>
             <p style={{ fontFamily: FONTS.body, color: COLORS.gray }}>
               {tab === "available" ? "Nenhum árbitro registrou disponibilidade para este evento." :
+               tab === "sugestoes" ? "Nenhum árbitro disponível para sugerir." :
                tab === "assigned"  ? "Nenhum árbitro escalado ainda." : "Nenhum árbitro ativo."}
             </p>
           </div>

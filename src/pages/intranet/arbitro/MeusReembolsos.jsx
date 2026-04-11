@@ -160,7 +160,8 @@ export default function MeusReembolsos() {
               </div>
               <div>
                 <span style={lbl}>Nota fiscal (foto ou PDF, max 2MB) *</span>
-                <input type="file" ref={fileRef} accept="image/*,.pdf" style={{ fontSize: 13 }} />
+                <input type="file" ref={fileRef} accept="image/*,.pdf" capture="environment" style={{ fontSize: 13 }} />
+                <div style={{ fontSize: 11, color: COLORS.gray, marginTop: 4 }}>No celular, voce pode tirar foto direto da camera.</div>
               </div>
             </div>
             {msg && <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 8, background: "#fef2f2", color: "#dc2626", fontSize: 13 }}>{msg}</div>}
