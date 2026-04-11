@@ -468,12 +468,13 @@ export function SolicitacaoEditor() {
         visivel: true,
       });
       // Notificar organizador por email
-      if (sol.organizadorEmail || sol.organizerEmail) {
+      const orgEmail = sol.organizadorEmail || sol.organizerEmail || organizer?.email;
+      if (orgEmail) {
         notificarStatusSolicitacao({
-          organizadorEmail: sol.organizadorEmail || sol.organizerEmail,
-          organizadorNome:  sol.organizadorNome  || sol.organizerName || "Organizador",
+          organizadorEmail: orgEmail,
+          organizadorNome:  sol.organizadorNome || sol.organizerName || organizer?.name || "Organizador",
           protocolo:        rStatus.data?.protocoloFMA || sol.protocoloFMA || sol.id,
-          evento:           sol.titulo || sol.title || "Evento",
+          evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
           status:           novoStatus,
           observacao:       analise.parecerFMA || "",
         }).catch(e => console.warn("Email solicitação:", e));
@@ -606,10 +607,10 @@ export function SolicitacaoEditor() {
         });
 
         // 10. Notificar organizador (só na primeira aprovação)
-        if (sol.organizadorEmail || sol.organizerEmail) {
+        if (sol.organizadorEmail || sol.organizerEmail || organizer?.email) {
           notificarStatusSolicitacao({
-            organizadorEmail: sol.organizadorEmail || sol.organizerEmail,
-            organizadorNome:  sol.organizadorNome  || sol.organizerName || "Organizador",
+            organizadorEmail: sol.organizadorEmail || sol.organizerEmail || organizer?.email,
+            organizadorNome:  sol.organizadorNome  || sol.organizerName || organizer?.name || "Organizador",
             protocolo:        sol.protocoloFMA || sol.id,
             evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
             status:           "aprovada",
@@ -619,10 +620,10 @@ export function SolicitacaoEditor() {
       }
 
       // Notificar organizador: permit/chancela gerado
-      if (sol.organizadorEmail || sol.organizerEmail) {
+      if (sol.organizadorEmail || sol.organizerEmail || organizer?.email) {
         notificarPermitGerado({
-          organizadorEmail: sol.organizadorEmail || sol.organizerEmail,
-          organizadorNome:  sol.organizadorNome  || sol.organizerName || "Organizador",
+          organizadorEmail: sol.organizadorEmail || sol.organizerEmail || organizer?.email,
+          organizadorNome:  sol.organizadorNome  || sol.organizerName || organizer?.name || "Organizador",
           protocolo:        sol.protocoloFMA || sol.id,
           evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
           tipo:             sol.tipo || "permit",
@@ -670,10 +671,10 @@ export function SolicitacaoEditor() {
         autorId: "admin", visivel: true,
       });
       // Notificar organizador: resultado aprovado
-      if (sol.organizadorEmail || sol.organizerEmail) {
+      if (sol.organizadorEmail || sol.organizerEmail || organizer?.email) {
         notificarResultadoStatus({
-          organizadorEmail: sol.organizadorEmail || sol.organizerEmail,
-          organizadorNome:  sol.organizadorNome  || sol.organizerName || "Organizador",
+          organizadorEmail: sol.organizadorEmail || sol.organizerEmail || organizer?.email,
+          organizadorNome:  sol.organizadorNome  || sol.organizerName || organizer?.name || "Organizador",
           evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
           status:           "aprovado",
         }).catch(() => {});
@@ -702,10 +703,10 @@ export function SolicitacaoEditor() {
         autorId: "admin", visivel: true,
       });
       // Notificar organizador: resultado rejeitado
-      if (sol.organizadorEmail || sol.organizerEmail) {
+      if (sol.organizadorEmail || sol.organizerEmail || organizer?.email) {
         notificarResultadoStatus({
-          organizadorEmail: sol.organizadorEmail || sol.organizerEmail,
-          organizadorNome:  sol.organizadorNome  || sol.organizerName || "Organizador",
+          organizadorEmail: sol.organizadorEmail || sol.organizerEmail || organizer?.email,
+          organizadorNome:  sol.organizadorNome  || sol.organizerName || organizer?.name || "Organizador",
           evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
           status:           "rejeitado",
         }).catch(() => {});
@@ -750,10 +751,10 @@ export function SolicitacaoEditor() {
         autorId: "admin", visivel: true,
       });
       // Notificar organizador: arquivo enviado pela FMA
-      if (sol.organizadorEmail || sol.organizerEmail) {
+      if (sol.organizadorEmail || sol.organizerEmail || organizer?.email) {
         notificarArquivoFmaEnviado({
-          organizadorEmail: sol.organizadorEmail || sol.organizerEmail,
-          organizadorNome:  sol.organizadorNome  || sol.organizerName || "Organizador",
+          organizadorEmail: sol.organizadorEmail || sol.organizerEmail || organizer?.email,
+          organizadorNome:  sol.organizadorNome  || sol.organizerName || organizer?.name || "Organizador",
           protocolo:        sol.protocoloFMA || sol.id,
           evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
           nomeArquivo:      file.name,
@@ -2207,9 +2208,9 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
     });
 
     // Notificar organizador: pagamento confirmado
-    if (sol.organizadorEmail || sol.organizerEmail) {
+    if (sol.organizadorEmail || sol.organizerEmail || organizer?.email) {
       notificarPagamentoConfirmado({
-        organizadorEmail: sol.organizadorEmail || sol.organizerEmail,
+        organizadorEmail: sol.organizadorEmail || sol.organizerEmail || organizer?.email,
         organizadorNome:  sol.organizadorNome  || sol.organizerName || organizer?.name || "Organizador",
         protocolo:        sol.protocoloFMA || sol.id,
         evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
@@ -2398,9 +2399,9 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
       autor: "fma", autorNome: "Equipe FMA", autorId: "admin", visivel: true,
     });
     // Notificar organizador: cobrança de pagamento
-    if (sol.organizadorEmail || sol.organizerEmail) {
+    if (sol.organizadorEmail || sol.organizerEmail || organizer?.email) {
       notificarCobrancaPagamento({
-        organizadorEmail: sol.organizadorEmail || sol.organizerEmail,
+        organizadorEmail: sol.organizadorEmail || sol.organizerEmail || organizer?.email,
         organizadorNome:  sol.organizadorNome  || sol.organizerName || organizer?.name || "Organizador",
         protocolo:        sol.protocoloFMA || sol.id,
         evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
