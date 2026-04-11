@@ -1089,6 +1089,39 @@ export function SolicitacaoEditor() {
               inp={inp}
             />
 
+            {/* Resposta à pendência do organizador */}
+            {sol.pendenciaRespondidaEm && (
+              <div style={{ marginBottom: 20, padding: "16px 20px", borderRadius: 10, background: "#fffbeb", border: "2px solid #fde68a" }}>
+                <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: "#92400e", marginBottom: 10 }}>
+                  Resposta do organizador a pendencia
+                  <span style={{ fontWeight: 400, textTransform: "none", marginLeft: 8, fontSize: 10 }}>
+                    ({new Date(sol.pendenciaRespondidaEm).toLocaleString("pt-BR")})
+                  </span>
+                </div>
+                <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.dark, lineHeight: 1.6, whiteSpace: "pre-line", marginBottom: 10, padding: "10px 14px", background: "#fff", borderRadius: 8, border: `1px solid ${COLORS.grayLight}` }}>
+                  {sol.pendenciaResposta || "—"}
+                </div>
+                {/* Documentos anexados na resposta */}
+                {(() => {
+                  const docsResposta = arquivos.filter(a => a.enviadoPor === "organizador" && a.descricao?.startsWith("Resposta a pendencia"));
+                  if (docsResposta.length === 0) return null;
+                  return (
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#92400e", marginBottom: 4 }}>Documentos anexados:</div>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        {docsResposta.map(arq => (
+                          <a key={arq.id} href={arq.url || arq.dataUrl} target="_blank" rel="noreferrer"
+                            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 6, background: "#fff", border: `1px solid ${COLORS.grayLight}`, textDecoration: "none", fontSize: 12, color: COLORS.primary, fontWeight: 600 }}>
+                            {arq.nome}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
             <div style={{ marginBottom: 20 }}>
               <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, display: "block", marginBottom: 5 }}>
                 Parecer FMA <span style={{ fontFamily: FONTS.body, fontSize: 10, fontWeight: 400, textTransform: "none" }}>(visível ao organizador)</span>
