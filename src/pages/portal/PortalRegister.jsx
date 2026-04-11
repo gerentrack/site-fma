@@ -136,6 +136,7 @@ export default function PortalRegister() {
       }
     }
     if (!form.city.trim()) e.city = "Cidade obrigatória";
+    if (!cnpjFound && !form.numero?.trim()) e.numero = "Número obrigatório";
     if (!lgpdConsent) e.lgpd = "Você deve aceitar a Política de Privacidade e os Termos de Uso";
     return e;
   };
@@ -279,10 +280,11 @@ export default function PortalRegister() {
               </div>
               {!cnpjFound && (
                 <>
-                  <Field label="Número">
+                  <Field label="Número" required>
                     <input value={form.numero || ""}
                       onChange={e => set("numero", e.target.value)}
                       placeholder="Nº" style={inpStyle} />
+                    {errors.numero && <div style={errStyle}>{errors.numero}</div>}
                   </Field>
                   <Field label="Complemento">
                     <input value={form.complemento || ""}
