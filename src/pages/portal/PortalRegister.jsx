@@ -91,6 +91,7 @@ export default function PortalRegister() {
 
   const buscarCnpj = async (cnpjRaw) => {
     if (cnpjRaw.length !== 14) return;
+    if (!validarCNPJ(cnpjRaw)) { setCnpjMsg("CNPJ inválido. Verifique os dígitos."); setCnpjValidated(false); return; }
     setCnpjLoading(true);
     setCnpjMsg("");
     try {
