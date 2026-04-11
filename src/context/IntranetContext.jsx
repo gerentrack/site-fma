@@ -16,8 +16,10 @@ export function IntranetProvider({ children }) {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const s = await intranetAuthAPI.getSession();
-        setSession(s);
+        try {
+          const s = await intranetAuthAPI.getSession();
+          setSession(s);
+        } catch { setSession(null); }
       } else {
         setSession(null);
       }

@@ -152,7 +152,13 @@ service cloud.firestore {
     // ── Usuários (leitura: autenticado; escrita: admin do painel OU referee admin da intranet) ──
     match /users/{docId} {
       allow read: if isAuth();
-      allow write: if isAuth() && (isAdminLevel(["master", "admin"]) || "referee" in getUserData().roles || getUserData().role == "referee");
+      // Admin, referee e organizer podem criar/atualizar seu próprio users doc
+      allow write: if isAuth() && (
+        isAdminLevel(["master", "admin"])
+        || "referee" in getUserData().roles || getUserData().role == "referee"
+        || "organizer" in getUserData().roles || getUserData().role == "organizer"
+        || request.auth.uid == docId
+      );
     }
 
     // ── Mail (extensão Trigger Email from Firestore) ──
