@@ -277,6 +277,20 @@ export default function PortalRegister() {
                     style={cnpjFound ? readOnlyStyle : inpStyle} />
                 </Field>
               </div>
+              {!cnpjFound && (
+                <>
+                  <Field label="Número">
+                    <input value={form.numero || ""}
+                      onChange={e => set("numero", e.target.value)}
+                      placeholder="Nº" style={inpStyle} />
+                  </Field>
+                  <Field label="Complemento">
+                    <input value={form.complemento || ""}
+                      onChange={e => set("complemento", e.target.value)}
+                      placeholder="Sala, andar, bloco (opcional)" style={inpStyle} />
+                  </Field>
+                </>
+              )}
               <Field label="Cidade" required>
                 <input value={form.city} readOnly={cnpjFound}
                   onChange={cnpjFound ? undefined : e => set("city", e.target.value)}
