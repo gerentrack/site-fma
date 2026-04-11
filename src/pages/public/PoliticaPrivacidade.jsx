@@ -245,18 +245,27 @@ export default function PoliticaPrivacidade() {
         periódica deste documento.
       </p>
 
-      <h2 style={S.h2}>13. Contato</h2>
+      <h2 style={S.h2}>13. Encarregado de Proteção de Dados (DPO)</h2>
       <p style={S.p}>
-        Para dúvidas, sugestões ou exercício de direitos relacionados a esta Política de
-        Privacidade e à proteção de seus dados pessoais, entre em contato:
+        Nos termos do Art. 41 da LGPD, a FMA designou um Encarregado pelo Tratamento de Dados
+        Pessoais, responsável por aceitar reclamações e comunicações dos titulares, prestar
+        esclarecimentos e adotar providências junto à Autoridade Nacional de Proteção de Dados (ANPD).
       </p>
       <div style={S.card}>
         <p style={{ ...S.p, margin: 0 }}>
-          <strong>Federação Mineira de Atletismo (FMA)</strong><br />
-          E-mail: mg@cbat.org.br<br />
+          <strong>Encarregado de Proteção de Dados (DPO)</strong><br />
+          Federação Mineira de Atletismo (FMA)<br />
+          E-mail: <a href="mailto:mg@cbat.org.br" style={{ color: COLORS.primary }}>mg@cbat.org.br</a><br />
           Assunto: Direitos LGPD
         </p>
       </div>
+
+      <h2 style={S.h2}>14. Contato</h2>
+      <p style={S.p}>
+        Para dúvidas, sugestões ou exercício de direitos relacionados a esta Política de
+        Privacidade e à proteção de seus dados pessoais, entre em contato pelo e-mail acima
+        ou através da nossa <a href="/transparencia/ouvidoria" style={{ color: COLORS.primary }}>Ouvidoria</a>.
+      </p>
 
       <div style={{ marginTop: 40, paddingTop: 20, borderTop: `1px solid ${COLORS.grayLight}` }}>
         <Link to="/" style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.gray, textDecoration: "none" }}>
