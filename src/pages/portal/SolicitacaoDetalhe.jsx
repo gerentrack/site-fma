@@ -578,6 +578,7 @@ export default function SolicitacaoDetalhe() {
   const [editOpen,      setEditOpen]      = useState(false);
   const [respostaPendencia, setRespostaPendencia] = useState("");
   const [enviandoResposta, setEnviandoResposta] = useState(false);
+  const respostaFileRef = useRef(null);
 
   const load = useCallback(async () => {
     const [sr,ar,mr] = await Promise.all([
@@ -677,9 +678,30 @@ export default function SolicitacaoDetalhe() {
               <textarea value={respostaPendencia} onChange={e => setRespostaPendencia(e.target.value)}
                 placeholder="Descreva a correção realizada ou justifique..."
                 style={{ width:"100%", padding:"10px 12px", border:`1px solid #fde68a`, borderRadius:8, fontSize:13, fontFamily:FONTS.body, minHeight:80, resize:"vertical", boxSizing:"border-box" }} />
+              <div style={{ marginTop:10 }}>
+                <label style={{ fontSize:11, fontWeight:600, color:"#92400e", display:"block", marginBottom:4 }}>Anexar documento (opcional)</label>
+                <input type="file" ref={respostaFileRef} accept="image/*,.pdf,.doc,.docx" style={{ fontSize:12 }} />
+              </div>
               <div style={{ display:"flex", gap:8, marginTop:10, justifyContent:"flex-end" }}>
                 <button disabled={enviandoResposta || !respostaPendencia.trim()} onClick={async () => {
                   setEnviandoResposta(true);
+                  // Upload do arquivo se houver
+                  const file = respostaFileRef.current?.files?.[0];
+                  if (file) {
+                    const sanitize = (s) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 80);
+                    const anoR = (sol.dataEvento || "").slice(0, 4) || String(new Date().getFullYear());
+                    const folder = `solicitacoes/${anoR}/${sanitize(organizerName)}/${sanitize(sol.nomeEvento)}`;
+                    const { url, path } = await uploadFile(file, folder);
+                    if (url) {
+                      await ArquivosService.upload({
+                        solicitacaoId: id, nome: file.name, tamanho: file.size,
+                        tipo: file.type || "application/octet-stream",
+                        descricao: `Resposta a pendencia: ${respostaPendencia.trim().slice(0, 60)}`,
+                        categoria: "complementar", url, storagePath: path,
+                        enviadoPor: "organizador", enviadoPorId: organizerId,
+                      });
+                    }
+                  }
                   await MovimentacoesService.registrar({
                     solicitacaoId: id, tipoEvento: "comentario",
                     statusAnterior: sol.status, statusNovo: sol.status,
@@ -694,6 +716,7 @@ export default function SolicitacaoDetalhe() {
                     autor: "organizador", autorNome: organizerName, autorId: organizerId, visivel: true,
                   });
                   setRespostaPendencia("");
+                  if (respostaFileRef.current) respostaFileRef.current.value = "";
                   setEnviandoResposta(false);
                   load();
                 }} style={{ padding:"10px 20px", borderRadius:8, border:"none", background:enviandoResposta?COLORS.gray:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:enviandoResposta?"not-allowed":"pointer" }}>
