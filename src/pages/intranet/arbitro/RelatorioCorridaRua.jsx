@@ -10,6 +10,7 @@ import { useIntranet } from "../../../context/IntranetContext";
 import { RelatoriosService, RefereeAssignmentsService, RefereesService, SolicitacoesService } from "../../../services/index";
 import { uploadFile } from "../../../services/storageService";
 import { COLORS, FONTS } from "../../../styles/colors";
+import SignaturePad, { gerarEvidenciaAssinatura } from "../../../components/ui/SignaturePad";
 
 // ── Opções de checkboxes/radios por seção ──
 const TIPO_EVENTO = ["Social e/ou Beneficente", "Participativo e Promocao do Esporte", "Competicao / Performance"];
@@ -173,6 +174,10 @@ export default function RelatorioCorridaRua() {
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
 
   const save = async (enviar = false) => {
+    if (enviar && !form.assinaturaDigital) {
+      setMsg("Erro: Assine o relatorio antes de enviar.");
+      return;
+    }
     setSaving(true); setMsg("");
     const evt = assignment?.event || {};
     const payload = {
@@ -183,6 +188,15 @@ export default function RelatorioCorridaRua() {
       eventTitle: evt.title || "", eventDate: evt.date || "", eventCity: evt.city || "",
       status: enviar ? "enviado" : "rascunho",
     };
+    // Registrar evidência da assinatura digital no envio
+    if (enviar && form.assinaturaDigital) {
+      payload.assinaturaEvidencia = gerarEvidenciaAssinatura({
+        uid: refereeId,
+        refereeId,
+        refereeName: name,
+        documentoId: existingId || "novo",
+      });
+    }
     if (existingId) {
       await RelatoriosService.update(existingId, payload);
     } else {
@@ -387,6 +401,14 @@ export default function RelatorioCorridaRua() {
               </Field>
               <Field label="Os Resultados devem ser Homologados? Descreva o motivo." required>
                 <textarea style={textarea} value={form.homologacaoResultados || ""} onChange={e => set("homologacaoResultados", e.target.value)} />
+              </Field>
+              <Field label="">
+                <SignaturePad
+                  value={form.assinaturaDigital || ""}
+                  onChange={v => set("assinaturaDigital", v)}
+                  disabled={form.status === "aprovado"}
+                  label="Assinatura do Arbitro Responsavel"
+                />
               </Field>
             </>
           )}
