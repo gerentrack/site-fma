@@ -72,6 +72,7 @@ export default function IntranetHome() {
   const [docsNaoLidos, setDocsNaoLidos] = useState(0);
   const [avisos, setAvisos] = useState([]);
   const [pendencias, setPendencias] = useState(null);
+  const [meuResumo, setMeuResumo] = useState(null); // resumo financeiro pessoal
 
   const anoAtual = new Date().getFullYear();
 
@@ -136,6 +137,17 @@ export default function IntranetHome() {
         }
       });
       AnuidadesService.getByRefereeAno(refereeId, anoAtual).then(r => { if (r.data) setAnuidade(r.data); });
+      // Resumo financeiro pessoal
+      ReembolsosService.list({ refereeId }).then(r => {
+        const meus = (r.data || []).filter(x => x.refereeId === refereeId);
+        const reembPendentes = meus.filter(x => x.status === "pendente").length;
+        const reembPagos = meus.filter(x => x.status === "pago").reduce((s, x) => s + (x.valorAprovado || x.valor || 0), 0);
+        RefereeAssignmentsService.getByReferee(refereeId).then(aRes => {
+          const diariasPagas = (aRes.data || []).filter(a => a.diariaPaga).reduce((s, a) => s + (a.valorDiaria || 0) + (a.transporte || 0) + (a.hospedagem || 0) + (a.alimentacao || 0), 0);
+          const totalEventos = (aRes.data || []).filter(a => a.event).length;
+          setMeuResumo({ reembPendentes, totalRecebido: diariasPagas + reembPagos, totalEventos });
+        });
+      });
       RefereesService.get(refereeId).then(rRef => {
         const nv = rRef.data?.nivel || "";
         EnvioDocumentosService.listByReferee(refereeId, nv).then(r => {
@@ -232,6 +244,10 @@ export default function IntranetHome() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 16, marginBottom: 36 }}>
             <StatCard label="Disponibilidades registradas" value={myAvail.length} icon="📅" color="#0066cc" to="/intranet/disponibilidade" />
             <StatCard label="Próximas escalas" value={myAssignments.length} icon="📋" color="#007733" to="/intranet/escalas" />
+            {docsNaoLidos > 0 && <StatCard label="Mensagens não lidas" value={docsNaoLidos} icon="📨" color="#d97706" to="/intranet/mensagens" />}
+            {meuResumo && meuResumo.reembPendentes > 0 && <StatCard label="Reembolsos pendentes" value={meuResumo.reembPendentes} icon="🧾" color="#dc2626" to="/intranet/reembolsos" />}
+            {meuResumo && <StatCard label="Total recebido no ano" value={meuResumo.totalRecebido.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} icon="💰" color="#15803d" />}
+            {meuResumo && <StatCard label="Total de eventos" value={meuResumo.totalEventos} icon="🏅" color="#7c3aed" />}
           </div>
         )}
 
