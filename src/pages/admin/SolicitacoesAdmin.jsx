@@ -1669,19 +1669,27 @@ function CamposTecnicosView({ sol, card, lbl, val, fmt }) {
     </div>
   );
 
-  const DocBadge = ({ doc, label }) => (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 8,
-      background: doc?.temArquivo ? "#f0fdf4" : "#fff5f5",
-      border: `1px solid ${doc?.temArquivo ? "#86efac" : "#fca5a5"}` }}>
-      <span>{doc?.temArquivo ? "✅" : "❌"}</span>
-      <div>
-        <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, color: doc?.temArquivo ? "#15803d" : "#dc2626" }}>
-          {label}
+  const DocBadge = ({ doc, label }) => {
+    const inner = (
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 8,
+        background: doc?.temArquivo ? "#f0fdf4" : "#fff5f5",
+        border: `1px solid ${doc?.temArquivo ? "#86efac" : "#fca5a5"}`,
+        cursor: doc?.url ? "pointer" : "default", transition: "opacity 0.15s" }}
+        onMouseEnter={e => { if (doc?.url) e.currentTarget.style.opacity = "0.8"; }}
+        onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}>
+        <span style={{ fontWeight: 700, color: doc?.temArquivo ? "#15803d" : "#dc2626" }}>{doc?.temArquivo ? "OK" : "—"}</span>
+        <div>
+          <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, color: doc?.temArquivo ? "#15803d" : "#dc2626" }}>
+            {label}
+          </div>
+          {doc?.nomeArquivo && <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>{doc.nomeArquivo}</div>}
         </div>
-        {doc?.nomeArquivo && <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>{doc.nomeArquivo}</div>}
       </div>
-    </div>
-  );
+    );
+    return doc?.url
+      ? <a href={doc.url} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>{inner}</a>
+      : inner;
+  };
 
   const ModalidadesTable = () => {
     const total = totalEstimativaInscritos(ct);
