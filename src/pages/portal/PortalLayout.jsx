@@ -25,7 +25,7 @@ function NavLink({ item }) {
       borderLeft: active ? "3px solid #60a5fa" : "3px solid transparent",
       transition: "all 0.15s",
     }}>
-      <span style={{ fontSize: 15 }}>{item.icon}</span>
+      {item.icon && <span style={{ fontSize: 15 }}>{item.icon}</span>}
       {item.label}
     </Link>
   );

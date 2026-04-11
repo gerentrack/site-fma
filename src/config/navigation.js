@@ -406,10 +406,10 @@ export const ANUIDADE_STATUS = [
 ];
 
 export const PORTAL_NAV = [
-  { label: "Início",            icon: "🏠", path: "/portal" },
-  { label: "Nova Solicitação",  icon: "➕", path: "/portal/nova-solicitacao" },
-  { label: "Minhas Solicitações", icon: "📋", path: "/portal/solicitacoes" },
-  { label: "Meus Dados",        icon: "👤", path: "/portal/meus-dados" },
+  { label: "Início",              icon: "", path: "/portal" },
+  { label: "Nova Solicitação",    icon: "", path: "/portal/nova-solicitacao" },
+  { label: "Minhas Solicitações", icon: "", path: "/portal/solicitacoes" },
+  { label: "Meus Dados",         icon: "", path: "/portal/meus-dados" },
 ];
 
 // ── LGPD — Versões dos documentos legais ─────────────────────────────────────
