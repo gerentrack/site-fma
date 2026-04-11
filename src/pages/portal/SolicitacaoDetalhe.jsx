@@ -752,7 +752,7 @@ export default function SolicitacaoDetalhe() {
                       </div>
                       <div style={{ display:"flex", gap:8, flexShrink:0 }}>
                         {(arq.dataUrl||arq.url)&&<a href={arq.dataUrl||arq.url} download={arq.nome} target="_blank" rel="noreferrer" style={{ padding:"6px 14px", borderRadius:7, background:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:11, fontWeight:700, textDecoration:"none" }}>Baixar</a>}
-                        {!isFMA&&canUpload&&<button onClick={async()=>{ if(!confirm(`Remover "${arq.nome}"?`))return; await ArquivosService.delete(arq.id); load(); }} style={{ padding:"6px 10px", borderRadius:7, border:"1px solid #fca5a5", background:"#fff", color:"#dc2626", fontFamily:FONTS.heading, fontSize:11, fontWeight:700, cursor:"pointer" }}>✕</button>}
+                        {!isFMA&&canDelete&&<button onClick={async()=>{ if(!confirm(`Remover "${arq.nome}"?`))return; await ArquivosService.delete(arq.id); load(); }} style={{ padding:"6px 10px", borderRadius:7, border:"1px solid #fca5a5", background:"#fff", color:"#dc2626", fontFamily:FONTS.heading, fontSize:11, fontWeight:700, cursor:"pointer" }}>✕</button>}
                       </div>
                     </div>
                   );
