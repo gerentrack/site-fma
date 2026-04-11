@@ -373,14 +373,14 @@ export default function CompleteProfileWizard() {
               <Field label="Nível" required error={errors.nivel}><Select value={data.nivel || ""} onChange={v => set("nivel", v)} options={NIVEL_OPTIONS} /></Field>
               <Field label="Registro CBAT" required error={errors.registroCbat}><Input value={data.registroCbat || ""} onChange={v => set("registroCbat", v)} placeholder="Número de registro na CBAT" /></Field>
               <Field label="Tamanho de Camisa" required error={errors.tamanhoCamisa}><Select value={data.tamanhoCamisa || ""} onChange={v => set("tamanhoCamisa", v)} options={CAMISA_OPTIONS} /></Field>
-              <Field label="Tipo Sanguíneo" error={errors.tipoSanguineo}><Select value={data.tipoSanguineo || ""} onChange={v => set("tipoSanguineo", v)} options={SANGUE_OPTIONS} /></Field>
+              <Field label="Tipo Sanguíneo (opcional)" error={errors.tipoSanguineo}><Select value={data.tipoSanguineo || ""} onChange={v => set("tipoSanguineo", v)} options={SANGUE_OPTIONS} /></Field>
               <Field label="Disponibilidade de Deslocamento" required error={errors.disponibilidadeDeslocamento}><Select value={data.disponibilidadeDeslocamento || ""} onChange={v => set("disponibilidadeDeslocamento", v)} options={DESLOCAMENTO} /></Field>
 
               <div style={{ gridColumn: "1 / -1", borderTop: `1px solid ${COLORS.grayLight}`, paddingTop: 16, marginTop: 4 }}>
-                <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>Contato de Emergência</div>
+                <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>Contato de Emergência (opcional)</div>
               </div>
-              <Field label="Nome" error={errors.contatoEmergenciaNome}><Input value={data.contatoEmergenciaNome || ""} onChange={v => set("contatoEmergenciaNome", v)} /></Field>
-              <Field label="Telefone" error={errors.contatoEmergenciaTelefone}><Input value={data.contatoEmergenciaTelefone || ""} onChange={v => set("contatoEmergenciaTelefone", v)} mask="phone" placeholder="(31) 99999-9999" /></Field>
+              <Field label="Nome"><Input value={data.contatoEmergenciaNome || ""} onChange={v => set("contatoEmergenciaNome", v)} /></Field>
+              <Field label="Telefone"><Input value={data.contatoEmergenciaTelefone || ""} onChange={v => set("contatoEmergenciaTelefone", v)} mask="phone" placeholder="(31) 99999-9999" /></Field>
 
               {/* ── Consentimento LGPD ── */}
               <div style={{ gridColumn: "1 / -1", borderTop: `1px solid ${COLORS.grayLight}`, paddingTop: 16, marginTop: 8 }}>

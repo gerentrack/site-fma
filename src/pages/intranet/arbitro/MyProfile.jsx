@@ -127,7 +127,7 @@ export default function MyProfile() {
   const nivel = REFEREE_CATEGORIES.find(c => c.value === data.nivel);
 
   // Calcular % de completude do perfil
-  const camposObrigatorios = ["name","email","phone","cpf","rg","dataNascimento","sexo","cep","logradouro","city","state","banco","agencia","contaDigito","chavePix","nivel","foto","contatoEmergenciaNome","contatoEmergenciaTelefone"];
+  const camposObrigatorios = ["name","email","phone","cpf","rg","dataNascimento","sexo","cep","logradouro","city","state","banco","agencia","contaDigito","chavePix","nivel","foto"];
   const preenchidos = camposObrigatorios.filter(k => data[k] && String(data[k]).trim() !== "").length;
   const completude = Math.round((preenchidos / camposObrigatorios.length) * 100);
 
@@ -342,11 +342,11 @@ export default function MyProfile() {
             <div>{label("Nível")}<select value={data.nivel || ""} onChange={e => set("nivel", e.target.value)} style={sel}><option value="">Selecione...</option>{REFEREE_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}</select></div>
             <div>{label("Registro CBAT")}<input value={data.registroCbat || ""} onChange={e => set("registroCbat", e.target.value)} style={inp} /></div>
             <div>{label("Tamanho de Camisa")}<select value={data.tamanhoCamisa || ""} onChange={e => set("tamanhoCamisa", e.target.value)} style={sel}><option value="">Selecione...</option>{CAMISA.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
-            <div>{label("Tipo Sanguíneo")}<select value={data.tipoSanguineo || ""} onChange={e => set("tipoSanguineo", e.target.value)} style={sel}><option value="">Selecione...</option>{SANGUE.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
+            <div>{label("Tipo Sanguíneo (opcional)")}<select value={data.tipoSanguineo || ""} onChange={e => set("tipoSanguineo", e.target.value)} style={sel}><option value="">Selecione...</option>{SANGUE.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
             <div>{label("Cor/Raça")}<select value={data.cor || ""} onChange={e => set("cor", e.target.value)} style={sel}><option value="">Selecione...</option>{COR.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
             <div>{label("Disponibilidade de Deslocamento")}<select value={data.disponibilidadeDeslocamento || ""} onChange={e => set("disponibilidadeDeslocamento", e.target.value)} style={sel}><option value="">Selecione...</option>{DESLOCAMENTO.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
-            <div>{label("Contato de Emergência — Nome")}<input value={data.contatoEmergenciaNome || ""} onChange={e => set("contatoEmergenciaNome", e.target.value)} style={inp} /></div>
-            <div>{label("Contato de Emergência — Telefone")}<input value={data.contatoEmergenciaTelefone || ""} onChange={e => set("contatoEmergenciaTelefone", e.target.value)} style={inp} /></div>
+            <div>{label("Contato de Emergência — Nome (opcional)")}<input value={data.contatoEmergenciaNome || ""} onChange={e => set("contatoEmergenciaNome", e.target.value)} style={inp} /></div>
+            <div>{label("Contato de Emergência — Telefone (opcional)")}<input value={data.contatoEmergenciaTelefone || ""} onChange={e => set("contatoEmergenciaTelefone", e.target.value)} style={inp} /></div>
           </div>
         </div>
 
