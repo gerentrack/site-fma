@@ -17,6 +17,7 @@ import {
   taxasConfigAPI, anuidadesAPI, envioDocumentosAPI, avaliacoesAPI,
   diariasAPI, muralAvisosAPI, reembolsosAPI, relatoriosAPI,
 } from "../data/api";
+import { notificarFmaSolicitacaoEnviada } from "./emailService";
 
 function slugify(str = "") {
   return str.toLowerCase().normalize("NFD")
@@ -432,6 +433,21 @@ export const SolicitacoesService = {
       descricao: "Solicitação enviada para análise da FMA.",
       autor: "organizador", autorNome: organizerName, autorId: organizerId, visivel: true,
     });
+    // Notificar FMA por e-mail
+    const solRes = await solicitacoesAPI.get(id);
+    if (solRes.data) {
+      const sol = solRes.data;
+      const orgRes = await organizersAPI.get(organizerId);
+      notificarFmaSolicitacaoEnviada({
+        organizadorNome: organizerName,
+        organizacao: orgRes.data?.organization || orgRes.data?.name || "",
+        evento: sol.nomeEvento || "",
+        cidade: sol.cidadeEvento || "",
+        dataEvento: sol.dataEvento || "",
+        tipo: sol.tipo || "permit",
+        solicitacaoId: id,
+      }).catch(() => {});
+    }
     return r;
   },
 

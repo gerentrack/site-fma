@@ -113,6 +113,35 @@ export async function notificarStatusSolicitacao({
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
+// 1b. Notificação à FMA — Solicitação enviada para análise
+// ═════════════════════════════════════════════════════════════════════════════
+
+export async function notificarFmaSolicitacaoEnviada({
+  organizadorNome, organizacao, evento, cidade, dataEvento, tipo, solicitacaoId,
+}) {
+  const html = templateBase(`
+    <p>Uma nova solicitacao foi enviada para analise:</p>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:140px;border:1px solid #eee;">Organizador</td><td style="padding:10px 14px;border:1px solid #eee;">${organizadorNome} (${organizacao})</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Evento</td><td style="padding:10px 14px;border:1px solid #eee;">${evento}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Cidade</td><td style="padding:10px 14px;border:1px solid #eee;">${cidade || "—"}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Data do evento</td><td style="padding:10px 14px;border:1px solid #eee;">${dataEvento ? new Date(dataEvento + "T12:00:00").toLocaleDateString("pt-BR") : "—"}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Tipo</td><td style="padding:10px 14px;border:1px solid #eee;">${tipo === "chancela" ? "Chancela" : "Permit"}</td></tr>
+    </table>
+    <p>Acesse o painel administrativo para analisar:</p>
+    <p style="text-align:center;margin:24px 0;">
+      <a href="${BASE_URL}/admin/solicitacoes/${solicitacaoId}" style="display:inline-block;padding:12px 28px;background:#0066cc;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver solicitacao</a>
+    </p>
+  `);
+
+  return enviarEmail({
+    to: "mg@cbat.org.br",
+    subject: `[FMA] Nova solicitacao de ${tipo === "chancela" ? "Chancela" : "Permit"} — ${evento}`,
+    html,
+  });
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
 // 2. Notificação de Escalação de Árbitro (já existia)
 // ═════════════════════════════════════════════════════════════════════════════
 
