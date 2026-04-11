@@ -16,8 +16,10 @@ export function OrganizerProvider({ children }) {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const s = await organizerAuthAPI.getSession();
-        setSession(s);
+        try {
+          const s = await organizerAuthAPI.getSession();
+          setSession(s);
+        } catch { setSession(null); }
       } else {
         setSession(null);
       }

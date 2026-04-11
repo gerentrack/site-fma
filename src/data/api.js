@@ -902,13 +902,15 @@ export const organizerAuthAPI = {
   getSession:        async () => {
     const u = auth.currentUser;
     if (!u) return null;
-    const profile = await readDoc("users", u.uid);
-    if (!profile || !hasRole(profile, "organizer")) return null;
-    if (!profile.refId) return null;
-    const org = await readDoc("organizers", profile.refId);
-    if (!org) return null;
-    const orgAtivo = org.status === "ativo" || org.active === true;
-    return { organizerId: org.id, uid: u.uid, email: org.email, name: org.name, active: orgAtivo, motivoDesativacao: org.motivoDesativacao || "", emailVerified: org.emailVerified || false };
+    try {
+      const profile = await readDoc("users", u.uid);
+      if (!profile || !hasRole(profile, "organizer")) return null;
+      if (!profile.refId) return null;
+      const org = await readDoc("organizers", profile.refId);
+      if (!org) return null;
+      const orgAtivo = org.status === "ativo" || org.active === true;
+      return { organizerId: org.id, uid: u.uid, email: org.email, name: org.name, active: orgAtivo, motivoDesativacao: org.motivoDesativacao || "", emailVerified: org.emailVerified || false };
+    } catch { return null; }
   },
   onAuthStateChange: (callback) => onAuthStateChanged(auth, callback),
   register: async (data) => {
