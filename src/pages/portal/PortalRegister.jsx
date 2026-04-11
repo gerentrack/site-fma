@@ -360,8 +360,14 @@ export default function PortalRegister() {
               <Field label="Confirmar senha" required>
                 <input type="password" value={form.confirmPassword}
                   onChange={e => set("confirmPassword", e.target.value)}
-                  placeholder="Repita a senha" style={inpStyle} />
-                {errors.confirmPassword && <div style={errStyle}>{errors.confirmPassword}</div>}
+                  placeholder="Repita a senha"
+                  style={{ ...inpStyle, borderColor: form.confirmPassword && form.confirmPassword !== form.password ? "#dc2626" : undefined }} />
+                {form.confirmPassword && form.confirmPassword !== form.password && (
+                  <div style={errStyle}>Senhas nao coincidem</div>
+                )}
+                {form.confirmPassword && form.confirmPassword === form.password && form.password.length >= 6 && (
+                  <div style={{ fontSize: 12, color: "#15803d", marginTop: 4 }}>Senhas coincidem</div>
+                )}
               </Field>
             </div>
 
