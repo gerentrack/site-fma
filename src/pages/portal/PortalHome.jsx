@@ -18,7 +18,7 @@ const tipoMap = Object.fromEntries(SOLICITACAO_TIPOS.map(t => [t.value, t]));
 const movMap = MOVIMENTACAO_TIPOS;
 
 function StatCard({ status, count, onClick }) {
-  const s = statusMap[status] || { label: status, color: COLORS.gray, bg: "#f3f4f6", icon: "📋" };
+  const s = statusMap[status] || { label: status, color: COLORS.gray, bg: "#f3f4f6", icon: "" };
   return (
     <button onClick={onClick} style={{
       background: s.bg, border: `1.5px solid ${s.color}30`,
@@ -28,7 +28,7 @@ function StatCard({ status, count, onClick }) {
     }}
       onMouseEnter={e => { if (count > 0) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.1)"; } }}
       onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}>
-      <div style={{ fontSize: 22, marginBottom: 8 }}>{s.icon}</div>
+      {s.icon && <div style={{ fontSize: 22, marginBottom: 8 }}>{s.icon}</div>}
       <div style={{ fontFamily: FONTS.heading, fontSize: 26, fontWeight: 900, color: s.color }}>{count}</div>
       <div style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, textTransform: "uppercase",
         letterSpacing: 0.5, color: s.color, marginTop: 2 }}>{s.label}</div>
@@ -139,7 +139,7 @@ export default function PortalHome() {
         {pendencias.length > 0 && (
           <div style={{ background: "#fffbeb", border: "1.5px solid #f59e0b", borderRadius: 12,
             padding: "16px 20px", marginBottom: 28, display: "flex", gap: 14, alignItems: "flex-start" }}>
-            <span style={{ fontSize: 22 }}>⚠️</span>
+            <span style={{ fontSize: 16, fontWeight: 900, color: "#f59e0b" }}>!</span>
             <div>
               <div style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, color: "#92400e" }}>
                 {pendencias.length} solicitação{pendencias.length > 1 ? "ções" : ""} com pendência
@@ -184,7 +184,7 @@ export default function PortalHome() {
             {solicitacoes.length === 0 ? (
               <div style={{ background: "#fff", borderRadius: 12, padding: "40px 24px",
                 textAlign: "center", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
+                <div style={{ fontSize: 40, marginBottom: 12, color: COLORS.grayLight }}>—</div>
                 <div style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 800,
                   color: COLORS.dark, textTransform: "uppercase", marginBottom: 8 }}>
                   Nenhuma solicitação ainda
@@ -196,14 +196,14 @@ export default function PortalHome() {
                   style={{ display: "inline-block", padding: "10px 22px", borderRadius: 8,
                     background: "#0066cc", color: "#fff", textDecoration: "none",
                     fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, textTransform: "uppercase" }}>
-                  ➕ Nova solicitação
+                  Nova solicitacao
                 </Link>
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {solicitacoes.slice(0, 5).map(sol => {
-                  const st = statusMap[sol.status] || { label: sol.status, color: COLORS.gray, bg: "#f3f4f6", icon: "📋" };
-                  const tp = tipoMap[sol.tipo] || { label: sol.tipo, icon: "📋" };
+                  const st = statusMap[sol.status] || { label: sol.status, color: COLORS.gray, bg: "#f3f4f6", icon: "" };
+                  const tp = tipoMap[sol.tipo] || { label: sol.tipo, icon: "" };
                   return (
                     <Link key={sol.id} to={`/portal/solicitacoes/${sol.id}`}
                       style={{ display: "block", textDecoration: "none", background: "#fff",
@@ -256,9 +256,9 @@ export default function PortalHome() {
               </h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {[
-                  { to: "/portal/nova-solicitacao", icon: "➕", label: "Nova solicitação", color: "#0066cc" },
-                  { to: "/portal/solicitacoes", icon: "📋", label: "Minhas solicitações", color: COLORS.dark },
-                  { to: "/portal/meus-dados", icon: "👤", label: "Meus dados", color: COLORS.dark },
+                  { to: "/portal/nova-solicitacao", icon: "+", label: "Nova solicitação", color: "#0066cc" },
+                  { to: "/portal/solicitacoes", icon: "", label: "Minhas solicitações", color: COLORS.dark },
+                  { to: "/portal/meus-dados", icon: "", label: "Meus dados", color: COLORS.dark },
                 ].map(a => (
                   <Link key={a.to} to={a.to} style={{ display: "flex", alignItems: "center", gap: 10,
                     padding: "10px 12px", borderRadius: 8, background: COLORS.grayLight,
@@ -266,7 +266,7 @@ export default function PortalHome() {
                     textDecoration: "none", transition: "background 0.15s" }}
                     onMouseEnter={e => e.currentTarget.style.background = `${a.color}18`}
                     onMouseLeave={e => e.currentTarget.style.background = COLORS.grayLight}>
-                    <span>{a.icon}</span> {a.label}
+                    {a.icon && <span>{a.icon}</span>} {a.label}
                   </Link>
                 ))}
               </div>
@@ -283,11 +283,11 @@ export default function PortalHome() {
                 </h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {recentMovs.slice(0, 5).map(mov => {
-                    const mt = movMap[mov.tipoEvento] || { icon: "📋", color: COLORS.gray };
+                    const mt = movMap[mov.tipoEvento] || { icon: "", color: COLORS.gray };
                     return (
                       <Link key={mov.id} to={`/portal/solicitacoes/${mov.solicitacaoId}`}
                         style={{ textDecoration: "none", display: "flex", gap: 10, alignItems: "flex-start" }}>
-                        <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{mt.icon}</span>
+                        {mt.icon && <span style={{ fontSize: 16, flexShrink: 0, marginTop: 1 }}>{mt.icon}</span>}
                         <div>
                           <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.dark,
                             lineHeight: 1.4 }}>{mov.descricao}</div>

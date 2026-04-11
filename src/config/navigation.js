@@ -353,49 +353,49 @@ export const SOCIAL_NETWORKS = [
 // ─── Portal de Solicitações ───────────────────────────────────────────────────
 
 export const SOLICITACAO_STATUS = [
-  { value: "rascunho",    label: "Rascunho",    color: "#6b7280", bg: "#f3f4f6", icon: "📝" },
-  { value: "enviada",     label: "Enviada",     color: "#0066cc", bg: "#eff6ff", icon: "📤" },
-  { value: "em_analise",  label: "Em análise",  color: "#d97706", bg: "#fffbeb", icon: "🔍" },
-  { value: "pendencia",   label: "Pendência",   color: "#b45309", bg: "#fef3c7", icon: "⚠️" },
-  { value: "aprovada",    label: "Aprovada",    color: "#15803d", bg: "#f0fdf4", icon: "✅" },
-  { value: "indeferida",  label: "Indeferida",  color: "#cc0000", bg: "#fff5f5", icon: "❌" },
-  { value: "concluida",   label: "Concluída",   color: "#0891b2", bg: "#f0f9ff", icon: "🏁" },
+  { value: "rascunho",    label: "Rascunho",    color: "#6b7280", bg: "#f3f4f6", icon: "" },
+  { value: "enviada",     label: "Enviada",     color: "#0066cc", bg: "#eff6ff", icon: "" },
+  { value: "em_analise",  label: "Em análise",  color: "#d97706", bg: "#fffbeb", icon: "" },
+  { value: "pendencia",   label: "Pendência",   color: "#b45309", bg: "#fef3c7", icon: "" },
+  { value: "aprovada",    label: "Aprovada",    color: "#15803d", bg: "#f0fdf4", icon: "" },
+  { value: "indeferida",  label: "Indeferida",  color: "#cc0000", bg: "#fff5f5", icon: "" },
+  { value: "concluida",   label: "Concluída",   color: "#0891b2", bg: "#f0f9ff", icon: "" },
 ];
 
 export const SOLICITACAO_TIPOS = [
-  { value: "permit",   label: "Permit",   icon: "🏃", desc: "Reconhecimento e homologação de corridas de rua e ultramaratonas, conforme Norma 07 da CBAt. Inclui arbitragem, medição de percurso e cronometragem oficial." },
-  { value: "chancela", label: "Chancela", icon: "🏔️", desc: "Reconhecimento e homologação de corridas em montanha e corridas em trilha, conforme Norma 15 da CBAt. Inclui Delegado Técnico e requisitos de segurança." },
+  { value: "permit",   label: "Permit",   icon: "", desc: "Reconhecimento e homologação de corridas de rua e ultramaratonas, conforme Norma 07 da CBAt. Inclui arbitragem, medição de percurso e cronometragem oficial." },
+  { value: "chancela", label: "Chancela", icon: "", desc: "Reconhecimento e homologação de corridas em montanha e corridas em trilha, conforme Norma 15 da CBAt. Inclui Delegado Técnico e requisitos de segurança." },
 ];
 
 export const MOVIMENTACAO_TIPOS = {
-  criada:              { label: "Solicitação criada",         icon: "📝", color: "#6b7280" },
-  enviada:             { label: "Enviada para análise",       icon: "📤", color: "#0066cc" },
-  status_alterado:     { label: "Status alterado",            icon: "🔄", color: "#d97706" },
-  pendencia_aberta:    { label: "Pendência aberta",           icon: "⚠️", color: "#b45309" },
-  arquivo_enviado:     { label: "Arquivo enviado",            icon: "📎", color: "#7c3aed" },
-  comentario:          { label: "Comentário adicionado",      icon: "💬", color: "#0891b2" },
-  protocolo_gerado:    { label: "Protocolo gerado",           icon: "🔖", color: "#15803d" },
-  evento_vinculado:    { label: "Evento vinculado",           icon: "📅", color: "#0066cc" },
-  evento_desvinculado: { label: "Evento desvinculado",        icon: "🔗", color: "#6b7280" },
-  aprovada:            { label: "Solicitação aprovada",       icon: "✅", color: "#15803d" },
-  indeferida:          { label: "Solicitação indeferida",     icon: "❌", color: "#cc0000" },
-  concluida:           { label: "Processo concluído",         icon: "🏁", color: "#0891b2" },
-  anotacao_interna:    { label: "Anotação interna",           icon: "🔒", color: "#9ca3af" },
-  permit_gerado:       { label: "Permit/Chancela gerado",     icon: "📋", color: "#15803d" },
-  resultado_enviado:   { label: "Resultado enviado",          icon: "📊", color: "#7c3aed" },
-  resultado_aprovado:  { label: "Resultado aprovado",         icon: "✅", color: "#15803d" },
-  resultado_rejeitado: { label: "Resultado rejeitado",        icon: "❌", color: "#cc0000" },
-  taxa_calculada:      { label: "Taxa calculada",             icon: "💰", color: "#d97706" },
-  pagamento_anexado:   { label: "Comprovante anexado",        icon: "🧾", color: "#0066cc" },
-  pagamento_confirmado:{ label: "Pagamento confirmado",       icon: "✅", color: "#15803d" },
-  pagamento_cobrado:   { label: "Cobrança enviada",           icon: "📨", color: "#b45309" },
+  criada:              { label: "Solicitação criada",         icon: "", color: "#6b7280" },
+  enviada:             { label: "Enviada para análise",       icon: "", color: "#0066cc" },
+  status_alterado:     { label: "Status alterado",            icon: "", color: "#d97706" },
+  pendencia_aberta:    { label: "Pendência aberta",           icon: "", color: "#b45309" },
+  arquivo_enviado:     { label: "Arquivo enviado",            icon: "", color: "#7c3aed" },
+  comentario:          { label: "Comentário adicionado",      icon: "", color: "#0891b2" },
+  protocolo_gerado:    { label: "Protocolo gerado",           icon: "", color: "#15803d" },
+  evento_vinculado:    { label: "Evento vinculado",           icon: "", color: "#0066cc" },
+  evento_desvinculado: { label: "Evento desvinculado",        icon: "", color: "#6b7280" },
+  aprovada:            { label: "Solicitação aprovada",       icon: "", color: "#15803d" },
+  indeferida:          { label: "Solicitação indeferida",     icon: "", color: "#cc0000" },
+  concluida:           { label: "Processo concluído",         icon: "", color: "#0891b2" },
+  anotacao_interna:    { label: "Anotação interna",           icon: "", color: "#9ca3af" },
+  permit_gerado:       { label: "Permit/Chancela gerado",     icon: "", color: "#15803d" },
+  resultado_enviado:   { label: "Resultado enviado",          icon: "", color: "#7c3aed" },
+  resultado_aprovado:  { label: "Resultado aprovado",         icon: "", color: "#15803d" },
+  resultado_rejeitado: { label: "Resultado rejeitado",        icon: "", color: "#cc0000" },
+  taxa_calculada:      { label: "Taxa calculada",             icon: "", color: "#d97706" },
+  pagamento_anexado:   { label: "Comprovante anexado",        icon: "", color: "#0066cc" },
+  pagamento_confirmado:{ label: "Pagamento confirmado",       icon: "", color: "#15803d" },
+  pagamento_cobrado:   { label: "Cobrança enviada",           icon: "", color: "#b45309" },
 };
 
 export const PAGAMENTO_STATUS = [
-  { value: "pendente",            label: "Pendente",            color: "#d97706", bg: "#fffbeb", icon: "⏳" },
-  { value: "comprovante_anexado", label: "Comprovante anexado", color: "#0066cc", bg: "#eff6ff", icon: "🧾" },
-  { value: "confirmado",         label: "Confirmado",          color: "#15803d", bg: "#f0fdf4", icon: "✅" },
-  { value: "isento",             label: "Isento",              color: "#6b7280", bg: "#f3f4f6", icon: "🔓" },
+  { value: "pendente",            label: "Pendente",            color: "#d97706", bg: "#fffbeb", icon: "" },
+  { value: "comprovante_anexado", label: "Comprovante anexado", color: "#0066cc", bg: "#eff6ff", icon: "" },
+  { value: "confirmado",         label: "Confirmado",          color: "#15803d", bg: "#f0fdf4", icon: "" },
+  { value: "isento",             label: "Isento",              color: "#6b7280", bg: "#f3f4f6", icon: "" },
 ];
 
 export const ANUIDADE_STATUS = [
