@@ -16,7 +16,7 @@ import {
   INTRANET_NAV_ADMIN,
   REFEREE_ROLES,
 } from "../../config/navigation";
-import { EnvioDocumentosService, AnuidadesService, RefereeAssignmentsService, RefereesService } from "../../services/index";
+import { EnvioDocumentosService, AnuidadesService, RefereeAssignmentsService, RefereesService, ReembolsosService } from "../../services/index";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "../../firebase";
 
@@ -96,10 +96,11 @@ export default function IntranetLayout({ children, requireRole = null }) {
       const items = [];
       const ano = new Date().getFullYear();
       try {
-        const [refRes, anRes, asRes] = await Promise.all([
+        const [refRes, anRes, asRes, reembRes] = await Promise.all([
           RefereesService.get(refereeId),
           AnuidadesService.getByRefereeAno(refereeId, ano),
           RefereeAssignmentsService.getByReferee(refereeId),
+          ReembolsosService.list({ refereeId }),
         ]);
         const nv = refRes.data?.nivel || "";
         const msgRes = await EnvioDocumentosService.listByReferee(refereeId, nv);
@@ -109,6 +110,11 @@ export default function IntranetLayout({ children, requireRole = null }) {
         if (an && (an.status === "pendente" || an.status === "vencido")) items.push({ text: `Anuidade ${ano} ${an.status}`, to: "/intranet/anuidade", color: "#dc2626" });
         const futuras = (asRes.data || []).filter(a => a.event?.date >= new Date().toISOString().slice(0, 10));
         if (futuras.length) items.push({ text: `${futuras.length} escala(s) futura(s)`, to: "/intranet/escalas", color: "#0066cc" });
+        // Reembolsos com status atualizado (aprovado ou rejeitado)
+        const reembAprovados = (reembRes.data || []).filter(r => r.refereeId === refereeId && r.status === "aprovado").length;
+        const reembRejeitados = (reembRes.data || []).filter(r => r.refereeId === refereeId && r.status === "rejeitado").length;
+        if (reembAprovados) items.push({ text: `${reembAprovados} reembolso(s) aprovado(s)`, to: "/intranet/reembolsos", color: "#15803d" });
+        if (reembRejeitados) items.push({ text: `${reembRejeitados} reembolso(s) rejeitado(s)`, to: "/intranet/reembolsos", color: "#dc2626" });
       } catch (e) { console.warn("Notifs:", e); }
       setNotifs(items);
     };
@@ -124,6 +130,7 @@ export default function IntranetLayout({ children, requireRole = null }) {
       unsubs.push(onSnapshot(collection(db, "envioDocumentos"), debouncedRecalcular, () => {}));
       unsubs.push(onSnapshot(collection(db, "anuidades"), debouncedRecalcular, () => {}));
       unsubs.push(onSnapshot(collection(db, "refereeAssignments"), debouncedRecalcular, () => {}));
+      unsubs.push(onSnapshot(collection(db, "reembolsos"), debouncedRecalcular, () => {}));
     } catch (e) { console.warn("onSnapshot setup:", e); }
 
     // Fallback: polling a cada 30s caso onSnapshot falhe
