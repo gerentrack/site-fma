@@ -43,7 +43,9 @@ async function imgToBase64(url) {
  * @param {number} dados.hospedagem
  * @param {number} dados.alimentacao
  * @param {Array} dados.reembolsos — [{ categoria, descricao, valor }]
- * @param {string} [dados.assinaturaUrl]
+ * @param {string} [dados.assinaturaUrl] — assinatura do presidente FMA
+ * @param {string} [dados.reciboAssinatura] — assinatura digital do árbitro (dataURL PNG)
+ * @param {object} [dados.reciboEvidencia] — evidência da assinatura { refereeName, assinadoEm, baseLegal }
  */
 export async function gerarReciboPagamentoArbitroPdf(dados) {
   const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -139,18 +141,46 @@ export async function gerarReciboPagamentoArbitroPdf(dados) {
   pdf.text(`Belo Horizonte/MG, ${dataExtenso()}.`, W / 2, y, { align: "center" });
   y += 20;
 
-  // Assinatura
-  const sigImgW = 50, sigImgH = 18;
+  // Assinaturas — lado a lado
+  const sigImgW = 45, sigImgH = 16;
+  const colL = ML + 10; // centro coluna esquerda (presidente)
+  const colR = W - MR - 10; // centro coluna direita (árbitro)
+  const sigLineW = 60;
+
+  // Assinatura do presidente (esquerda)
   if (dados.assinaturaUrl) {
     try {
       const sigData = await imgToBase64(dados.assinaturaUrl);
-      if (sigData) pdf.addImage(sigData, "PNG", (W - sigImgW) / 2, y + 4 - sigImgH, sigImgW, sigImgH);
+      if (sigData) pdf.addImage(sigData, "PNG", colL + (sigLineW - sigImgW) / 2 - sigLineW / 2, y + 4 - sigImgH, sigImgW, sigImgH);
     } catch {}
   }
+
+  // Assinatura do árbitro (direita)
+  if (dados.reciboAssinatura) {
+    try {
+      const arbSig = dados.reciboAssinatura.startsWith("data:") ? dados.reciboAssinatura : await imgToBase64(dados.reciboAssinatura);
+      if (arbSig) pdf.addImage(arbSig, "PNG", colR - sigLineW / 2 + (sigLineW - sigImgW) / 2, y + 4 - sigImgH, sigImgW, sigImgH);
+    } catch {}
+  }
+
   y += 4;
   pdf.setDrawColor(0); pdf.setLineWidth(0.3);
-  const sigW = 70;
-  pdf.line((W - sigW) / 2, y, (W + sigW) / 2, y);
+  // Linha esquerda
+  pdf.line(colL - sigLineW / 2, y, colL + sigLineW / 2, y);
+  // Linha direita
+  pdf.line(colR - sigLineW / 2, y, colR + sigLineW / 2, y);
+
+  y += 4;
+  pdf.setFontSize(8); pdf.setFont("helvetica", "normal"); pdf.setTextColor(80);
+  pdf.text("Federacao Mineira de Atletismo", colL, y, { align: "center" });
+  pdf.text(dados.arbitroNome || "Arbitro", colR, y, { align: "center" });
+
+  // Evidência da assinatura digital
+  if (dados.reciboEvidencia?.assinadoEm) {
+    y += 12;
+    pdf.setFontSize(7); pdf.setTextColor(150);
+    pdf.text(`Assinatura eletronica simples (Lei 14.063/2020). Assinado em ${new Date(dados.reciboEvidencia.assinadoEm).toLocaleString("pt-BR")}.`, W / 2, y, { align: "center" });
+  }
 
   return pdf.output("blob");
 }

@@ -353,6 +353,8 @@ export default function FinanceiroArbitragem() {
                                           hospedagem: a.hospedagem, alimentacao: a.alimentacao,
                                           reembolsos: reembs.filter(r => r.status === "pago").map(r => ({ categoria: r.categoria, descricao: r.descricao, valor: (r.valorAprovado ?? r.valor) || 0 })),
                                           assinaturaUrl: config.assinaturaPresidenteUrl || "",
+                                          reciboAssinatura: a.reciboAssinatura || "",
+                                          reciboEvidencia: a.reciboEvidencia || null,
                                         },
                                       });
                                     }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: a.reciboNumero ? "#15803d" : COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
@@ -440,6 +442,8 @@ export default function FinanceiroArbitragem() {
                                         hospedagem: a.hospedagem, alimentacao: a.alimentacao,
                                         reembolsos: reembs.filter(r => r.status === "pago").map(r => ({ categoria: r.categoria, descricao: r.descricao, valor: (r.valorAprovado ?? r.valor) || 0 })),
                                         assinaturaUrl: config.assinaturaPresidenteUrl || "",
+                                        reciboAssinatura: a.reciboAssinatura || "",
+                                        reciboEvidencia: a.reciboEvidencia || null,
                                       },
                                     });
                                   }} style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: a.reciboNumero ? "#15803d" : COLORS.primary, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
