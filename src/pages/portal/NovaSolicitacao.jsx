@@ -18,6 +18,10 @@ import { SolicitacoesService, MovimentacoesService, ArquivosService, OrganizersS
 import { uploadFile } from "../../services/storageService";
 import { COLORS, FONTS } from "../../styles/colors";
 import { SOLICITACAO_TIPOS } from "../../config/navigation";
+
+function sanitize(str) {
+  return (str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 80);
+}
 import { useCep } from "../../hooks/useCep";
 import CepField from "../../components/common/CepField";
 import { validarCPF, validarCNPJ } from "../../utils/cpfCnpj";
