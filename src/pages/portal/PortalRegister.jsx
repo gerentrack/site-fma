@@ -72,6 +72,7 @@ export default function PortalRegister() {
   const [cnpjFound, setCnpjFound] = useState(false);
   const [legalModal, setLegalModal] = useState(null); // "privacidade" | "termos" | null
 
+  const [cepFound, setCepFound] = useState(false);
   const { setCep: setCepHook, loading: cepLoading } = useCep((result) => {
     setForm(f => ({
       ...f,
@@ -79,6 +80,7 @@ export default function PortalRegister() {
       city: result.cidade || f.city,
       state: result.estado || f.state,
     }));
+    setCepFound(true);
   });
 
   useEffect(() => {
@@ -256,56 +258,67 @@ export default function PortalRegister() {
               </Field>
               <div />
 
-              {/* Endereço — via CEP quando CNPJ não encontrado */}
-              {!cnpjFound && (
-                <div style={{ gridColumn: "1/-1" }}>
-                  <Field label="CEP">
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <input value={form.cep || ""}
-                        onChange={e => { const v = e.target.value; set("cep", v); setCepHook(v); }}
-                        placeholder="00000-000" maxLength={9}
-                        style={{ ...inpStyle, maxWidth: 160 }} />
-                      {cepLoading && <span style={{ fontSize: 12, color: COLORS.gray }}>Buscando...</span>}
-                    </div>
-                  </Field>
-                </div>
-              )}
-              <div style={{ gridColumn: "1/-1" }}>
-                <Field label="Endereço">
-                  <input value={cnpjFound ? (form.address || "—") : form.address} readOnly={cnpjFound}
-                    onChange={cnpjFound ? undefined : e => set("address", e.target.value)}
-                    placeholder="Endereço completo"
-                    style={cnpjFound ? readOnlyStyle : inpStyle} />
-                </Field>
-              </div>
-              {!cnpjFound && (
+              {/* Endereço — via Receita ou via CEP */}
+              {cnpjFound ? (
                 <>
-                  <Field label="Número" required>
-                    <input value={form.numero || ""}
-                      onChange={e => set("numero", e.target.value)}
-                      placeholder="Nº" style={inpStyle} />
-                    {errors.numero && <div style={errStyle}>{errors.numero}</div>}
+                  <div style={{ gridColumn: "1/-1" }}>
+                    <Field label="Endereço">
+                      <input value={form.address || "—"} readOnly style={readOnlyStyle} />
+                    </Field>
+                  </div>
+                  <Field label="Cidade" required>
+                    <input value={form.city} readOnly style={readOnlyStyle} />
                   </Field>
-                  <Field label="Complemento">
-                    <input value={form.complemento || ""}
-                      onChange={e => set("complemento", e.target.value)}
-                      placeholder="Sala, andar, bloco (opcional)" style={inpStyle} />
+                  <Field label="Estado">
+                    <input value={form.state} readOnly style={readOnlyStyle} />
                   </Field>
                 </>
+              ) : (
+                <>
+                  <div style={{ gridColumn: "1/-1" }}>
+                    <Field label="CEP" required>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <input value={form.cep || ""}
+                          onChange={e => { const v = e.target.value; set("cep", v); setCepHook(v); if (v.replace(/\D/g, "").length < 8) setCepFound(false); }}
+                          placeholder="00000-000" maxLength={9}
+                          style={{ ...inpStyle, maxWidth: 160 }} />
+                        {cepLoading && <span style={{ fontSize: 12, color: COLORS.gray }}>Buscando...</span>}
+                        <a href="https://buscacepinter.correios.com.br/app/endereco/index.php" target="_blank" rel="noreferrer"
+                          style={{ fontSize: 12, color: COLORS.primary, textDecoration: "underline", whiteSpace: "nowrap" }}>
+                          Nao sei meu CEP
+                        </a>
+                      </div>
+                    </Field>
+                  </div>
+                  {cepFound && (
+                    <>
+                      <div style={{ gridColumn: "1/-1" }}>
+                        <Field label="Endereço">
+                          <input value={form.address || ""} readOnly style={readOnlyStyle} />
+                        </Field>
+                      </div>
+                      <Field label="Número" required>
+                        <input value={form.numero || ""}
+                          onChange={e => set("numero", e.target.value)}
+                          placeholder="Nº" style={inpStyle} />
+                        {errors.numero && <div style={errStyle}>{errors.numero}</div>}
+                      </Field>
+                      <Field label="Complemento">
+                        <input value={form.complemento || ""}
+                          onChange={e => set("complemento", e.target.value)}
+                          placeholder="Sala, andar, bloco (opcional)" style={inpStyle} />
+                      </Field>
+                      <Field label="Cidade" required>
+                        <input value={form.city} readOnly style={readOnlyStyle} />
+                        {errors.city && <div style={errStyle}>{errors.city}</div>}
+                      </Field>
+                      <Field label="Estado">
+                        <input value={form.state} readOnly style={readOnlyStyle} />
+                      </Field>
+                    </>
+                  )}
+                </>
               )}
-              <Field label="Cidade" required>
-                <input value={form.city} readOnly={cnpjFound}
-                  onChange={cnpjFound ? undefined : e => set("city", e.target.value)}
-                  placeholder="Cidade"
-                  style={cnpjFound ? readOnlyStyle : inpStyle} />
-                {errors.city && <div style={errStyle}>{errors.city}</div>}
-              </Field>
-              <Field label="Estado">
-                <input value={form.state} readOnly={cnpjFound}
-                  onChange={cnpjFound ? undefined : e => set("state", e.target.value)}
-                  placeholder="UF" maxLength={2}
-                  style={cnpjFound ? readOnlyStyle : inpStyle} />
-              </Field>
 
               {/* Site — opcional, com modelo e preview */}
               <div style={{ gridColumn: "1/-1" }}>
