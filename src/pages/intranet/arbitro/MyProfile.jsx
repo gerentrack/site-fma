@@ -126,17 +126,40 @@ export default function MyProfile() {
   const status = statusMap[data.status] || { label: data.status, color: COLORS.gray };
   const nivel = REFEREE_CATEGORIES.find(c => c.value === data.nivel);
 
+  // Calcular % de completude do perfil
+  const camposObrigatorios = ["name","email","phone","cpf","rg","dataNascimento","sexo","cep","logradouro","city","state","banco","agencia","contaDigito","chavePix","nivel","foto","contatoEmergenciaNome","contatoEmergenciaTelefone"];
+  const preenchidos = camposObrigatorios.filter(k => data[k] && String(data[k]).trim() !== "").length;
+  const completude = Math.round((preenchidos / camposObrigatorios.length) * 100);
+
   return (
     <IntranetLayout>
       <div style={{ padding: 36, maxWidth: 800 }}>
         <h1 style={{ fontFamily: FONTS.heading, fontSize: 26, fontWeight: 900, textTransform: "uppercase", color: COLORS.dark, margin: "0 0 8px" }}>Meus Dados</h1>
-        <p style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, margin: "0 0 28px" }}>Mantenha seus dados sempre atualizados.</p>
+        <p style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, margin: "0 0 20px" }}>Mantenha seus dados sempre atualizados.</p>
+
+        {/* Barra de completude */}
+        {completude < 100 && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+              <span style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, color: COLORS.gray }}>Completude do perfil</span>
+              <span style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, color: completude >= 80 ? "#15803d" : "#d97706" }}>{completude}%</span>
+            </div>
+            <div style={{ height: 6, borderRadius: 3, background: COLORS.grayLight, overflow: "hidden" }}>
+              <div style={{ height: "100%", borderRadius: 3, width: `${completude}%`, background: completude >= 80 ? "#15803d" : completude >= 50 ? "#d97706" : "#dc2626", transition: "width 0.5s" }} />
+            </div>
+          </div>
+        )}
 
         {/* Status badges */}
         <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap" }}>
           <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: `${role.color}15`, color: role.color }}>{role.label}</span>
           <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: `${status.color}15`, color: status.color }}>{status.label}</span>
           {nivel && <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: `${nivel.color}15`, color: nivel.color }}>{nivel.label}</span>}
+          {completude < 100 && (
+            <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: completude >= 80 ? "#f0fdf4" : "#fef3c7", color: completude >= 80 ? "#15803d" : "#92400e" }}>
+              Perfil {completude}% completo
+            </span>
+          )}
           <button onClick={async () => {
             setMsg("Gerando credencial...");
             const cRes = await TaxasConfigService.get();
