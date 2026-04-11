@@ -27,6 +27,8 @@ export default function MyAssignments() {
   const [relatorios, setRelatorios] = useState({});
   const [loading, setLoading] = useState(true);
   const [showPast, setShowPast] = useState(false);
+  const [filtroStatus, setFiltroStatus] = useState("");
+  const [filtroCidade, setFiltroCidade] = useState("");
 
   useEffect(() => {
     Promise.all([
@@ -53,7 +55,10 @@ export default function MyAssignments() {
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = assignments.filter(a => a.event?.date >= today);
   const past = assignments.filter(a => a.event?.date < today);
-  const list = showPast ? past : upcoming;
+  let list = showPast ? past : upcoming;
+  if (filtroStatus) list = list.filter(a => a.status === filtroStatus);
+  if (filtroCidade) list = list.filter(a => a.event?.city === filtroCidade);
+  const cidades = [...new Set((showPast ? past : upcoming).map(a => a.event?.city).filter(Boolean))].sort();
 
   return (
     <IntranetLayout>
@@ -74,6 +79,20 @@ export default function MyAssignments() {
               {t.label}
             </button>
           ))}
+          <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
+            style={{ padding: "8px 12px", borderRadius: 20, border: `2px solid ${COLORS.grayLight}`, fontFamily: FONTS.heading, fontSize: 13, background: "#fff", cursor: "pointer" }}>
+            <option value="">Todos os status</option>
+            <option value="confirmado">Confirmado</option>
+            <option value="pendente">Pendente</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+          {cidades.length > 1 && (
+            <select value={filtroCidade} onChange={e => setFiltroCidade(e.target.value)}
+              style={{ padding: "8px 12px", borderRadius: 20, border: `2px solid ${COLORS.grayLight}`, fontFamily: FONTS.heading, fontSize: 13, background: "#fff", cursor: "pointer" }}>
+              <option value="">Todas as cidades</option>
+              {cidades.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          )}
         </div>
 
         {loading ? (
