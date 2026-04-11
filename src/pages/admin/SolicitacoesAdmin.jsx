@@ -910,7 +910,7 @@ export function SolicitacaoEditor() {
 
             {/* Campos livres (objeto campos) */}
             {/* Campos técnicos estruturados (novo formato) */}
-            <CamposTecnicosView sol={sol} card={card} lbl={lbl} val={val} fmt={fmt} />
+            <CamposTecnicosView sol={sol} card={card} lbl={lbl} val={val} fmt={fmt} arquivos={arquivos} />
 
             {/* Datas do ciclo de vida */}
             <div style={card}>
@@ -1647,7 +1647,7 @@ function EventoVinculadoSection({
  * CamposTecnicosView — Renderiza os camposTecnicos de uma solicitação.
  * Suporta: permit (view completa), chancela (view completa), legado (migra automaticamente).
  */
-function CamposTecnicosView({ sol, card, lbl, val, fmt }) {
+function CamposTecnicosView({ sol, card, lbl, val, fmt, arquivos = [] }) {
   const ct = normalizarCamposTecnicos(sol);
   if (!ct || !ct._tipo) return null;
 
