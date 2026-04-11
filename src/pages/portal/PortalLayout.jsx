@@ -106,7 +106,7 @@ export default function PortalLayout({ children }) {
         <div style={{ padding: "14px 18px", borderTop: "1px solid rgba(255,255,255,0.06)",
           display: "flex", flexDirection: "column", gap: 8 }}>
           <Link to="/portal/ajuda" style={{ fontFamily: FONTS.body, fontSize: 11,
-            color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>❓ Ajuda</Link>
+            color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>Ajuda</Link>
           <Link to="/" style={{ fontFamily: FONTS.body, fontSize: 11,
             color: "rgba(255,255,255,0.35)", textDecoration: "none" }}>← Site FMA</Link>
           <button onClick={logout} style={{ background: "transparent", border: "none",

@@ -93,7 +93,7 @@ export default function PortalLogin() {
             <div style={{ background: "#fff5f5", border: "1px solid #fca5a5", borderRadius: 8,
               padding: "10px 14px", marginBottom: 18, fontFamily: FONTS.body, fontSize: 13,
               color: "#dc2626", display: "flex", gap: 8 }}>
-              ⚠️ {error}
+              {error}
             </div>
           )}
 

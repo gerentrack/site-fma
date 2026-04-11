@@ -204,7 +204,7 @@ export default function PortalRegister() {
           {error && (
             <div style={{ background: "#fff5f5", border: "1px solid #fca5a5", borderRadius: 8,
               padding: "10px 14px", marginBottom: 18, fontFamily: FONTS.body, fontSize: 13, color: "#dc2626" }}>
-              ⚠️ {error}
+              {error}
             </div>
           )}
 
@@ -221,7 +221,7 @@ export default function PortalRegister() {
                   }}
                   placeholder="00.000.000/0000-00"
                   style={inpStyle} autoFocus />
-                {cnpjLoading && <span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 14 }}>⏳</span>}
+                {cnpjLoading && <span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 14 }}>...</span>}
               </div>
               {errors.cpfCnpj && <div style={errStyle}>{errors.cpfCnpj}</div>}
               {cnpjMsg && <div style={{ fontFamily: FONTS.body, fontSize: 11, color: cnpjMsg.includes("preenchidos") ? "#15803d" : "#b45309", marginTop: 2 }}>{cnpjMsg}</div>}

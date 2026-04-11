@@ -161,14 +161,14 @@ export default function MinhasSolicitacoes() {
                           {sol.protocoloFMA && (
                             <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11,
                               fontFamily: FONTS.heading, fontWeight: 700, background: "#f0fdf4", color: "#15803d" }}>
-                              📄 {sol.protocoloFMA}
+                              {sol.protocoloFMA}
                             </span>
                           )}
                         </div>
                         <div style={{ fontFamily: FONTS.heading, fontSize: 17, fontWeight: 800,
                           color: COLORS.dark, marginBottom: 4 }}>{sol.nomeEvento}</div>
                         <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>
-                          📍 {sol.cidadeEvento} · 📅 {sol.dataEvento ? new Date(sol.dataEvento + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
+                          {sol.cidadeEvento} · {sol.dataEvento ? new Date(sol.dataEvento + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
                           {" "}· Criado em {fmt(sol.criadoEm)}
                           {sol.enviadoEm && ` · Enviado em ${fmt(sol.enviadoEm)}`}
                         </div>

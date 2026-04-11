@@ -87,7 +87,7 @@ export default function PortalHome() {
   if (loading) return (
     <>
       <div style={{ padding: 60, textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray }}>
-        ⏳ Carregando...
+        Carregando...
       </div>
     </>
   );
@@ -116,7 +116,7 @@ export default function PortalHome() {
           <div style={{ background: "#fef2f2", border: "2px solid #dc2626", borderRadius: 12,
             padding: "20px 24px", marginBottom: 28 }}>
             <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-              <span style={{ fontSize: 28, flexShrink: 0 }}>🔒</span>
+              <span style={{ fontSize: 28, flexShrink: 0 }}></span>
               <div>
                 <div style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 800, color: "#dc2626", textTransform: "uppercase", marginBottom: 6 }}>
                   Conta bloqueada
@@ -230,7 +230,7 @@ export default function PortalHome() {
                             {sol.nomeEvento}
                           </div>
                           <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 3 }}>
-                            📍 {sol.cidadeEvento} · 📅 {fmtDate(sol.dataEvento)}
+                            {sol.cidadeEvento} · {fmtDate(sol.dataEvento)}
                           </div>
                         </div>
                         <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, flexShrink: 0 }}>

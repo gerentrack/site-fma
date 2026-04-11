@@ -615,7 +615,7 @@ function TaxaEstimativaCard({ taxaCalc, tipo, organizerData, taxasConfig, bloque
   return (
     <div style={{ background: "#fff", borderRadius: 12, padding: "20px 24px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 14, border: `2px solid ${taxaCalc.isPrazoInsuficiente ? "#fca5a5" : taxaCalc.isUrgente ? "#fcd34d" : "#bae6fd"}` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-        <span style={{ fontSize: 20 }}>💰</span>
+        <span style={{ fontSize: 20 }}></span>
         <h3 style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, margin: 0 }}>
           Taxa Estimada
         </h3>
@@ -814,7 +814,7 @@ function TaxaEstimativaCard({ taxaCalc, tipo, organizerData, taxasConfig, bloque
             </div>
             {comprovantePagamento ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0" }}>
-                <span style={{ fontSize: 16 }}>🧾</span>
+                <span style={{ fontSize: 16 }}></span>
                 <span style={{ flex: 1, fontSize: 13, fontFamily: FONTS.body, color: "#15803d" }}>{comprovantePagamento.name}</span>
                 <button type="button" onClick={() => onComprovanteChange(null)}
                   style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #fca5a5", background: "#fff5f5", color: "#dc2626", cursor: "pointer", fontSize: 11, fontWeight: 600 }}>

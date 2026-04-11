@@ -133,7 +133,7 @@ function TaxasPagamentoSection({ sol }) {
                 <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                   {pag.reciboNumero && (
                     <span style={{ fontSize:12, fontWeight:700, color:"#15803d", display:"flex", alignItems:"center", gap:4 }}>
-                      📄 {pag.reciboNumero}
+                      {pag.reciboNumero}
                       {pag.reciboArquivoId && (
                         <button onClick={async () => {
                           const r = await ArquivosService.get(pag.reciboArquivoId);
@@ -157,13 +157,13 @@ function TaxasPagamentoSection({ sol }) {
 
 // ─── StatusBadge ──────────────────────────────────────────────────────────────
 function StatusBadge({ status, size="md" }) {
-  const s = statusMap[status] || { label:status, color:COLORS.gray, bg:"#f3f4f6", icon:"📋" };
+  const s = statusMap[status] || { label:status, color:COLORS.gray, bg:"#f3f4f6", icon:"" };
   return <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:size==="lg"?"6px 16px":"3px 10px", borderRadius:20, fontSize:size==="lg"?13:11, fontFamily:FONTS.heading, fontWeight:700, background:s.bg, color:s.color, border:`1px solid ${s.color}30` }}>{s.icon} {s.label}</span>;
 }
 
 // ─── TimelineItem ─────────────────────────────────────────────────────────────
 function TimelineItem({ mov, isLast }) {
-  const mt = movMap[mov.tipoEvento] || { icon:"📋" };
+  const mt = movMap[mov.tipoEvento] || { icon:"" };
   const isOrg = mov.autor === "organizador";
   return (
     <div style={{ display:"flex", gap:14, position:"relative" }}>
@@ -178,7 +178,7 @@ function TimelineItem({ mov, isLast }) {
             </div>
           )}
         </div>
-        <div style={{ fontFamily:FONTS.body, fontSize:11, color:COLORS.gray }}>{fmtDT(mov.criadoEm)} · {isOrg?"👤":"🏛️"} {mov.autorNome}</div>
+        <div style={{ fontFamily:FONTS.body, fontSize:11, color:COLORS.gray }}>{fmtDT(mov.criadoEm)} · {mov.autorNome}</div>
       </div>
     </div>
   );
@@ -216,8 +216,8 @@ function ArquivoUploader({ solicitacaoId, organizerId, organizerName, nomeEvento
 
   return (
     <div style={{ background:"#f8fafc", border:`2px dashed ${COLORS.grayLight}`, borderRadius:10, padding:20 }}>
-      <div style={{ fontFamily:FONTS.heading, fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:1.5, color:COLORS.dark, marginBottom:14 }}>📎 Enviar arquivo</div>
-      {error && <div style={{ background:"#fff5f5", border:"1px solid #fca5a5", borderRadius:8, padding:"8px 12px", marginBottom:12, fontFamily:FONTS.body, fontSize:12, color:"#dc2626" }}>⚠️ {error}</div>}
+      <div style={{ fontFamily:FONTS.heading, fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:1.5, color:COLORS.dark, marginBottom:14 }}>Enviar arquivo</div>
+      {error && <div style={{ background:"#fff5f5", border:"1px solid #fca5a5", borderRadius:8, padding:"8px 12px", marginBottom:12, fontFamily:FONTS.body, fontSize:12, color:"#dc2626" }}>{error}</div>}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
         <div>
           <label style={{ fontFamily:FONTS.heading, fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:1, color:COLORS.gray, display:"block", marginBottom:4 }}>Arquivo</label>
@@ -235,7 +235,7 @@ function ArquivoUploader({ solicitacaoId, organizerId, organizerName, nomeEvento
           <input value={descricao} onChange={e=>setDescricao(e.target.value)} placeholder="Ex: Alvará de autorização" style={{ width:"100%", padding:"8px 10px", borderRadius:7, border:`1px solid ${COLORS.grayLight}`, fontFamily:FONTS.body, fontSize:13, outline:"none", boxSizing:"border-box" }} />
         </div>
       </div>
-      <button onClick={handleUpload} disabled={uploading||!file} style={{ padding:"9px 20px", borderRadius:8, border:"none", background:!file?COLORS.gray:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:(!file||uploading)?"not-allowed":"pointer" }}>{uploading?"Enviando...":"⬆️ Enviar arquivo"}</button>
+      <button onClick={handleUpload} disabled={uploading||!file} style={{ padding:"9px 20px", borderRadius:8, border:"none", background:!file?COLORS.gray:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:(!file||uploading)?"not-allowed":"pointer" }}>{uploading?"Enviando...":"Enviar arquivo"}</button>
       <div style={{ fontFamily:FONTS.body, fontSize:10, color:COLORS.gray, marginTop:8 }}>PDF, DOC, JPG, PNG, XLS. Máx. 1.5 MB (demo).</div>
     </div>
   );
@@ -316,11 +316,11 @@ function EditDrawer({ sol, organizerId, organizerName, onClose, onSaved }) {
 
         {/* Corpo */}
         <div style={{ padding:"20px 24px", flex:1 }}>
-          {globalErr && <div style={{ background:"#fff5f5", border:"1px solid #fca5a5", borderRadius:8, padding:"10px 14px", marginBottom:16, fontFamily:FONTS.body, fontSize:13, color:"#dc2626" }}>⚠️ {globalErr}</div>}
+          {globalErr && <div style={{ background:"#fff5f5", border:"1px solid #fca5a5", borderRadius:8, padding:"10px 14px", marginBottom:16, fontFamily:FONTS.body, fontSize:13, color:"#dc2626" }}>{globalErr}</div>}
 
           {/* Dados base */}
           <div style={cardSty}>
-            <SecTitle>📋 Dados do evento</SecTitle>
+            <SecTitle>Dados do evento</SecTitle>
             <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
               <div><Lbl req>Nome do evento</Lbl><input value={form.nomeEvento} onChange={e=>setF("nomeEvento",e.target.value)} style={baseInp(!!errors.nomeEvento)}/>{errors.nomeEvento&&<Err msg={errors.nomeEvento}/>}</div>
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
@@ -333,7 +333,7 @@ function EditDrawer({ sol, organizerId, organizerName, onClose, onSaved }) {
 
           {/* Modalidades */}
           <div style={cardSty}>
-            <SecTitle>🏃 Modalidades / Distâncias</SecTitle>
+            <SecTitle>Modalidades / Distancias</SecTitle>
             <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
               {mods.map((m,i)=>(
                 <div key={m.id} style={{ display:"grid", gridTemplateColumns:"1fr 150px 36px", gap:10, alignItems:"flex-end" }}>
@@ -366,7 +366,7 @@ function EditDrawer({ sol, organizerId, organizerName, onClose, onSaved }) {
         {/* Rodapé fixo */}
         <div style={{ padding:"16px 24px", background:"#fff", borderTop:`1px solid ${COLORS.grayLight}`, display:"flex", gap:10, justifyContent:"flex-end", flexShrink:0 }}>
           <button onClick={onClose} style={{ padding:"10px 18px", borderRadius:8, border:`1px solid ${COLORS.grayLight}`, background:"#fff", color:COLORS.grayDark, fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:"pointer" }}>Cancelar</button>
-          <button onClick={handleSave} disabled={saving} style={{ padding:"10px 22px", borderRadius:8, border:"none", background:saving?COLORS.gray:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:saving?"not-allowed":"pointer" }}>{saving?"Salvando...":"💾 Salvar alterações"}</button>
+          <button onClick={handleSave} disabled={saving} style={{ padding:"10px 22px", borderRadius:8, border:"none", background:saving?COLORS.gray:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:saving?"not-allowed":"pointer" }}>{saving?"Salvando...":"Salvar alteracoes"}</button>
         </div>
       </div>
     </div>
@@ -377,7 +377,7 @@ function EditDrawer({ sol, organizerId, organizerName, onClose, onSaved }) {
 function EventoBanner({ eventoId }) {
   return (
     <div style={{ display:"flex", alignItems:"center", gap:14, background:"linear-gradient(90deg,#f0fdf4,#dcfce7)", border:"1.5px solid #86efac", borderRadius:12, padding:"14px 18px", marginBottom:20 }}>
-      <span style={{fontSize:32}}>🏟️</span>
+      <span style={{fontSize:32}}></span>
       <div style={{flex:1}}>
         <div style={{ fontFamily:FONTS.heading, fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:1.5, color:"#15803d", marginBottom:2 }}>Evento publicado no calendário FMA</div>
         <div style={{ fontFamily:FONTS.body, fontSize:13, color:"#166534" }}>Sua solicitação foi aprovada. O evento está disponível publicamente no site da FMA.</div>
@@ -460,7 +460,7 @@ function ResultadosTab({ sol, organizerId, organizerName, onUpdated }) {
 
   return (
     <div style={{ background:"#fff", borderRadius:12, padding:"24px 28px", boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}>
-      <SecTitle>📊 Resultados do Evento</SecTitle>
+      <SecTitle>Resultados do Evento</SecTitle>
 
       {/* Status do resultado já enviado */}
       {jaEnviou && !podeReenviar && (
@@ -471,12 +471,12 @@ function ResultadosTab({ sol, organizerId, organizerName, onUpdated }) {
           <div style={{ fontFamily:FONTS.heading, fontSize:12, fontWeight:800, textTransform:"uppercase", marginBottom:6,
             color: sol.resultadoStatus === "aprovado" ? "#15803d" : sol.resultadoStatus === "pendente_aprovacao" ? "#92400e" : "#dc2626",
           }}>
-            {sol.resultadoStatus === "aprovado" && "✅ Resultado aprovado e publicado"}
-            {sol.resultadoStatus === "pendente_aprovacao" && "⏳ Aguardando aprovação da FMA"}
+            {sol.resultadoStatus === "aprovado" && "Resultado aprovado e publicado"}
+            {sol.resultadoStatus === "pendente_aprovacao" && "Aguardando aprovacao da FMA"}
           </div>
           <div style={{ fontFamily:FONTS.body, fontSize:13, color:COLORS.dark }}>
             <a href={sol.resultadoFileUrl} target="_blank" rel="noreferrer" style={{ color:"#0066cc" }}>
-              {sol.resultadoTipo === "link" ? "🔗 Ver link externo" : "📄 Baixar arquivo"}
+              {sol.resultadoTipo === "link" ? "Ver link externo" : "Baixar arquivo"}
             </a>
             {sol.resultadoDescricao && <span style={{ color:COLORS.gray }}> — {sol.resultadoDescricao}</span>}
           </div>
@@ -492,7 +492,7 @@ function ResultadosTab({ sol, organizerId, organizerName, onUpdated }) {
         <div style={{ padding:20, background:"#f9fafb", borderRadius:10, border:`1px solid ${COLORS.grayLight}` }}>
           {podeReenviar && (
             <div style={{ padding:"10px 14px", borderRadius:8, background:"#fff5f5", border:"1px solid #fca5a5", marginBottom:16, fontFamily:FONTS.body, fontSize:12, color:"#dc2626" }}>
-              ❌ O resultado anterior foi rejeitado pela FMA. Você pode enviar um novo resultado.
+              O resultado anterior foi rejeitado pela FMA. Voce pode enviar um novo resultado.
             </div>
           )}
 
@@ -538,7 +538,7 @@ function ResultadosTab({ sol, organizerId, organizerName, onUpdated }) {
 
           <button onClick={handleEnviar} disabled={uploading}
             style={{ padding:"11px 24px", borderRadius:8, border:"none", background:uploading?COLORS.gray:"#0066cc", color:"#fff", cursor:uploading?"wait":"pointer", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, marginTop:8 }}>
-            {uploading ? "Enviando..." : "📊 Enviar Resultado"}
+            {uploading ? "Enviando..." : "Enviar Resultado"}
           </button>
         </div>
       )}
@@ -596,11 +596,11 @@ export default function SolicitacaoDetalhe() {
     navigate("/portal/solicitacoes");
   };
 
-  if (pageStatus==="loading") return <div style={{ padding:60, textAlign:"center", fontFamily:FONTS.body, color:COLORS.gray }}>⏳ Carregando...</div>;
-  if (pageStatus==="notfound") return <div style={{ padding:60, textAlign:"center" }}><div style={{fontSize:44,marginBottom:12}}>🔍</div><h2 style={{ fontFamily:FONTS.heading, fontSize:22, color:COLORS.primary, textTransform:"uppercase" }}>Solicitação não encontrada</h2><Link to="/portal/solicitacoes" style={{color:"#0066cc"}}>← Voltar</Link></div>;
+  if (pageStatus==="loading") return <div style={{ padding:60, textAlign:"center", fontFamily:FONTS.body, color:COLORS.gray }}>Carregando...</div>;
+  if (pageStatus==="notfound") return <div style={{ padding:60, textAlign:"center" }}><div style={{fontSize:44,marginBottom:12}}>—</div><h2 style={{ fontFamily:FONTS.heading, fontSize:22, color:COLORS.primary, textTransform:"uppercase" }}>Solicitacao nao encontrada</h2><Link to="/portal/solicitacoes" style={{color:"#0066cc"}}>← Voltar</Link></div>;
 
-  const st        = statusMap[sol.status]||{ label:sol.status, color:COLORS.gray, bg:"#f3f4f6", icon:"📋" };
-  const tp        = tipoMap[sol.tipo]||{ label:sol.tipo, icon:"📋" };
+  const st        = statusMap[sol.status]||{ label:sol.status, color:COLORS.gray, bg:"#f3f4f6", icon:"" };
+  const tp        = tipoMap[sol.tipo]||{ label:sol.tipo, icon:"" };
   const canUpload = !["concluida","indeferida"].includes(sol.status);
   const canSend   = sol.status==="rascunho";
   const canDelete = sol.status==="rascunho";
@@ -608,10 +608,10 @@ export default function SolicitacaoDetalhe() {
 
   const showResultados = ["aprovada", "concluida"].includes(sol.status);
   const tabs = [
-    { id:"geral",     label:"Visão geral",                      icon:"📋" },
-    { id:"arquivos",  label:`Arquivos (${arquivos.length})`,     icon:"📎" },
-    ...(showResultados ? [{ id:"resultados", label:"Resultados", icon:"📊" }] : []),
-    { id:"historico", label:`Histórico (${movimentacoes.length})`,icon:"🕐" },
+    { id:"geral",     label:"Visao geral",                      icon:"" },
+    { id:"arquivos",  label:`Arquivos (${arquivos.length})`,     icon:"" },
+    ...(showResultados ? [{ id:"resultados", label:"Resultados", icon:"" }] : []),
+    { id:"historico", label:`Historico (${movimentacoes.length})`,icon:"" },
   ];
 
   return (
@@ -635,29 +635,29 @@ export default function SolicitacaoDetalhe() {
             <StatusBadge status={sol.status} size="lg"/>
             <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"6px 14px", borderRadius:20, fontSize:12, fontFamily:FONTS.heading, fontWeight:700, background:COLORS.grayLight, color:COLORS.grayDark }}>{tp.icon} {tp.label}</span>
             {sol.protocoloFMA ? (
-              <span style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:20, fontSize:13, fontFamily:FONTS.heading, fontWeight:800, background:"#f0fdf4", color:"#15803d", border:"1.5px solid #86efac" }}>🔖 {sol.protocoloFMA}</span>
+              <span style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:20, fontSize:13, fontFamily:FONTS.heading, fontWeight:800, background:"#f0fdf4", color:"#15803d", border:"1.5px solid #86efac" }}>{sol.protocoloFMA}</span>
             ) : (
               ["em_analise","pendencia","aprovada","indeferida","concluida"].includes(sol.status)?null:(
-                <span style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:20, fontSize:11, fontFamily:FONTS.body, color:"#92400e", background:"#fffbeb", border:"1px dashed #fcd34d" }}>⏳ Protocolo pendente</span>
+                <span style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:20, fontSize:11, fontFamily:FONTS.body, color:"#92400e", background:"#fffbeb", border:"1px dashed #fcd34d" }}>Protocolo pendente</span>
               )
             )}
           </div>
           <h1 style={{ fontFamily:FONTS.heading, fontSize:"clamp(1.3rem,3vw,1.9rem)", fontWeight:900, color:COLORS.dark, margin:"0 0 8px", textTransform:"uppercase", lineHeight:1.2 }}>{sol.nomeEvento}</h1>
           <div style={{ fontFamily:FONTS.body, fontSize:13, color:COLORS.gray, marginBottom:sol.parecerFMA?16:0 }}>
-            📍 {sol.cidadeEvento} · 📅 {sol.dataEvento?new Date(sol.dataEvento+"T12:00:00").toLocaleDateString("pt-BR"):"—"} · Criado em {fmt(sol.criadoEm)}
+            {sol.cidadeEvento} · {sol.dataEvento?new Date(sol.dataEvento+"T12:00:00").toLocaleDateString("pt-BR"):"—"} · Criado em {fmt(sol.criadoEm)}
           </div>
           {sol.parecerFMA && (
             <div style={{ background:`${st.color}08`, borderLeft:`3px solid ${st.color}`, borderRadius:"0 8px 8px 0", padding:"12px 16px" }}>
-              <div style={{ fontFamily:FONTS.heading, fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:1, color:st.color, marginBottom:4 }}>🏛️ Manifestação da FMA</div>
+              <div style={{ fontFamily:FONTS.heading, fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:1, color:st.color, marginBottom:4 }}>Manifestacao da FMA</div>
               <div style={{ fontFamily:FONTS.body, fontSize:13, color:COLORS.dark, lineHeight:1.6 }}>{sol.parecerFMA}</div>
             </div>
           )}
           {/* Ações */}
           <div style={{ display:"flex", gap:10, marginTop:16, flexWrap:"wrap" }}>
-            {canSend && <button onClick={handleEnviar} disabled={sendingStatus} style={{ padding:"10px 20px", borderRadius:8, border:"none", background:sendingStatus?COLORS.gray:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:sendingStatus?"not-allowed":"pointer" }}>{sendingStatus?"Enviando...":"📤 Enviar para análise"}</button>}
+            {canSend && <button onClick={handleEnviar} disabled={sendingStatus} style={{ padding:"10px 20px", borderRadius:8, border:"none", background:sendingStatus?COLORS.gray:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:sendingStatus?"not-allowed":"pointer" }}>{sendingStatus?"Enviando...":"Enviar para analise"}</button>}
             {/* P1 — botão editar rascunho */}
-            {canEdit && <button onClick={()=>setEditOpen(true)} style={{ padding:"10px 18px", borderRadius:8, border:"1.5px solid #bfdbfe", background:"#eff6ff", color:"#0066cc", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:"pointer" }}>✏️ Editar rascunho</button>}
-            {canDelete && <button onClick={handleDelete} disabled={deleting} style={{ padding:"10px 18px", borderRadius:8, border:"1px solid #fca5a5", background:"#fff", color:"#dc2626", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:deleting?"not-allowed":"pointer" }}>{deleting?"Excluindo...":"🗑️ Excluir rascunho"}</button>}
+            {canEdit && <button onClick={()=>setEditOpen(true)} style={{ padding:"10px 18px", borderRadius:8, border:"1.5px solid #bfdbfe", background:"#eff6ff", color:"#0066cc", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:"pointer" }}>Editar rascunho</button>}
+            {canDelete && <button onClick={handleDelete} disabled={deleting} style={{ padding:"10px 18px", borderRadius:8, border:"1px solid #fca5a5", background:"#fff", color:"#dc2626", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:deleting?"not-allowed":"pointer" }}>{deleting?"Excluindo...":"Excluir rascunho"}</button>}
           </div>
         </div>
 
@@ -713,7 +713,7 @@ export default function SolicitacaoDetalhe() {
             {canUpload && <ArquivoUploader solicitacaoId={id} organizerId={organizerId} organizerName={organizerName} nomeEvento={sol.nomeEvento} dataEvento={sol.dataEvento} onUploaded={load}/>}
             {arquivos.length===0 ? (
               <div style={{ background:"#fff", borderRadius:12, padding:"40px 24px", textAlign:"center", boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}>
-                <div style={{fontSize:40,marginBottom:10}}>📭</div>
+                <div style={{fontSize:40,marginBottom:10}}>—</div>
                 <div style={{ fontFamily:FONTS.heading, fontSize:16, fontWeight:800, textTransform:"uppercase", color:COLORS.dark }}>Nenhum arquivo enviado</div>
                 <p style={{ fontFamily:FONTS.body, fontSize:13, color:COLORS.gray, marginTop:6 }}>{canUpload?"Use o formulário acima para enviar documentos.":"Não há arquivos nesta solicitação."}</p>
               </div>
@@ -721,21 +721,21 @@ export default function SolicitacaoDetalhe() {
               <div style={{ background:"#fff", borderRadius:12, boxShadow:"0 2px 12px rgba(0,0,0,0.06)", overflow:"hidden" }}>
                 <div style={{ padding:"16px 20px", borderBottom:`1px solid ${COLORS.grayLight}`, fontFamily:FONTS.heading, fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:1.5, color:COLORS.dark }}>{arquivos.length} arquivo{arquivos.length>1?"s":""}</div>
                 {arquivos.map((arq,i)=>{
-                  const cat=arquivoCatMap[arq.categoria]||{label:arq.categoria,icon:"📎",color:COLORS.gray};
+                  const cat=arquivoCatMap[arq.categoria]||{label:arq.categoria,icon:"",color:COLORS.gray};
                   const isFMA=arq.enviadoPor==="fma";
                   return (
                     <div key={arq.id} style={{ padding:"14px 20px", background:isFMA?"#eff6ff":"#fff", borderBottom:i<arquivos.length-1?`1px solid ${COLORS.grayLight}`:"none", display:"flex", justifyContent:"space-between", alignItems:"center", gap:16 }}>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:4 }}>
-                          <span style={{fontSize:20}}>{arq.tipo?.includes("pdf")?"📄":arq.tipo?.includes("image")?"🖼️":"📎"}</span>
+                          <span style={{fontSize:20}}>{arq.tipo?.includes("pdf")?"":arq.tipo?.includes("image")?"":""}</span>
                           <span style={{ fontFamily:FONTS.heading, fontSize:14, fontWeight:700, color:COLORS.dark, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{arq.nome}</span>
                           <span style={{ padding:"2px 8px", borderRadius:20, fontSize:10, fontFamily:FONTS.heading, fontWeight:700, background:`${cat.color}15`, color:cat.color }}>{cat.icon} {cat.label}</span>
-                          {isFMA&&<span style={{ padding:"2px 8px", borderRadius:20, fontSize:10, fontFamily:FONTS.heading, fontWeight:700, background:"#eff6ff", color:"#0066cc" }}>🏛️ FMA</span>}
+                          {isFMA&&<span style={{ padding:"2px 8px", borderRadius:20, fontSize:10, fontFamily:FONTS.heading, fontWeight:700, background:"#eff6ff", color:"#0066cc" }}>FMA</span>}
                         </div>
                         <div style={{ fontFamily:FONTS.body, fontSize:12, color:COLORS.gray, paddingLeft:28 }}>{arq.descricao} · {fmtSize(arq.tamanho)} · {fmtDT(arq.uploadedAt)}</div>
                       </div>
                       <div style={{ display:"flex", gap:8, flexShrink:0 }}>
-                        {(arq.dataUrl||arq.url)&&<a href={arq.dataUrl||arq.url} download={arq.nome} target="_blank" rel="noreferrer" style={{ padding:"6px 14px", borderRadius:7, background:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:11, fontWeight:700, textDecoration:"none" }}>⬇️ Baixar</a>}
+                        {(arq.dataUrl||arq.url)&&<a href={arq.dataUrl||arq.url} download={arq.nome} target="_blank" rel="noreferrer" style={{ padding:"6px 14px", borderRadius:7, background:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:11, fontWeight:700, textDecoration:"none" }}>Baixar</a>}
                         {!isFMA&&canUpload&&<button onClick={async()=>{ if(!confirm(`Remover "${arq.nome}"?`))return; await ArquivosService.delete(arq.id); load(); }} style={{ padding:"6px 10px", borderRadius:7, border:"1px solid #fca5a5", background:"#fff", color:"#dc2626", fontFamily:FONTS.heading, fontSize:11, fontWeight:700, cursor:"pointer" }}>✕</button>}
                       </div>
                     </div>
@@ -756,7 +756,7 @@ export default function SolicitacaoDetalhe() {
           <div style={{ background:"#fff", borderRadius:12, padding:"24px 28px", boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}>
             {movimentacoes.length===0 ? (
               <div style={{ textAlign:"center", padding:"30px 0" }}>
-                <div style={{fontSize:36,marginBottom:10}}>📜</div>
+                <div style={{fontSize:36,marginBottom:10}}>—</div>
                 <div style={{ fontFamily:FONTS.heading, fontSize:14, fontWeight:800, textTransform:"uppercase", color:COLORS.dark }}>Nenhuma movimentação</div>
               </div>
             ) : (
