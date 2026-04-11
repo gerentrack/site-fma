@@ -13,6 +13,7 @@ import PoliticaPrivacidade from "../public/PoliticaPrivacidade";
 import TermosUso from "../public/TermosUso";
 import { enviarBoasVindasOrganizador } from "../../services/emailService";
 import { validarCPF, validarCNPJ, cpfCnpjJaExisteOrganizador } from "../../utils/cpfCnpj";
+import { LGPD_VERSIONS } from "../../config/navigation";
 
 const ESTADOS = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
 
@@ -147,6 +148,8 @@ export default function PortalRegister() {
       website,
       emailVerified: false,
       lgpdConsentAt: new Date().toISOString(),
+      lgpdConsentVersion: LGPD_VERSIONS.privacidade,
+      termosConsentVersion: LGPD_VERSIONS.termos,
     });
     setLoading(false);
     if (result.error) { setError(result.error); return; }

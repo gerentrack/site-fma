@@ -275,6 +275,67 @@ export default function MeusDados() {
           )}
         </div>
 
+        {/* Privacidade e LGPD */}
+        <div style={card}>
+          {section("Privacidade e Protecao de Dados (LGPD)")}
+          <p style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, margin: "0 0 16px" }}>
+            Conforme a Lei Geral de Protecao de Dados, voce tem direito de acessar, exportar e solicitar a exclusao dos seus dados pessoais.
+          </p>
+
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+            <button onClick={() => {
+              if (!organizer) return;
+              const exportData = {
+                nome: organizer.name, email: organizer.email, tipoPessoa: organizer.tipoPessoa,
+                cpfCnpj: organizer.cpfCnpj, phone: organizer.phone, organization: organizer.organization,
+                address: organizer.address, city: organizer.city, state: organizer.state,
+                website: organizer.website,
+                lgpdConsentAt: organizer.lgpdConsentAt, lgpdConsentVersion: organizer.lgpdConsentVersion,
+                termosConsentVersion: organizer.termosConsentVersion,
+                createdAt: organizer.createdAt, updatedAt: organizer.updatedAt,
+              };
+              const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url; a.download = `meus-dados-fma-${new Date().toISOString().slice(0, 10)}.json`;
+              a.click(); URL.revokeObjectURL(url);
+            }}
+              style={{ padding: "10px 20px", borderRadius: 8, border: "none", background: "#0066cc", color: "#fff",
+                cursor: "pointer", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700 }}>
+              Exportar meus dados (JSON)
+            </button>
+
+            {!organizer?.lgpdExclusaoSolicitadaEm ? (
+              <button onClick={async () => {
+                if (!confirm("Ao solicitar a exclusao, seus dados pessoais serao removidos do sistema. Dados necessarios para obrigacoes legais poderao ser mantidos. Deseja continuar?")) return;
+                await OrganizersService.update(organizerId, {
+                  lgpdExclusaoSolicitadaEm: new Date().toISOString(),
+                  lgpdExclusaoStatus: "solicitada",
+                });
+                setSuccess("Solicitacao de exclusao registrada. A FMA tera ate 15 dias para processar.");
+                load();
+              }}
+                style={{ padding: "10px 20px", borderRadius: 8, border: "1px solid #fca5a5", background: "#fff5f5", color: "#cc0000",
+                  cursor: "pointer", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700 }}>
+                Solicitar exclusao dos meus dados
+              </button>
+            ) : (
+              <div style={{ padding: "10px 20px", borderRadius: 8, background: "#fef3c7", border: "1px solid #fde68a",
+                fontFamily: FONTS.body, fontSize: 13, color: "#92400e" }}>
+                Exclusao solicitada em {new Date(organizer.lgpdExclusaoSolicitadaEm).toLocaleDateString("pt-BR")}.
+                A FMA tera ate 15 dias para processar.
+              </div>
+            )}
+          </div>
+
+          {organizer?.lgpdConsentAt && (
+            <div style={{ fontSize: 11, fontFamily: FONTS.body, color: COLORS.gray }}>
+              Consentimento aceito em {new Date(organizer.lgpdConsentAt).toLocaleDateString("pt-BR")}
+              {organizer.lgpdConsentVersion ? ` (versao ${organizer.lgpdConsentVersion})` : ""}
+            </div>
+          )}
+        </div>
+
         {/* Alterar senha */}
         <div style={card}>
           {section("Alterar senha")}

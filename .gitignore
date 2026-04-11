@@ -1,0 +1,11 @@
+# Chaves e credenciais — NUNCA commitar
+serviceAccountKey.json
+*.pem
+.env
+.env.*
+
+# Dependências
+node_modules/
+
+# Build
+dist/

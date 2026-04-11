@@ -281,6 +281,7 @@ export const INTRANET_NAV_ARBITRO = [
   // ── Minha Conta ──
   { label: "Meus Dados",            icon: "👤", path: "/intranet/perfil",           group: "Minha Conta" },
   { label: "Minha Anuidade",        icon: "💳", path: "/intranet/anuidade" },
+  { label: "Privacidade (LGPD)",    icon: "🔒", path: "/intranet/lgpd" },
 ];
 
 export const INTRANET_NAV_ADMIN = [
@@ -312,6 +313,7 @@ export const INTRANET_NAV_ADMIN = [
   // ── Minha Conta ──
   { label: "Meus Dados",            icon: "👤", path: "/intranet/perfil",           group: "Minha Conta" },
   { label: "Minha Anuidade",        icon: "💳", path: "/intranet/anuidade" },
+  { label: "Privacidade (LGPD)",    icon: "🔒", path: "/intranet/lgpd" },
 ];
 
 export const ATHLETE_CONTENT_CATEGORIES = [
@@ -407,6 +409,22 @@ export const PORTAL_NAV = [
   { label: "Minhas Solicitações", icon: "📋", path: "/portal/solicitacoes" },
   { label: "Meus Dados",        icon: "👤", path: "/portal/meus-dados" },
 ];
+
+// ── LGPD — Versões dos documentos legais ─────────────────────────────────────
+export const LGPD_VERSIONS = {
+  privacidade: "2026-04-11",   // Data da última revisão da Política de Privacidade
+  termos:      "2026-04-11",   // Data da última revisão dos Termos de Uso
+};
+
+// ── LGPD — Política de retenção (em dias) ────────────────────────────────────
+export const LGPD_RETENCAO = {
+  arbitroInativo:     5 * 365,  // 5 anos após inativação (obrigação CBAt)
+  dadosBancarios:     30,       // 30 dias após solicitação/inativação
+  dadosSensiveis:     0,        // imediato (cor/raça, tipo sanguíneo)
+  organizadorInativo: 5 * 365,  // 5 anos (histórico de solicitações)
+  navegacao:          365,      // 12 meses
+  prazoExclusao:      15,       // prazo para processar solicitação do titular
+};
 
 export const ARQUIVO_CATEGORIAS = [
   { value: "obrigatorio",   label: "Documento Obrigatório", icon: "📌", color: "#cc0000" },

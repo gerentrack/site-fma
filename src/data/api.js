@@ -687,11 +687,11 @@ export const refereesAPI = {
     items.sort((a,b)=>a.name.localeCompare(b.name));
     return ok(items.map(({password,...safe})=>safe));
   },
-  get: async (id,{includePassword=false}={}) => {
+  get: async (id) => {
     const item=await readDoc("referees",id);
     if (!item) return err("Árbitro não encontrado.");
-    if (!includePassword){const {password,...safe}=item;return ok(safe);}
-    return ok(item);
+    const {password,...safe}=item; // strip legacy password if still present
+    return ok(safe);
   },
   create: async (data) => {
     const all=await readCol("referees");
@@ -703,8 +703,9 @@ export const refereesAPI = {
       return err(authErr?.message || "Erro ao criar conta de autenticação.");
     }
 
-    // 2. Criar referee doc no Firestore (só se Auth ok)
-    const item=await createDoc("referees",{ ...data, mustChangePassword: true, profileComplete: false });
+    // 2. Criar referee doc no Firestore (só se Auth ok) — NUNCA salvar senha
+    const { password: _pw, ...dataWithoutPassword } = data;
+    const item=await createDoc("referees",{ ...dataWithoutPassword, mustChangePassword: true, profileComplete: false });
 
     // 3. Criar/atualizar users doc
     if (newUid) {
@@ -722,14 +723,24 @@ export const refereesAPI = {
     return ok(safe);
   },
   update: async (id,data) => {
-    if (!data.password) delete data.password;
+    delete data.password; // NUNCA salvar senha no Firestore
     const item=await patchDoc("referees",id,data);
     if (!item) return err("Não encontrado.");
     const {password,...safe}=item;
     return ok(safe);
   },
   delete:         async (id)      => { await removeDoc("referees",id); return ok(true); },
-  updatePassword: async (id,pass) => { await patchDoc("referees",id,{password:pass}); return ok(true); },
+  updatePassword: async (id, pass) => {
+    // Alterar senha APENAS no Firebase Auth (nunca salvar no Firestore)
+    const u = auth.currentUser;
+    if (!u) return err("Não autenticado.");
+    try {
+      await fbUpdatePassword(u, pass);
+      return ok(true);
+    } catch (e) {
+      return err(e.message);
+    }
+  },
   findByEmail:    async (email)   => {
     const all = await readCol("referees");
     const item = all.find(r => r.email === email);
@@ -905,7 +916,8 @@ export const organizerAuthAPI = {
     // Cria conta no Firebase Auth
     try {
       const cred = await createUserWithEmailAndPassword(auth, data.email, data.password);
-      const item = await createDoc("organizers", { ...data, status: "ativo", active: true });
+      const { password: _pw, ...dataWithoutPassword } = data;
+      const item = await createDoc("organizers", { ...dataWithoutPassword, status: "ativo", active: true });
       await setDoc(doc(db, "users", cred.user.uid), {
         uid: cred.user.uid, email: data.email,
         roles: ["organizer"], name: data.name, refId: item.id, createdAt: now(),
@@ -935,21 +947,21 @@ export const organizersAPI = {
     items.sort((a,b)=>a.name.localeCompare(b.name));
     return ok(items.map(({password,...safe})=>safe));
   },
-  get: async (id,{includePassword=false}={}) => {
+  get: async (id) => {
     const item=await readDoc("organizers",id);
     if (!item) return err("Não encontrado.");
-    if (!includePassword){const {password,...safe}=item;return ok(safe);}
-    return ok(item);
+    const {password,...safe}=item; // strip legacy password if still present
+    return ok(safe);
   },
   create: async (data) => {
     const all=await readCol("organizers");
     if (all.find(o=>o.email===data.email)) return err("E-mail já cadastrado.");
-    const item=await createDoc("organizers",data);
-    const {password:_,...safe}=item;
-    return ok(safe);
+    const { password: _pw, ...dataWithoutPassword } = data;
+    const item=await createDoc("organizers",dataWithoutPassword);
+    return ok(item);
   },
   update: async (id,data) => {
-    if (!data.password) delete data.password;
+    delete data.password; // NUNCA salvar senha no Firestore
     const item=await patchDoc("organizers",id,data);
     if (!item) return err("Não encontrado.");
     const {password,...safe}=item;
@@ -963,7 +975,19 @@ export const organizersAPI = {
     await patchDoc("organizers", id, data);
     return ok(true);
   },
-  updatePassword: async (id,pass) => { await patchDoc("organizers",id,{password:pass}); return ok(true); },
+  updatePassword: async (id, { currentPassword, newPassword }) => {
+    const u = auth.currentUser;
+    if (!u) return err("Não autenticado.");
+    try {
+      const cred = EmailAuthProvider.credential(u.email, currentPassword);
+      await reauthenticateWithCredential(u, cred);
+      await fbUpdatePassword(u, newPassword);
+      return ok(true);
+    } catch (e) {
+      if (e.code === "auth/wrong-password" || e.code === "auth/invalid-credential") return err("Senha atual incorreta.");
+      return err(e.message);
+    }
+  },
   updateEmail: async (id, newEmail, currentPassword) => {
     const u = auth.currentUser;
     if (!u) return err("Não autenticado.");

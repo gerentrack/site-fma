@@ -11,6 +11,7 @@ import { COLORS, FONTS } from "../../styles/colors";
 import { validarCPF, validarNisPis, cpfJaExisteArbitro } from "../../utils/cpfCnpj";
 import PoliticaPrivacidade from "../public/PoliticaPrivacidade";
 import TermosUso from "../public/TermosUso";
+import { LGPD_VERSIONS } from "../../config/navigation";
 
 // ── Opções de selects ─────────────────────────────────────────────────────────
 
@@ -236,6 +237,8 @@ export default function CompleteProfileWizard() {
       cpf: (data.cpf || "").replace(/\D/g, ""),
       profileComplete: true,
       lgpdConsentAt: new Date().toISOString(),
+      lgpdConsentVersion: LGPD_VERSIONS.privacidade,
+      termosConsentVersion: LGPD_VERSIONS.termos,
       lgpdSensitiveConsentAt: new Date().toISOString(),
       confidentialityConsentAt: new Date().toISOString(),
     };

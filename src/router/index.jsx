@@ -26,6 +26,7 @@ import IntranetDocuments      from "../pages/intranet/arbitro/IntranetDocuments"
 import { IntranetRefereeList, IntranetRefereeEditor } from "../pages/intranet/admin/RefereesAdmin";
 import { IntranetEventList, IntranetEventEditor }     from "../pages/intranet/admin/EventsAdmin";
 import { AssignmentList, AssignmentEditor }           from "../pages/intranet/admin/AssignmentPanel";
+import MeusDadosLgpd           from "../pages/intranet/arbitro/MeusDadosLgpd";
 import ChangePasswordIntranet  from "../pages/intranet/ChangePasswordIntranet";
 import CompleteProfileWizard   from "../pages/intranet/CompleteProfileWizard";
 import VerificarEmailIntranet  from "../pages/intranet/VerificarEmailIntranet";
@@ -166,6 +167,7 @@ export default function AppRouter() {
       <Route path="/intranet/disponibilidade"    element={<MyAvailability />} />
       <Route path="/intranet/escalas"            element={<MyAssignments />} />
       <Route path="/intranet/perfil"             element={<MyProfile />} />
+      <Route path="/intranet/lgpd"               element={<MeusDadosLgpd />} />
       <Route path="/intranet/documentos"         element={<IntranetDocuments />} />
       <Route path="/intranet/anuidade"          element={<MinhaAnuidade />} />
       <Route path="/intranet/mensagens"          element={<MeusDocumentosRecebidos />} />
