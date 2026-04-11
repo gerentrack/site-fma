@@ -429,9 +429,9 @@ export const SolicitacoesService = {
     const solAntes = await solicitacoesAPI.get(id);
     if (solAntes.error) return solAntes;
     const { protocolo, gerado } = garantirProtocolo(solAntes.data);
-    if (gerado) {
-      await solicitacoesAPI.update(id, { protocoloFMA: protocolo });
-    }
+    const updateData = { enviadoEm: new Date().toISOString() };
+    if (gerado) updateData.protocoloFMA = protocolo;
+    await solicitacoesAPI.update(id, updateData);
 
     const r = await solicitacoesAPI.changeStatus(id, "enviada");
     if (r.error) return r;
