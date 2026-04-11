@@ -2352,6 +2352,43 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
     onSaved();
   };
 
+  const handleExcluirPagamento = async (pag) => {
+    if (!confirm(`Excluir pagamento de ${formatarMoeda(pag.valor)}? Esta acao nao pode ser desfeita.`)) return;
+    setSaving(true);
+    try {
+      // Excluir recibo associado se houver
+      if (pag.reciboArquivoId) {
+        const arqR = await ArquivosService.get(pag.reciboArquivoId);
+        if (arqR.data) {
+          if (arqR.data.storagePath) await deleteFile(arqR.data.storagePath).catch(() => {});
+          await ArquivosService.delete(pag.reciboArquivoId).catch(() => {});
+        }
+      }
+      await PagamentosService.delete(pag.id);
+      // Recalcular status do pagamento na solicitação
+      const restantes = await PagamentosService.listBySolicitacao(sol.id);
+      const totalRestante = (restantes.data || []).reduce((s, p) => s + (p.valor || 0), 0);
+      const novoStatus = totalRestante <= 0 ? "pendente" : totalRestante >= taxaTotal ? "confirmado" : "comprovante_anexado";
+      await SolicitacoesService.update(sol.id, {
+        pagamento: { ...pagamento, status: novoStatus },
+      });
+      await MovimentacoesService.registrar({
+        solicitacaoId: sol.id, tipoEvento: "status_alterado",
+        statusAnterior: sol.status, statusNovo: sol.status,
+        descricao: `Pagamento de ${formatarMoeda(pag.valor)} excluido.`,
+        autor: "fma", autorNome: "Equipe FMA", autorId: "admin", visivel: false,
+      });
+      flash("Pagamento excluido.");
+    } catch (e) {
+      console.error("Erro ao excluir pagamento:", e);
+      flash("Erro ao excluir pagamento.");
+    }
+    setSaving(false);
+    const r = await PagamentosService.listBySolicitacao(sol.id);
+    setPagamentos(r.data || []);
+    onSaved();
+  };
+
   const handleCobrar = async () => {
     setSaving(true);
     await MovimentacoesService.registrar({
@@ -2458,8 +2495,16 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
                 </div>
                 <span style={{ fontSize: 16, fontWeight: 800, color: COLORS.primary }}>{formatarMoeda(pag.valor)}</span>
               </div>
-              <div style={{ fontSize: 12, color: COLORS.gray, marginBottom: 6 }}>
-                Pagador: {pag.pagadorNome} ({pag.pagadorCpfCnpj}){pag.terceiro ? " (terceiro)" : ""} — {pag.confirmadoEm ? new Date(pag.confirmadoEm).toLocaleDateString("pt-BR") : "—"}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <div style={{ fontSize: 12, color: COLORS.gray }}>
+                  Pagador: {pag.pagadorNome} ({pag.pagadorCpfCnpj}){pag.terceiro ? " (terceiro)" : ""} — {pag.confirmadoEm ? new Date(pag.confirmadoEm).toLocaleDateString("pt-BR") : "—"}
+                </div>
+                <button onClick={() => handleExcluirPagamento(pag)} disabled={saving}
+                  style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, padding: "2px 6px", opacity: 0.6 }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = "1"}
+                  onMouseLeave={e => e.currentTarget.style.opacity = "0.6"}>
+                  Excluir pagamento
+                </button>
               </div>
               <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                 {pag.reciboNumero ? (
