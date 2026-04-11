@@ -127,14 +127,14 @@ export default function PortalRegister() {
     if (tipoPessoa === "pf") {
       if (!validarCPF(cpfCnpjRaw)) {
         e.cpfCnpj = "CPF inválido";
-      } else if (await cpfCnpjJaExisteOrganizador(cpfCnpjRaw)) {
-        e.cpfCnpj = "Este CPF já está cadastrado";
+      } else {
+        try { if (await cpfCnpjJaExisteOrganizador(cpfCnpjRaw)) e.cpfCnpj = "Este CPF já está cadastrado"; } catch {}
       }
     } else {
       if (!validarCNPJ(cpfCnpjRaw)) {
         e.cpfCnpj = "CNPJ inválido";
-      } else if (await cpfCnpjJaExisteOrganizador(cpfCnpjRaw)) {
-        e.cpfCnpj = "Este CNPJ já está cadastrado";
+      } else {
+        try { if (await cpfCnpjJaExisteOrganizador(cpfCnpjRaw)) e.cpfCnpj = "Este CNPJ já está cadastrado"; } catch {}
       }
     }
     if (!form.city.trim()) e.city = "Cidade obrigatória";
