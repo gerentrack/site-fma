@@ -911,9 +911,7 @@ export const organizerAuthAPI = {
   },
   onAuthStateChange: (callback) => onAuthStateChanged(auth, callback),
   register: async (data) => {
-    const all = await readCol("organizers");
-    if (all.find(o => o.email === data.email)) return err("E-mail já cadastrado.");
-    // Cria conta no Firebase Auth
+    // Duplicidade de e-mail é verificada pelo Firebase Auth (createUserWithEmailAndPassword)
     try {
       const cred = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const { password: _pw, ...dataWithoutPassword } = data;
@@ -925,7 +923,10 @@ export const organizerAuthAPI = {
       await signOut(auth);
       const { password: _, ...safe } = item;
       return ok(safe);
-    } catch (e) { return err(e.message); }
+    } catch (e) {
+      if (e.code === "auth/email-already-in-use") return err("Este e-mail já está cadastrado.");
+      return err(e.message);
+    }
   },
 };
 
