@@ -97,7 +97,7 @@ export async function notificarStatusSolicitacao({
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Protocolo</td><td style="padding:10px 14px;border:1px solid #eee;">${protocolo}</td></tr>
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Evento</td><td style="padding:10px 14px;border:1px solid #eee;">${evento}</td></tr>
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Novo Status</td><td style="padding:10px 14px;border:1px solid #eee;"><span style="display:inline-block;padding:4px 14px;border-radius:20px;background:${statusColor}15;color:${statusColor};font-weight:700;">${statusLabel}</span></td></tr>
-      ${observacao && observacao !== "—" ? `<tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Observação</td><td style="padding:10px 14px;border:1px solid #eee;">${observacao}</td></tr>` : ""}
+      ${observacao && observacao !== "—" ? `<tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Observação</td><td style="padding:10px 14px;border:1px solid #eee;white-space:pre-line;">${observacao.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}</td></tr>` : ""}
     </table>
     <p>Acompanhe o andamento da sua solicitação no Portal do Organizador:</p>
     <p style="text-align:center;margin:24px 0;">
@@ -156,7 +156,7 @@ export async function notificarEscalacaoArbitro({
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Data</td><td style="padding:10px 14px;border:1px solid #eee;">${data}</td></tr>
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Local</td><td style="padding:10px 14px;border:1px solid #eee;">${local}</td></tr>
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Função</td><td style="padding:10px 14px;border:1px solid #eee;">${funcao}</td></tr>
-      ${observacao && observacao !== "—" ? `<tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Observação</td><td style="padding:10px 14px;border:1px solid #eee;">${observacao}</td></tr>` : ""}
+      ${observacao && observacao !== "—" ? `<tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Observação</td><td style="padding:10px 14px;border:1px solid #eee;white-space:pre-line;">${observacao.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>")}</td></tr>` : ""}
     </table>
     <p>Acesse a Intranet para mais detalhes.</p>
     <p style="text-align:center;margin:24px 0;">
