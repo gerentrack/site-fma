@@ -53,19 +53,20 @@ export default function PortalHome() {
 
   useEffect(() => {
     async function load() {
-      const r = await SolicitacoesService.list({ organizerId });
-      if (r.data) {
-        setSolicitacoes(r.data);
-        // Pegar as últimas movimentações das 3 solicitações mais recentes
-        const recent = r.data.slice(0, 4);
-        const movsAll = [];
-        for (const sol of recent) {
-          const mr = await MovimentacoesService.listBySolicitacao(sol.id);
-          if (mr.data) movsAll.push(...mr.data.map(m => ({ ...m, solicitacao: sol })));
+      try {
+        const r = await SolicitacoesService.list({ organizerId });
+        if (r.data) {
+          setSolicitacoes(r.data);
+          const recent = r.data.slice(0, 4);
+          const movsAll = [];
+          for (const sol of recent) {
+            const mr = await MovimentacoesService.listBySolicitacao(sol.id);
+            if (mr.data) movsAll.push(...mr.data.map(m => ({ ...m, solicitacao: sol })));
+          }
+          movsAll.sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
+          setRecentMovs(movsAll.slice(0, 8));
         }
-        movsAll.sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
-        setRecentMovs(movsAll.slice(0, 8));
-      }
+      } catch {}
       setLoading(false);
     }
     load();
