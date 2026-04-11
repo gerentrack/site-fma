@@ -708,11 +708,11 @@ export default function SolicitacaoDetalhe() {
                     descricao: respostaPendencia.trim(),
                     autor: "organizador", autorNome: organizerName, autorId: organizerId, visivel: true,
                   });
-                  await SolicitacoesService.changeStatus(id, "enviada");
+                  await SolicitacoesService.changeStatus(id, "em_analise");
                   await SolicitacoesService.update(id, { pendenciaRespondidaEm: new Date().toISOString(), pendenciaResposta: respostaPendencia.trim() });
                   await MovimentacoesService.registrar({
                     solicitacaoId: id, tipoEvento: "enviada",
-                    statusAnterior: "pendencia", statusNovo: "enviada",
+                    statusAnterior: "pendencia", statusNovo: "em_analise",
                     descricao: "Solicitacao reenviada apos correcao da pendencia.",
                     autor: "organizador", autorNome: organizerName, autorId: organizerId, visivel: true,
                   });

@@ -429,18 +429,19 @@ export const SolicitacoesService = {
     const solAntes = await solicitacoesAPI.get(id);
     if (solAntes.error) return solAntes;
     const { protocolo, gerado } = garantirProtocolo(solAntes.data);
-    const updateData = { enviadoEm: new Date().toISOString() };
+    const agora = new Date().toISOString();
+    const updateData = { enviadoEm: agora, analisadoEm: agora };
     if (gerado) updateData.protocoloFMA = protocolo;
     await solicitacoesAPI.update(id, updateData);
 
-    const r = await solicitacoesAPI.changeStatus(id, "enviada");
+    const r = await solicitacoesAPI.changeStatus(id, "em_analise");
     if (r.error) return r;
 
     // Movimentação de envio
     await movimentacoesAPI.registrar({
       solicitacaoId: id, tipoEvento: "enviada",
-      statusAnterior: "rascunho", statusNovo: "enviada",
-      descricao: `Solicitação enviada para análise da FMA.${gerado ? ` Protocolo ${protocolo} gerado.` : ""}`,
+      statusAnterior: "rascunho", statusNovo: "em_analise",
+      descricao: `Solicitação enviada e em análise.${gerado ? ` Protocolo ${protocolo} gerado.` : ""}`,
       autor: "organizador", autorNome: organizerName, autorId: organizerId, visivel: true,
     });
 
@@ -448,7 +449,7 @@ export const SolicitacoesService = {
     if (gerado) {
       await movimentacoesAPI.registrar({
         solicitacaoId: id, tipoEvento: "protocolo_gerado",
-        statusAnterior: "", statusNovo: "enviada",
+        statusAnterior: "", statusNovo: "em_analise",
         descricao: `Protocolo ${protocolo} gerado automaticamente no envio.`,
         autor: "sistema", autorNome: "Sistema FMA", autorId: "sistema", visivel: true,
       });
