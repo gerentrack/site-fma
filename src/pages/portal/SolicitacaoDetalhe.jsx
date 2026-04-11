@@ -576,6 +576,8 @@ export default function SolicitacaoDetalhe() {
   const [sendingStatus, setSendingStatus] = useState(false);
   const [deleting,      setDeleting]      = useState(false);
   const [editOpen,      setEditOpen]      = useState(false);
+  const [respostaPendencia, setRespostaPendencia] = useState("");
+  const [enviandoResposta, setEnviandoResposta] = useState(false);
 
   const load = useCallback(async () => {
     const [sr,ar,mr] = await Promise.all([
@@ -668,6 +670,39 @@ export default function SolicitacaoDetalhe() {
               <div style={{ fontFamily:FONTS.body, fontSize:13, color:COLORS.dark, lineHeight:1.6 }}>{sol.parecerFMA}</div>
             </div>
           )}
+          {/* Responder pendência */}
+          {sol.status === "pendencia" && (
+            <div style={{ marginTop:16, padding:"16px 20px", borderRadius:10, background:"#fffbeb", border:"1.5px solid #fde68a" }}>
+              <div style={{ fontFamily:FONTS.heading, fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:1, color:"#92400e", marginBottom:8 }}>Responder pendencia</div>
+              <textarea value={respostaPendencia} onChange={e => setRespostaPendencia(e.target.value)}
+                placeholder="Descreva a correção realizada ou justifique..."
+                style={{ width:"100%", padding:"10px 12px", border:`1px solid #fde68a`, borderRadius:8, fontSize:13, fontFamily:FONTS.body, minHeight:80, resize:"vertical", boxSizing:"border-box" }} />
+              <div style={{ display:"flex", gap:8, marginTop:10, justifyContent:"flex-end" }}>
+                <button disabled={enviandoResposta || !respostaPendencia.trim()} onClick={async () => {
+                  setEnviandoResposta(true);
+                  await MovimentacoesService.registrar({
+                    solicitacaoId: id, tipoEvento: "comentario",
+                    statusAnterior: sol.status, statusNovo: sol.status,
+                    descricao: respostaPendencia.trim(),
+                    autor: "organizador", autorNome: organizerName, autorId: organizerId, visivel: true,
+                  });
+                  await SolicitacoesService.changeStatus(id, "enviada");
+                  await MovimentacoesService.registrar({
+                    solicitacaoId: id, tipoEvento: "enviada",
+                    statusAnterior: "pendencia", statusNovo: "enviada",
+                    descricao: "Solicitacao reenviada apos correcao da pendencia.",
+                    autor: "organizador", autorNome: organizerName, autorId: organizerId, visivel: true,
+                  });
+                  setRespostaPendencia("");
+                  setEnviandoResposta(false);
+                  load();
+                }} style={{ padding:"10px 20px", borderRadius:8, border:"none", background:enviandoResposta?COLORS.gray:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:enviandoResposta?"not-allowed":"pointer" }}>
+                  {enviandoResposta ? "Enviando..." : "Enviar resposta e reenviar solicitacao"}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Ações */}
           <div style={{ display:"flex", gap:10, marginTop:16, flexWrap:"wrap" }}>
             {canSend && <button onClick={handleEnviar} disabled={sendingStatus} style={{ padding:"10px 20px", borderRadius:8, border:"none", background:sendingStatus?COLORS.gray:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:sendingStatus?"not-allowed":"pointer" }}>{sendingStatus?"Enviando...":"Enviar para analise"}</button>}
