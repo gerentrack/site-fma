@@ -1669,25 +1669,31 @@ function CamposTecnicosView({ sol, card, lbl, val, fmt }) {
     </div>
   );
 
-  const DocBadge = ({ doc, label }) => {
+  const DocBadge = ({ doc, label, arquivos }) => {
+    // Tentar URL do doc, ou buscar no array de arquivos pelo arquivoId
+    let url = doc?.url;
+    if (!url && doc?.arquivoId && arquivos) {
+      const arq = arquivos.find(a => a.id === doc.arquivoId);
+      if (arq) url = arq.url || arq.dataUrl;
+    }
     const inner = (
       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 8,
         background: doc?.temArquivo ? "#f0fdf4" : "#fff5f5",
         border: `1px solid ${doc?.temArquivo ? "#86efac" : "#fca5a5"}`,
-        cursor: doc?.url ? "pointer" : "default", transition: "opacity 0.15s" }}
-        onMouseEnter={e => { if (doc?.url) e.currentTarget.style.opacity = "0.8"; }}
+        cursor: url ? "pointer" : "default", transition: "opacity 0.15s" }}
+        onMouseEnter={e => { if (url) e.currentTarget.style.opacity = "0.8"; }}
         onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}>
         <span style={{ fontWeight: 700, color: doc?.temArquivo ? "#15803d" : "#dc2626" }}>{doc?.temArquivo ? "OK" : "—"}</span>
         <div>
           <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, color: doc?.temArquivo ? "#15803d" : "#dc2626" }}>
-            {label}
+            {label} {url && <span style={{ fontWeight: 400, fontSize: 10, color: COLORS.primary }}>(abrir)</span>}
           </div>
           {doc?.nomeArquivo && <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>{doc.nomeArquivo}</div>}
         </div>
       </div>
     );
-    return doc?.url
-      ? <a href={doc.url} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>{inner}</a>
+    return url
+      ? <a href={url} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>{inner}</a>
       : inner;
   };
 
@@ -1774,8 +1780,8 @@ function CamposTecnicosView({ sol, card, lbl, val, fmt }) {
         <div>
           <SecHead>📁 Documentos Obrigatórios</SecHead>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <DocBadge doc={ct.regulamento} label="Regulamento do Evento" />
-            <DocBadge doc={ct.mapaPercurso} label="Mapa do Percurso" />
+            <DocBadge doc={ct.regulamento} label="Regulamento do Evento" arquivos={arquivos} />
+            <DocBadge doc={ct.mapaPercurso} label="Mapa do Percurso" arquivos={arquivos} />
           </div>
           {missingDocs.length > 0 && (
             <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 6, background: "#fff5f5", border: "1px solid #fca5a5", fontFamily: FONTS.body, fontSize: 12, color: "#dc2626" }}>
@@ -1846,7 +1852,7 @@ function CamposTecnicosView({ sol, card, lbl, val, fmt }) {
         <div>
           <SecHead>📁 Documentos</SecHead>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            {allDocKeys.map(k => <DocBadge key={k} doc={ct[k]} label={docLabels[k] || k} />)}
+            {allDocKeys.map(k => <DocBadge key={k} doc={ct[k]} label={docLabels[k] || k} arquivos={arquivos} />)}
           </div>
           {missingRequired.length > 0 && (
             <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 6, background: "#fff5f5", border: "1px solid #fca5a5", fontFamily: FONTS.body, fontSize: 12, color: "#dc2626" }}>
