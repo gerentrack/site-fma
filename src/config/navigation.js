@@ -273,6 +273,7 @@ export const INTRANET_NAV_ARBITRO = [
   // ── Minha Arbitragem ──
   { label: "Disponibilidade",       icon: "📅", path: "/intranet/disponibilidade",  group: "Minha Arbitragem" },
   { label: "Minhas Escalas",        icon: "📋", path: "/intranet/escalas" },
+  { label: "Historico",             icon: "📊", path: "/intranet/historico" },
   { label: "Calendario",            icon: "🗓️", path: "/intranet/calendario" },
   { label: "Meus Reembolsos",       icon: "🧾", path: "/intranet/reembolsos" },
   // ── Comunicacao ──
