@@ -70,7 +70,7 @@ export default function MinhasSolicitacoes() {
             style={{ padding: "11px 20px", borderRadius: 8, background: "#0066cc", color: "#fff",
               textDecoration: "none", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800,
               textTransform: "uppercase", whiteSpace: "nowrap" }}>
-            ➕ Nova solicitação
+            + Nova solicitacao
           </Link>
         </div>
 
@@ -79,7 +79,7 @@ export default function MinhasSolicitacoes() {
           boxShadow: "0 2px 10px rgba(0,0,0,0.06)", marginBottom: 20,
           display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="🔍 Buscar por nome do evento..."
+            placeholder="Buscar por nome do evento..."
             style={{ flex: 1, minWidth: 200, padding: "8px 12px", borderRadius: 8,
               border: `1px solid ${COLORS.grayLight}`, fontFamily: FONTS.body,
               fontSize: 13, outline: "none" }} />
@@ -117,7 +117,7 @@ export default function MinhasSolicitacoes() {
         {!loading && filtered.length === 0 ? (
           <div style={{ background: "#fff", borderRadius: 12, padding: "60px 24px",
             textAlign: "center", boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }}>
-            <div style={{ fontSize: 44, marginBottom: 12 }}>📭</div>
+            <div style={{ fontSize: 28, marginBottom: 12, color: COLORS.grayLight }}>—</div>
             <div style={{ fontFamily: FONTS.heading, fontSize: 18, fontWeight: 800,
               textTransform: "uppercase", color: COLORS.dark, marginBottom: 8 }}>
               {items.length === 0 ? "Nenhuma solicitação ainda" : "Nenhum resultado"}
@@ -130,15 +130,15 @@ export default function MinhasSolicitacoes() {
                 style={{ display: "inline-block", padding: "10px 22px", borderRadius: 8,
                   background: "#0066cc", color: "#fff", textDecoration: "none",
                   fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, textTransform: "uppercase" }}>
-                ➕ Nova solicitação
+                + Nova solicitacao
               </Link>
             )}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {filtered.map(sol => {
-              const st = statusMap[sol.status] || { label: sol.status, color: COLORS.gray, bg: "#f3f4f6", icon: "📋" };
-              const tp = tipoMap[sol.tipo] || { label: sol.tipo, icon: "📋" };
+              const st = statusMap[sol.status] || { label: sol.status, color: COLORS.gray, bg: "#f3f4f6", icon: "" };
+              const tp = tipoMap[sol.tipo] || { label: sol.tipo, icon: "" };
               return (
                 <div key={sol.id} style={{ background: "#fff", borderRadius: 12,
                   boxShadow: "0 2px 10px rgba(0,0,0,0.06)", overflow: "hidden",
