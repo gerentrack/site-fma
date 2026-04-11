@@ -423,16 +423,37 @@ export const SolicitacoesService = {
   delete: (id) => solicitacoesAPI.delete(id),
   countByStatus: () => solicitacoesAPI.countByStatus(),
 
-  /** Envia uma solicitação: muda status rascunho → enviada e registra movimentação. */
+  /** Envia uma solicitação: gera protocolo, muda status rascunho → enviada e registra movimentação. */
   enviar: async (id, organizerId, organizerName) => {
+    // Gerar protocolo no envio
+    const solAntes = await solicitacoesAPI.get(id);
+    if (solAntes.error) return solAntes;
+    const { protocolo, gerado } = garantirProtocolo(solAntes.data);
+    if (gerado) {
+      await solicitacoesAPI.update(id, { protocoloFMA: protocolo });
+    }
+
     const r = await solicitacoesAPI.changeStatus(id, "enviada");
     if (r.error) return r;
+
+    // Movimentação de envio
     await movimentacoesAPI.registrar({
       solicitacaoId: id, tipoEvento: "enviada",
       statusAnterior: "rascunho", statusNovo: "enviada",
-      descricao: "Solicitação enviada para análise da FMA.",
+      descricao: `Solicitação enviada para análise da FMA.${gerado ? ` Protocolo ${protocolo} gerado.` : ""}`,
       autor: "organizador", autorNome: organizerName, autorId: organizerId, visivel: true,
     });
+
+    // Movimentação de protocolo gerado
+    if (gerado) {
+      await movimentacoesAPI.registrar({
+        solicitacaoId: id, tipoEvento: "protocolo_gerado",
+        statusAnterior: "", statusNovo: "enviada",
+        descricao: `Protocolo ${protocolo} gerado automaticamente no envio.`,
+        autor: "sistema", autorNome: "Sistema FMA", autorId: "sistema", visivel: true,
+      });
+    }
+
     // Notificar FMA por e-mail
     const solRes = await solicitacoesAPI.get(id);
     if (solRes.data) {
@@ -448,7 +469,7 @@ export const SolicitacoesService = {
         solicitacaoId: id,
       }).catch(() => {});
     }
-    return r;
+    return { ...r, data: { ...r.data, protocoloFMA: protocolo, _protocoloGerado: gerado } };
   },
 
   /**
