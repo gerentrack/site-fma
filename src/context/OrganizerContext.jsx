@@ -62,6 +62,7 @@ export function OrganizerProvider({ children }) {
       organizerEmail:       session?.email       || "",
       organizerActive:      session?.active !== false,
       motivoDesativacao:    session?.motivoDesativacao || "",
+      emailVerified:        session?.emailVerified || false,
     }}>
       {children}
     </OrganizerContext.Provider>

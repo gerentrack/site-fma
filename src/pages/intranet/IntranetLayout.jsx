@@ -45,7 +45,7 @@ function NavLink({ item }) {
 }
 
 export default function IntranetLayout({ children, requireRole = null }) {
-  const { isAuthenticated, loading, logout, name, role, canManage, mustChangePassword, profileComplete, refereeId } = useIntranet();
+  const { isAuthenticated, loading, logout, name, role, canManage, mustChangePassword, profileComplete, emailVerified, refereeId } = useIntranet();
   const navigate = useNavigate();
   const location = useLocation();
   const [notifs, setNotifs] = useState([]);
@@ -65,16 +65,18 @@ export default function IntranetLayout({ children, requireRole = null }) {
     }
   }, [isAuthenticated, loading]);
 
-  // Fluxo de primeiro acesso: troca de senha → completar perfil
+  // Fluxo de primeiro acesso: troca de senha → completar perfil → verificar e-mail
   useEffect(() => {
     if (!loading && isAuthenticated) {
       if (mustChangePassword && location.pathname !== "/intranet/alterar-senha") {
         navigate("/intranet/alterar-senha", { replace: true });
       } else if (!mustChangePassword && !profileComplete && location.pathname !== "/intranet/completar-perfil") {
         navigate("/intranet/completar-perfil", { replace: true });
+      } else if (!mustChangePassword && profileComplete && !emailVerified && location.pathname !== "/intranet/verificar-email") {
+        navigate("/intranet/verificar-email", { replace: true });
       }
     }
-  }, [isAuthenticated, loading, mustChangePassword, profileComplete, location.pathname]);
+  }, [isAuthenticated, loading, mustChangePassword, profileComplete, emailVerified, location.pathname]);
 
   // Role guard
   useEffect(() => {

@@ -617,6 +617,7 @@ export const intranetAuthAPI = {
         refereeId: referee.id, uid: cred.user.uid, email: referee.email, name: referee.name, role: referee.role, loginAt: now(),
         mustChangePassword: referee.mustChangePassword || false,
         profileComplete: referee.profileComplete || false,
+        emailVerified: referee.emailVerified || false,
       };
       const { password: _, ...safe } = referee;
       return ok({ session, referee: safe });
@@ -638,6 +639,7 @@ export const intranetAuthAPI = {
       refereeId: referee.id, uid: u.uid, email: referee.email, name: referee.name, role: referee.role,
       mustChangePassword: referee.mustChangePassword || false,
       profileComplete: referee.profileComplete || false,
+      emailVerified: referee.emailVerified || false,
     };
   },
   onAuthStateChange: (callback) => onAuthStateChanged(auth, callback),
@@ -653,6 +655,25 @@ export const intranetAuthAPI = {
       return ok(true);
     } catch (e) {
       if (e.code === "auth/wrong-password" || e.code === "auth/invalid-credential") return err("Senha atual incorreta.");
+      return err(e.message);
+    }
+  },
+  updateEmail: async (refereeId, newEmail, currentPassword) => {
+    const u = auth.currentUser;
+    if (!u) return err("Não autenticado.");
+    try {
+      const cred = EmailAuthProvider.credential(u.email, currentPassword);
+      await reauthenticateWithCredential(u, cred);
+      await fbUpdateEmail(u, newEmail);
+      await updateDoc(doc(db, "referees", refereeId), { email: newEmail, updatedAt: now() });
+      const usersSnap = await getDocs(collection(db, "users"));
+      const userDoc = usersSnap.docs.find(d => { const dt = d.data(); return dt.refId === refereeId && hasRole(dt, "referee"); });
+      if (userDoc) await updateDoc(doc(db, "users", userDoc.id), { email: newEmail });
+      return ok(true);
+    } catch (e) {
+      if (e.code === "auth/wrong-password" || e.code === "auth/invalid-credential") return err("Senha incorreta.");
+      if (e.code === "auth/email-already-in-use") return err("Este e-mail já está em uso por outra conta.");
+      if (e.code === "auth/invalid-email") return err("E-mail inválido.");
       return err(e.message);
     }
   },
@@ -857,7 +878,7 @@ export const organizerAuthAPI = {
       const org = await readDoc("organizers", profile.refId);
       if (!org) { await signOut(auth); return err("Conta não encontrada."); }
       const orgAtivo = org.status === "ativo" || org.active === true;
-      const session = { organizerId: org.id, uid: cred.user.uid, email: org.email, name: org.name, loginAt: now(), active: orgAtivo, motivoDesativacao: org.motivoDesativacao || "" };
+      const session = { organizerId: org.id, uid: cred.user.uid, email: org.email, name: org.name, loginAt: now(), active: orgAtivo, motivoDesativacao: org.motivoDesativacao || "", emailVerified: org.emailVerified || false };
       const { password: _, ...safe } = org;
       return ok({ session, organizer: safe });
     } catch (e) {
@@ -875,7 +896,7 @@ export const organizerAuthAPI = {
     const org = await readDoc("organizers", profile.refId);
     if (!org) return null;
     const orgAtivo = org.status === "ativo" || org.active === true;
-    return { organizerId: org.id, uid: u.uid, email: org.email, name: org.name, active: orgAtivo, motivoDesativacao: org.motivoDesativacao || "" };
+    return { organizerId: org.id, uid: u.uid, email: org.email, name: org.name, active: orgAtivo, motivoDesativacao: org.motivoDesativacao || "", emailVerified: org.emailVerified || false };
   },
   onAuthStateChange: (callback) => onAuthStateChanged(auth, callback),
   register: async (data) => {
@@ -895,6 +916,17 @@ export const organizerAuthAPI = {
     } catch (e) { return err(e.message); }
   },
 };
+
+// ── Verificação de e-mail único ──────────────────────────────────────────────
+export async function emailJaExisteOrganizador(email) {
+  const all = await readCol("organizers");
+  return all.some(o => o.email === email);
+}
+
+export async function emailJaExisteArbitro(email) {
+  const all = await readCol("referees");
+  return all.some(r => r.email === email);
+}
 
 export const organizersAPI = {
   list: async ({ status=null }={}) => {

@@ -47,10 +47,12 @@ export function IntranetProvider({ children }) {
       session, loading, login, logout,
       isAuthenticated, isAdmin, isCoordinator, canManage,
       refereeId:           session?.refereeId || null,
+      email:               session?.email     || "",
       role:                session?.role      || null,
       name:                session?.name      || "",
       mustChangePassword:  session?.mustChangePassword || false,
       profileComplete:     session?.profileComplete || false,
+      emailVerified:       session?.emailVerified || false,
     }}>
       {children}
     </IntranetContext.Provider>

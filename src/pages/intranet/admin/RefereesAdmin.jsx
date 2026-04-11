@@ -210,6 +210,7 @@ export function IntranetRefereeEditor() {
       notificarArbitroCadastro({
         arbitroEmail: form.email,
         arbitroNome: form.name,
+        senhaTemporaria: form.password,
       }).catch(e => console.warn("Email cadastro árbitro:", e));
     }
     navigate("/intranet/admin/arbitros");

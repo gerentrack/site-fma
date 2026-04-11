@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import IntranetLayout from "../IntranetLayout";
 import { RefereeAssignmentsService, RefereesService } from "../../../services/index";
+import { notificarDiariaPaga } from "../../../services/emailService";
 import { COLORS, FONTS } from "../../../styles/colors";
 import { REFEREE_FUNCTIONS } from "../../../config/navigation";
 
@@ -49,6 +50,12 @@ export default function DiariasAdmin() {
     const partes = dt.split("/");
     const dataISO = partes.length === 3 ? `${partes[2]}-${partes[1]}-${partes[0]}` : new Date().toISOString().slice(0, 10);
     await RefereeAssignmentsService.update(id, { diariaPaga: true, diariaPagaEm: dataISO });
+    const a = assignments.find(x => x.id === id);
+    const ref = a && refMap[a.refereeId];
+    if (ref?.email && a?.event) {
+      const total = (a.valorDiaria || 0) + (a.transporte || 0) + (a.hospedagem || 0) + (a.alimentacao || 0);
+      notificarDiariaPaga({ arbitroEmail: ref.email, arbitroNome: ref.name, evento: a.event.title, valor: total }).catch(() => {});
+    }
     fetchData();
   };
   const handleDesfazerPago = async (id) => {

@@ -67,6 +67,7 @@ export default function PortalRegister() {
   const [cnpjLoading, setCnpjLoading] = useState(false);
   const [cnpjMsg, setCnpjMsg] = useState("");
   const [cnpjValidated, setCnpjValidated] = useState(false);
+  const [cnpjFound, setCnpjFound] = useState(false);
   const [legalModal, setLegalModal] = useState(null); // "privacidade" | "termos" | null
 
   useEffect(() => {
@@ -81,7 +82,7 @@ export default function PortalRegister() {
     setCnpjMsg("");
     try {
       const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjRaw}`);
-      if (!res.ok) { setCnpjMsg("CNPJ não encontrado na Receita Federal."); setCnpjLoading(false); setCnpjValidated(true); return; }
+      if (!res.ok) { setCnpjMsg("CNPJ não encontrado na Receita Federal. Preencha os dados manualmente."); setCnpjFound(false); setCnpjLoading(false); setCnpjValidated(true); return; }
       const data = await res.json();
       setForm(f => ({
         ...f,
@@ -92,8 +93,10 @@ export default function PortalRegister() {
         state: data.uf || f.state,
         address: [data.logradouro, data.numero, data.complemento, data.bairro].filter(Boolean).join(", ") || f.address,
       }));
+      setCnpjFound(true);
       setCnpjMsg("Dados preenchidos automaticamente via Receita Federal.");
     } catch {
+      setCnpjFound(false);
       setCnpjMsg("Não foi possível consultar o CNPJ. Preencha os dados manualmente.");
     }
     setCnpjLoading(false);
@@ -142,6 +145,7 @@ export default function PortalRegister() {
       phone: form.phone.replace(/\D/g, ""),
       organization: form.organization || form.name,
       website,
+      emailVerified: false,
       lgpdConsentAt: new Date().toISOString(),
     });
     setLoading(false);
@@ -215,15 +219,20 @@ export default function PortalRegister() {
             <div style={{ display: cnpjValidated ? "grid" : "none", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <div style={{ gridColumn: "1/-1" }}>
                 <Field label="Razão social" required>
-                  <input value={form.name} readOnly
-                    style={readOnlyStyle} />
+                  <input value={form.name} readOnly={cnpjFound}
+                    onChange={cnpjFound ? undefined : e => set("name", e.target.value)}
+                    placeholder="Razão social da empresa"
+                    style={cnpjFound ? readOnlyStyle : inpStyle} />
                   {errors.name && <div style={errStyle}>{errors.name}</div>}
                 </Field>
               </div>
               <div style={{ gridColumn: "1/-1" }}>
                 <Field label="Nome fantasia">
-                  <input value={form.organization || "Não cadastrado na Receita Federal"} readOnly
-                    style={{ ...readOnlyStyle, color: form.organization ? COLORS.gray : "#9ca3af", fontStyle: form.organization ? "normal" : "italic" }} />
+                  <input value={cnpjFound ? (form.organization || "Não cadastrado na Receita Federal") : form.organization}
+                    readOnly={cnpjFound}
+                    onChange={cnpjFound ? undefined : e => set("organization", e.target.value)}
+                    placeholder="Nome fantasia (opcional)"
+                    style={cnpjFound ? { ...readOnlyStyle, color: form.organization ? COLORS.gray : "#9ca3af", fontStyle: form.organization ? "normal" : "italic" } : inpStyle} />
                 </Field>
               </div>
               <Field label="Telefone / WhatsApp">
@@ -233,18 +242,27 @@ export default function PortalRegister() {
               </Field>
               <div />
 
-              {/* Endereço completo — somente leitura (Receita Federal) */}
+              {/* Endereço completo */}
               <div style={{ gridColumn: "1/-1" }}>
                 <Field label="Endereço">
-                  <input value={form.address || "—"} readOnly style={readOnlyStyle} />
+                  <input value={cnpjFound ? (form.address || "—") : form.address} readOnly={cnpjFound}
+                    onChange={cnpjFound ? undefined : e => set("address", e.target.value)}
+                    placeholder="Endereço completo"
+                    style={cnpjFound ? readOnlyStyle : inpStyle} />
                 </Field>
               </div>
-              <Field label="Cidade">
-                <input value={form.city} readOnly style={readOnlyStyle} />
+              <Field label="Cidade" required>
+                <input value={form.city} readOnly={cnpjFound}
+                  onChange={cnpjFound ? undefined : e => set("city", e.target.value)}
+                  placeholder="Cidade"
+                  style={cnpjFound ? readOnlyStyle : inpStyle} />
                 {errors.city && <div style={errStyle}>{errors.city}</div>}
               </Field>
               <Field label="Estado">
-                <input value={form.state} readOnly style={readOnlyStyle} />
+                <input value={form.state} readOnly={cnpjFound}
+                  onChange={cnpjFound ? undefined : e => set("state", e.target.value)}
+                  placeholder="UF" maxLength={2}
+                  style={cnpjFound ? readOnlyStyle : inpStyle} />
               </Field>
 
               {/* Site — opcional, com modelo e preview */}

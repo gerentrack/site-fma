@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import IntranetLayout from "../IntranetLayout";
 import { RefereeAssignmentsService, ReembolsosService, RefereesService } from "../../../services/index";
-import { notificarReembolso } from "../../../services/emailService";
+import { notificarReembolso, notificarDiariaPaga } from "../../../services/emailService";
 import { COLORS, FONTS } from "../../../styles/colors";
 import { REFEREE_FUNCTIONS } from "../../../config/navigation";
 
@@ -67,8 +67,20 @@ export default function PagamentosArbitragem() {
     setActionLoading(modalPagar.id);
     if (modalPagar.type === "diaria") {
       await RefereeAssignmentsService.update(modalPagar.id, { diariaPaga: true, diariaPagaEm: modalData });
+      if (notifyEmail) {
+        const a = assignments.find(x => x.id === modalPagar.id);
+        const ref = a && referees[a.refereeId];
+        if (ref?.email && a?.event) {
+          const total = (a.valorDiaria || 0) + (a.transporte || 0) + (a.hospedagem || 0) + (a.alimentacao || 0);
+          notificarDiariaPaga({ arbitroEmail: ref.email, arbitroNome: ref.name, evento: a.event.title, valor: total }).catch(() => {});
+        }
+      }
     } else {
       await ReembolsosService.update(modalPagar.id, { status: "pago", pagoEm: modalData });
+      if (notifyEmail) {
+        const r = reembolsos.find(x => x.id === modalPagar.id);
+        if (r) { const ref = referees[r.refereeId]; if (ref?.email) notificarReembolso({ arbitroEmail: ref.email, arbitroNome: ref.name, status: "pago", categoria: CATS[r.categoria] || r.categoria, valor: r.valor, valorAprovado: r.valorAprovado }).catch(() => {}); }
+      }
     }
     setActionLoading(null);
     setModalPagar(null);

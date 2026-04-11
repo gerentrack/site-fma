@@ -26,8 +26,9 @@ import IntranetDocuments      from "../pages/intranet/arbitro/IntranetDocuments"
 import { IntranetRefereeList, IntranetRefereeEditor } from "../pages/intranet/admin/RefereesAdmin";
 import { IntranetEventList, IntranetEventEditor }     from "../pages/intranet/admin/EventsAdmin";
 import { AssignmentList, AssignmentEditor }           from "../pages/intranet/admin/AssignmentPanel";
-import ChangePasswordIntranet from "../pages/intranet/ChangePasswordIntranet";
-import CompleteProfileWizard  from "../pages/intranet/CompleteProfileWizard";
+import ChangePasswordIntranet  from "../pages/intranet/ChangePasswordIntranet";
+import CompleteProfileWizard   from "../pages/intranet/CompleteProfileWizard";
+import VerificarEmailIntranet  from "../pages/intranet/VerificarEmailIntranet";
 
 // ── Páginas admin FMA ─────────────────────────────────────────────────────────
 import AdminLogin                              from "../pages/admin/AdminLogin";
@@ -51,7 +52,8 @@ import PortalHome         from "../pages/portal/PortalHome";
 import MinhasSolicitacoes from "../pages/portal/MinhasSolicitacoes";
 import NovaSolicitacao    from "../pages/portal/NovaSolicitacao";
 import SolicitacaoDetalhe from "../pages/portal/SolicitacaoDetalhe";
-import MeusDados          from "../pages/portal/MeusDados";
+import MeusDados              from "../pages/portal/MeusDados";
+import VerificarEmailPortal   from "../pages/portal/VerificarEmailPortal";
 // ── Admin: Portal ─────────────────────────────────────────────────────────────
 import { SolicitacoesList, SolicitacaoEditor } from "../pages/admin/SolicitacoesAdmin";
 import { OrganizadoresList, OrganizadorEditor } from "../pages/admin/OrganizadoresAdmin";
@@ -159,6 +161,7 @@ export default function AppRouter() {
       <Route path="/intranet/login"              element={<IntranetLogin />} />
       <Route path="/intranet/alterar-senha"      element={<ChangePasswordIntranet />} />
       <Route path="/intranet/completar-perfil"   element={<CompleteProfileWizard />} />
+      <Route path="/intranet/verificar-email"    element={<VerificarEmailIntranet />} />
       {/* Área do árbitro */}
       <Route path="/intranet/disponibilidade"    element={<MyAvailability />} />
       <Route path="/intranet/escalas"            element={<MyAssignments />} />
@@ -298,6 +301,7 @@ export default function AppRouter() {
       <Route path="/portal/cadastro" element={<PortalRegister />} />
 
       {/* Rotas autenticadas do portal */}
+      <Route path="/portal/verificar-email"    element={<VerificarEmailPortal />} />
       <Route path="/portal"                    element={<PortalLayout><PortalHome /></PortalLayout>} />
       <Route path="/portal/nova-solicitacao"   element={<PortalLayout><NovaSolicitacao /></PortalLayout>} />
       <Route path="/portal/solicitacoes"       element={<PortalLayout><MinhasSolicitacoes /></PortalLayout>} />

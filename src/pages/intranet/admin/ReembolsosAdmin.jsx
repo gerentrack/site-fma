@@ -191,6 +191,7 @@ export default function ReembolsosAdmin() {
                       const dataISO = partes.length === 3 ? `${partes[2]}-${partes[1]}-${partes[0]}` : new Date().toISOString().slice(0, 10);
                       setActionLoading(r.id);
                       await ReembolsosService.update(r.id, { status: "pago", pagoEm: dataISO });
+                      notificarArbitro(r, "pago", r.valorAprovado);
                       setActionLoading(null);
                       fetchData();
                     }} disabled={actionLoading === r.id}

@@ -267,15 +267,42 @@ export async function enviarBoasVindasOrganizador({
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
+// 5b. Verificação de E-mail — Código de 6 dígitos
+// ═════════════════════════════════════════════════════════════════════════════
+
+export async function enviarCodigoVerificacao({ email, nome, codigo }) {
+  const html = templateBase(`
+    <p>Olá, <strong>${nome}</strong>!</p>
+    <p>Use o código abaixo para verificar seu e-mail:</p>
+    <p style="text-align:center;margin:28px 0;">
+      <span style="display:inline-block;padding:16px 40px;border-radius:12px;background:#f0f9ff;border:2px solid #bae6fd;font-size:32px;font-weight:900;letter-spacing:8px;color:#0066cc;">${codigo}</span>
+    </p>
+    <p style="font-size:13px;color:#666;">Este código expira em <strong>10 minutos</strong>. Se você não solicitou esta verificação, ignore este e-mail.</p>
+  `);
+
+  return enviarEmail({
+    to: email,
+    subject: `[FMA] Código de verificação: ${codigo}`,
+    html,
+  });
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
 // 6. Notificação de Árbitro — Cadastro/Status
 // ═════════════════════════════════════════════════════════════════════════════
 
 export async function notificarArbitroCadastro({
-  arbitroEmail, arbitroNome,
+  arbitroEmail, arbitroNome, senhaTemporaria,
 }) {
   const html = templateBase(`
     <p>Olá, <strong>${arbitroNome}</strong>!</p>
     <p>Seu cadastro na <strong>Intranet de Árbitros</strong> da FMA foi criado com sucesso.</p>
+    <p>Seus dados de acesso:</p>
+    <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">E-mail</td><td style="padding:10px 14px;border:1px solid #eee;">${arbitroEmail}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Senha temporária</td><td style="padding:10px 14px;border:1px solid #eee;"><code style="font-size:16px;font-weight:700;letter-spacing:1px;color:#cc0000;">${senhaTemporaria}</code></td></tr>
+    </table>
+    <p style="font-size:13px;color:#b45309;background:#fffbeb;padding:10px 14px;border-radius:8px;border:1px solid #fde68a;"><strong>Importante:</strong> Você deverá alterar sua senha no primeiro acesso.</p>
     <p>Através da Intranet você poderá:</p>
     <ul style="margin:16px 0;padding-left:20px;">
       <li>Visualizar suas <strong>escalações</strong> para eventos</li>
@@ -361,7 +388,7 @@ export async function notificarMensagemRecebida({ arbitroEmail, arbitroNome, rem
 }
 
 export async function notificarReembolso({ arbitroEmail, arbitroNome, status, categoria, valor, valorAprovado, motivo }) {
-  const statusLabels = { aprovado: "Aprovado", aprovado_parcial: "Aprovado parcialmente", rejeitado: "Rejeitado" };
+  const statusLabels = { aprovado: "Aprovado", aprovado_parcial: "Aprovado parcialmente", pago: "Pago", rejeitado: "Rejeitado" };
   const html = templateBase(`
     <p>Ola, <strong>${arbitroNome}</strong>!</p>
     <p>Seu pedido de reembolso foi atualizado:</p>

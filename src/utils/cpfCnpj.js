@@ -2,7 +2,7 @@
  * Validação de CPF e CNPJ — algoritmo oficial dos dígitos verificadores.
  * Também inclui checagem de duplicidade no Firestore.
  */
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 
 // ── Validação matemática ─────────────────────────────────────────────────────
@@ -79,7 +79,6 @@ export async function cpfJaExisteArbitro(cpf, excludeId) {
 export async function cpfCnpjJaExisteOrganizador(cpfCnpj, excludeId) {
   const digits = (cpfCnpj || "").replace(/\D/g, "");
   if (!digits) return false;
-  const q = query(collection(db, "organizers"), where("cpfCnpj", "==", digits));
-  const snap = await getDocs(q);
-  return snap.docs.some(d => d.id !== excludeId);
+  const snap = await getDocs(collection(db, "organizers"));
+  return snap.docs.some(d => d.id !== excludeId && d.data().cpfCnpj === digits);
 }

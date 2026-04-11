@@ -32,7 +32,7 @@ function NavLink({ item }) {
 }
 
 export default function PortalLayout({ children }) {
-  const { isAuthenticated, loading, logout, organizerName, organizerOrg } = useOrganizer();
+  const { isAuthenticated, loading, logout, organizerName, organizerOrg, emailVerified } = useOrganizer();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -46,8 +46,10 @@ export default function PortalLayout({ children }) {
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       navigate("/portal/login", { replace: true, state: { from: location.pathname } });
+    } else if (!loading && isAuthenticated && !emailVerified && location.pathname !== "/portal/verificar-email") {
+      navigate("/portal/verificar-email", { replace: true });
     }
-  }, [isAuthenticated, loading]);
+  }, [isAuthenticated, loading, emailVerified, location.pathname]);
 
   if (loading || !isAuthenticated) {
     return (

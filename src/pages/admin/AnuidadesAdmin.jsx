@@ -11,10 +11,8 @@ import { useState, useEffect } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
 import IntranetLayout from "../../pages/intranet/IntranetLayout";
 import { COLORS, FONTS } from "../../styles/colors";
-import { AnuidadesService, TaxasConfigService, RefereesService } from "../../services/index";
+import { AnuidadesService, TaxasConfigService } from "../../services/index";
 import { ANUIDADE_STATUS } from "../../config/navigation";
-import { reservarNumeroRecibo, formatarNumeroRecibo } from "../../utils/reciboCounter";
-import { gerarAnuidadeReciboPdf } from "../../services/anuidadeReciboPdf";
 
 const statusMap = Object.fromEntries(ANUIDADE_STATUS.map(s => [s.value, s]));
 
@@ -45,7 +43,6 @@ export default function AnuidadesAdmin({ useIntranet = false }) {
   const [detail, setDetail] = useState(null); // anuidade selecionada
   const [actionLoading, setActionLoading] = useState(false);
   const [reciboNumero, setReciboNumero] = useState("");
-  const [gerandoRecibo, setGerandoRecibo] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -75,6 +72,14 @@ export default function AnuidadesAdmin({ useIntranet = false }) {
     if (status === "pago") {
       patch.confirmadoPor = "admin";
       patch.confirmadoEm = new Date().toISOString();
+    }
+    if (status === "pendente") {
+      patch.confirmadoPor = "";
+      patch.confirmadoEm = "";
+      patch.comprovanteUrl = "";
+      patch.comprovantePath = "";
+      patch.pagamentoEm = "";
+      patch.reciboNumero = "";
     }
     if (obs !== undefined) patch.observacao = obs;
     await AnuidadesService.update(id, patch);
@@ -279,80 +284,6 @@ export default function AnuidadesAdmin({ useIntranet = false }) {
                 )}
               </div>
 
-              {/* Gerar recibo */}
-              {detail.status === "pago" && (
-                <div style={{ marginTop: 16, padding: 14, background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0" }}>
-                  <div style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#15803d", marginBottom: 8 }}>
-                    Gerar Recibo
-                  </div>
-                  {detail.reciboNumero ? (
-                    <div style={{ fontSize: 13, fontFamily: FONTS.body, marginBottom: 8 }}>
-                      Recibo ja emitido: <strong>{detail.reciboNumero}</strong>
-                    </div>
-                  ) : null}
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <input
-                      value={reciboNumero}
-                      onChange={e => setReciboNumero(e.target.value)}
-                      placeholder={detail.reciboNumero || "Ex: REC-005/2026 (vazio = gerar automatico)"}
-                      style={{ flex: 1, padding: "7px 10px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, fontSize: 13, fontFamily: FONTS.body }} />
-                    <button
-                      disabled={gerandoRecibo}
-                      onClick={async () => {
-                        setGerandoRecibo(true);
-                        let numero = reciboNumero.trim();
-                        if (!numero) {
-                          if (detail.reciboNumero) {
-                            numero = detail.reciboNumero;
-                          } else {
-                            const seq = await reservarNumeroRecibo(detail.ano);
-                            numero = formatarNumeroRecibo(seq, detail.ano);
-                          }
-                        }
-                        // Buscar dados do árbitro (CPF)
-                        const refResult = await RefereesService.get(detail.refereeId);
-                        const ref = refResult?.data || {};
-                        const blob = await gerarAnuidadeReciboPdf({
-                          reciboNumero: numero,
-                          arbitroNome: detail.refereeName,
-                          arbitroCpf: ref.cpf || "",
-                          arbitroNivel: detail.refereeNivel,
-                          ano: detail.ano,
-                          valor: detail.valor,
-                          confirmadoEm: detail.confirmadoEm,
-                          confirmadoPor: detail.confirmadoPor,
-                          assinaturaUrl: config?.assinaturaPresidenteUrl || "",
-                          presidenteNome: config?.presidenteNome || "",
-                          presidenteCargo: config?.presidenteCargo || "Presidente - Federacao Mineira de Atletismo",
-                        });
-                        // Salvar numero no registro
-                        if (!detail.reciboNumero || detail.reciboNumero !== numero) {
-                          await AnuidadesService.update(detail.id, { reciboNumero: numero });
-                          setDetail(prev => ({ ...prev, reciboNumero: numero }));
-                        }
-                        // Download
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement("a");
-                        a.href = url;
-                        a.download = `Recibo_Anuidade_${detail.refereeName.replace(/\s+/g, "_")}_${detail.ano}.pdf`;
-                        a.click();
-                        URL.revokeObjectURL(url);
-                        setGerandoRecibo(false);
-                        fetchData();
-                      }}
-                      style={{
-                        padding: "7px 16px", borderRadius: 6, border: "none",
-                        background: "#15803d", color: "#fff", fontWeight: 700, fontSize: 12,
-                        cursor: gerandoRecibo ? "not-allowed" : "pointer", whiteSpace: "nowrap",
-                      }}>
-                      {gerandoRecibo ? "Gerando..." : detail.reciboNumero ? "Baixar Recibo" : "Gerar Recibo"}
-                    </button>
-                  </div>
-                  <div style={{ fontSize: 11, color: COLORS.gray, marginTop: 6 }}>
-                    Deixe vazio para gerar numero sequencial automatico. Ou digite um numero caso tenha emitido fora do sistema.
-                  </div>
-                </div>
-              )}
 
               <div style={{ textAlign: "right", marginTop: 16 }}>
                 <button onClick={() => { setDetail(null); setReciboNumero(""); }}
