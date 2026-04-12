@@ -401,8 +401,9 @@ export function SolicitacaoEditor() {
     if (rMov.data) setMovimentacoes(rMov.data);
 
     // Carregar evento vinculado (se houver) e lista para busca
-    if (r.data.eventoCalendarioId) {
-      const rEvento = await CalendarService.get(r.data.eventoCalendarioId);
+    const evtId = r.data.eventoCalendarioId || r.data.eventoId;
+    if (evtId) {
+      const rEvento = await CalendarService.get(evtId);
       setEventoVinculado(rEvento.data || null);
     } else {
       setEventoVinculado(null);
