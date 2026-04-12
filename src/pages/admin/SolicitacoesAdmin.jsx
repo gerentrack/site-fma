@@ -1092,42 +1092,61 @@ export function SolicitacaoEditor() {
               inp={inp}
             />
 
-            {/* Resposta à pendência do organizador */}
-            {sol.pendenciaRespondidaEm && (
-              <div style={{ marginBottom: 20, padding: "16px 20px", borderRadius: 10, background: "#fffbeb", border: "2px solid #fde68a" }}>
-                <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: "#92400e", marginBottom: 10 }}>
-                  Resposta do organizador a pendencia
-                  <span style={{ fontWeight: 400, textTransform: "none", marginLeft: 8, fontSize: 10 }}>
-                    ({new Date(sol.pendenciaRespondidaEm).toLocaleString("pt-BR")})
-                  </span>
+            {/* Timeline de pareceres e respostas */}
+            {(() => {
+              const interacoes = movimentacoes.filter(m =>
+                m.tipoEvento === "pendencia_aberta" ||
+                m.tipoEvento === "comentario" ||
+                (m.tipoEvento === "status_alterado" && m.descricao?.includes("Parecer:"))
+              ).sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm));
+              if (interacoes.length === 0) return null;
+              const docsResposta = arquivos.filter(a => a.enviadoPor === "organizador" && a.descricao?.startsWith("Resposta a pendencia"));
+              return (
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, display: "block", marginBottom: 10 }}>
+                    Historico de pareceres e respostas
+                  </label>
+                  <div style={{ borderLeft: `3px solid ${COLORS.grayLight}`, paddingLeft: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+                    {interacoes.map(mov => {
+                      const isFma = mov.autor === "fma" || mov.autor === "admin";
+                      const isOrg = mov.autor === "organizador";
+                      return (
+                        <div key={mov.id} style={{
+                          padding: "10px 14px", borderRadius: 8,
+                          background: isFma ? "#f0f9ff" : "#fffbeb",
+                          border: `1px solid ${isFma ? "#bae6fd" : "#fde68a"}`,
+                        }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                            <span style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: isFma ? "#0066cc" : "#92400e" }}>
+                              {isFma ? "FMA" : "Organizador"} — {mov.autorNome}
+                            </span>
+                            <span style={{ fontSize: 10, color: COLORS.gray }}>{new Date(mov.criadoEm).toLocaleString("pt-BR")}</span>
+                          </div>
+                          <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.dark, lineHeight: 1.5, whiteSpace: "pre-line" }}>
+                            {mov.descricao}
+                          </div>
+                          {/* Documentos anexados na resposta do organizador */}
+                          {isOrg && mov.tipoEvento === "comentario" && docsResposta.length > 0 && (
+                            <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                              {docsResposta.map(arq => (
+                                <a key={arq.id} href={arq.url || arq.dataUrl} target="_blank" rel="noreferrer"
+                                  style={{ padding: "4px 10px", borderRadius: 6, background: "#fff", border: `1px solid ${COLORS.grayLight}`, textDecoration: "none", fontSize: 11, color: COLORS.primary, fontWeight: 600 }}>
+                                  {arq.nome}
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.dark, lineHeight: 1.6, whiteSpace: "pre-line", marginBottom: 10, padding: "10px 14px", background: "#fff", borderRadius: 8, border: `1px solid ${COLORS.grayLight}` }}>
-                  {sol.pendenciaResposta || "—"}
-                </div>
-                {/* Documentos anexados na resposta */}
-                {(() => {
-                  const docsResposta = arquivos.filter(a => a.enviadoPor === "organizador" && a.descricao?.startsWith("Resposta a pendencia"));
-                  if (docsResposta.length === 0) return null;
-                  return (
-                    <div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "#92400e", marginBottom: 4 }}>Documentos anexados:</div>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        {docsResposta.map(arq => (
-                          <a key={arq.id} href={arq.url || arq.dataUrl} target="_blank" rel="noreferrer"
-                            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 6, background: "#fff", border: `1px solid ${COLORS.grayLight}`, textDecoration: "none", fontSize: 12, color: COLORS.primary, fontWeight: 600 }}>
-                            {arq.nome}
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            )}
+              );
+            })()}
 
             <div style={{ marginBottom: 20 }}>
               <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, display: "block", marginBottom: 5 }}>
-                Parecer FMA <span style={{ fontFamily: FONTS.body, fontSize: 10, fontWeight: 400, textTransform: "none" }}>(visível ao organizador)</span>
+                Parecer FMA <span style={{ fontFamily: FONTS.body, fontSize: 10, fontWeight: 400, textTransform: "none" }}>(visivel ao organizador)</span>
               </label>
               <textarea value={analise.parecerFMA} onChange={e => setAnalise(a => ({ ...a, parecerFMA: e.target.value }))}
                 rows={5} placeholder="Descreva o parecer técnico, documentos necessários, condicionantes da aprovação, motivo do indeferimento, etc."
