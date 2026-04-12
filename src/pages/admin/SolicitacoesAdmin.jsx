@@ -58,7 +58,7 @@ function fmtSize(bytes) {
 }
 
 function StatusBadge({ status, size = "md" }) {
-  const s = statusMap[status] || { label: status, color: COLORS.gray, bg: "#f3f4f6", icon: "📋" };
+  const s = statusMap[status] || { label: status, color: COLORS.gray, bg: "#f3f4f6", icon: "" };
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 4,
@@ -73,7 +73,7 @@ function StatusBadge({ status, size = "md" }) {
 }
 
 function TipoBadge({ tipo }) {
-  const t = tipoMap[tipo] || { label: tipo, icon: "📋" };
+  const t = tipoMap[tipo] || { label: tipo, icon: "" };
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 9px",
       borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700,
@@ -175,10 +175,10 @@ export function SolicitacoesList() {
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <Link to="/admin/organizadores" style={{ padding: "10px 18px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
-              🏢 Organizadores
+              Organizadores
             </Link>
             <a href="/portal" target="_blank" rel="noreferrer" style={{ padding: "10px 18px", borderRadius: 8, background: "#0f172a", color: "#60a5fa", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
-              🔗 Abrir Portal
+              Abrir Portal
             </a>
           </div>
         </div>
@@ -260,7 +260,7 @@ export function SolicitacoesList() {
         {/* Tabela */}
         <div style={card}>
           {loading ? (
-            <div style={{ textAlign: "center", padding: "40px", fontFamily: FONTS.body, color: COLORS.gray }}>⏳ Carregando...</div>
+            <div style={{ textAlign: "center", padding: "40px", fontFamily: FONTS.body, color: COLORS.gray }}>Carregando...</div>
           ) : filtered.length === 0 ? (
             <div style={{ textAlign: "center", padding: "40px", fontFamily: FONTS.body, color: COLORS.gray }}>Nenhuma solicitação encontrada.</div>
           ) : (
@@ -291,7 +291,7 @@ export function SolicitacoesList() {
                         <td style={{ padding: "12px" }}><TipoBadge tipo={item.tipo} /></td>
                         <td style={{ padding: "12px", minWidth: 200 }}>
                           <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark }}>{item.nomeEvento}</div>
-                          <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>📍 {item.cidadeEvento}</div>
+                          <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>{item.cidadeEvento}</div>
                         </td>
                         <td style={{ padding: "12px" }}>
                           <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.dark }}>{org?.name || item.organizerId}</div>
@@ -311,7 +311,7 @@ export function SolicitacoesList() {
                             <span style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800,
                               color: "#15803d", background: "#f0fdf4", padding: "3px 8px",
                               borderRadius: 6, border: "1px solid #86efac" }}>
-                              🔖 {item.protocoloFMA}
+                              {item.protocoloFMA}
                             </span>
                           ) : (
                             <span style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>—</span>
@@ -804,18 +804,18 @@ export function SolicitacaoEditor() {
   if (loading) {
     return (
       <AdminLayout>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", fontFamily: FONTS.body, color: COLORS.gray }}>⏳ Carregando solicitação...</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", fontFamily: FONTS.body, color: COLORS.gray }}>Carregando solicitacao...</div>
       </AdminLayout>
     );
   }
 
-  const tipo = tipoMap[sol.tipo] || { label: sol.tipo, icon: "📋" };
+  const tipo = tipoMap[sol.tipo] || { label: sol.tipo, icon: "" };
   const abas = [
-    { key: "dados",    label: "📄 Dados",    count: null },
-    { key: "taxas",    label: "💰 Taxas",    count: null },
-    { key: "arquivos", label: "📎 Arquivos",  count: arquivos.length },
-    { key: "analise",  label: "🔍 Análise",   count: null },
-    { key: "historico",label: "📋 Histórico", count: movimentacoes.length },
+    { key: "dados",    label: "Dados",    count: null },
+    { key: "taxas",    label: "Taxas",    count: null },
+    { key: "arquivos", label: "Arquivos",  count: arquivos.length },
+    { key: "analise",  label: "Analise",   count: null },
+    { key: "historico",label: "Historico", count: movimentacoes.length },
   ];
 
   const card = { background: "#fff", borderRadius: 12, padding: "24px 28px", boxShadow: "0 1px 8px rgba(0,0,0,0.06)", marginBottom: 20 };
@@ -850,8 +850,8 @@ export function SolicitacaoEditor() {
                 {sol.nomeEvento}
               </h1>
               <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, marginTop: 4 }}>
-                📍 {sol.cidadeEvento} · 📅 {fmt(sol.dataEvento)}
-                {sol.responsavelFMA && ` · 👤 ${sol.responsavelFMA}`}
+                {sol.cidadeEvento} · {fmt(sol.dataEvento)}
+                {sol.responsavelFMA && ` · ${sol.responsavelFMA}`}
               </div>
             </div>
           </div>
@@ -863,7 +863,7 @@ export function SolicitacaoEditor() {
             background: msg.type === "ok" ? "#f0fdf4" : "#fff5f5",
             color: msg.type === "ok" ? "#15803d" : "#dc2626",
             border: `1px solid ${msg.type === "ok" ? "#86efac" : "#fca5a5"}` }}>
-            {msg.type === "ok" ? "✅" : "⚠️"} {msg.text}
+            {msg.text}
           </div>
         )}
 
@@ -886,7 +886,7 @@ export function SolicitacaoEditor() {
             {/* Dados do organizador */}
             <div style={card}>
               <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 18px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
-                🏢 Organizador
+                Organizador
               </h3>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
                 {lbl("Nome")}{val(organizer?.name)}
@@ -906,7 +906,7 @@ export function SolicitacaoEditor() {
             {/* Dados do evento */}
             <div style={card}>
               <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 18px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
-                🏃 Dados do Evento
+                Dados do Evento
               </h3>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
                 {lbl("Tipo de solicitação")}{val(`${tipo.icon} ${tipo.label}`)}
@@ -924,7 +924,7 @@ export function SolicitacaoEditor() {
             {/* Datas do ciclo de vida */}
             <div style={card}>
               <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 18px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
-                🕐 Ciclo de vida
+                Ciclo de vida
               </h3>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 16 }}>
                 {[
@@ -955,7 +955,7 @@ export function SolicitacaoEditor() {
             {/* Upload pela FMA */}
             <div style={card}>
               <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 16px" }}>
-                ⬆️ Enviar arquivo pela FMA
+                Enviar arquivo pela FMA
               </h3>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
                 <div style={{ flex: 1, minWidth: 200 }}>
@@ -966,7 +966,7 @@ export function SolicitacaoEditor() {
                 </div>
                 <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
                   style={{ padding: "10px 18px", borderRadius: 8, background: uploading ? COLORS.gray : "#0f172a", color: "#fff", border: "none", cursor: uploading ? "wait" : "pointer", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, whiteSpace: "nowrap" }}>
-                  {uploading ? "⏳ Enviando..." : "📎 Selecionar arquivo"}
+                  {uploading ? "Enviando..." : "Selecionar arquivo"}
                 </button>
                 <input ref={fileInputRef} type="file" style={{ display: "none" }} onChange={handleFileSelect}
                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx" />
@@ -979,7 +979,7 @@ export function SolicitacaoEditor() {
             {/* Listagem de arquivos */}
             <div style={card}>
               <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 16px" }}>
-                📁 Arquivos da solicitação ({arquivos.length})
+                Arquivos da solicitacao ({arquivos.length})
               </h3>
               {arquivos.length === 0 ? (
                 <div style={{ padding: "32px", textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray, fontStyle: "italic" }}>Nenhum arquivo enviado ainda.</div>
@@ -990,14 +990,14 @@ export function SolicitacaoEditor() {
                     const isImg = arq.tipo?.startsWith("image/");
                     return (
                       <div key={arq.id} style={{ display: "flex", gap: 14, alignItems: "flex-start", padding: "14px", borderRadius: 10, border: `1px solid ${isFma ? "#fed7aa" : COLORS.grayLight}`, background: isFma ? "#fff7ed" : "#fafafa" }}>
-                        <div style={{ fontSize: 28, flexShrink: 0 }}>{isImg ? "🖼️" : arq.tipo?.includes("pdf") ? "📕" : arq.tipo?.includes("spreadsheet") || arq.tipo?.includes("excel") ? "📊" : "📄"}</div>
+                        <div style={{ fontSize: 28, flexShrink: 0 }}>{isImg ? "" : arq.tipo?.includes("pdf") ? "" : arq.tipo?.includes("spreadsheet") || arq.tipo?.includes("excel") ? "" : ""}</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark }}>{arq.nome}</div>
                           {arq.descricao && <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 2 }}>{arq.descricao}</div>}
                           <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, marginTop: 4, display: "flex", gap: 10, flexWrap: "wrap" }}>
                             <span>{fmtSize(arq.tamanho)}</span>
                             <span>·</span>
-                            <span>{isFma ? `📋 Enviado pela FMA (${arq.enviadoPorNome})` : `👤 Enviado pelo organizador`}</span>
+                            <span>{isFma ? `Enviado pela FMA (${arq.enviadoPorNome})` : `Enviado pelo organizador`}</span>
                             <span>·</span>
                             <span>{fmtDT(arq.uploadedAt)}</span>
                           </div>
@@ -1006,12 +1006,12 @@ export function SolicitacaoEditor() {
                           {(arq.dataUrl || arq.url) && (
                             <a href={arq.dataUrl || arq.url} download={arq.nome} target="_blank" rel="noreferrer"
                               style={{ padding: "6px 12px", borderRadius: 6, background: "#0f172a", color: "#fff", textDecoration: "none", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
-                              ⬇️ Baixar
+                              Baixar
                             </a>
                           )}
                           <button onClick={() => handleDeleteArquivo(arq)}
                             style={{ padding: "6px 10px", borderRadius: 6, background: "#fff5f5", color: COLORS.primary, border: `1px solid #fca5a5`, cursor: "pointer", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
-                            🗑️
+                            Excluir
                           </button>
                         </div>
                       </div>
@@ -1027,7 +1027,7 @@ export function SolicitacaoEditor() {
         {aba === "analise" && (
           <div style={card}>
             <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 24px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
-              🔍 Análise da FMA
+              Analise da FMA
             </h3>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
@@ -1052,7 +1052,7 @@ export function SolicitacaoEditor() {
                       fontFamily: FONTS.heading, fontSize: 15, fontWeight: 900,
                       color: "#15803d", letterSpacing: 1,
                     }}>
-                      🔖 {sol.protocoloFMA}
+                      {sol.protocoloFMA}
                     </span>
                     <span style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>
                       Protocolo emitido — não pode ser alterado.
@@ -1163,7 +1163,7 @@ export function SolicitacaoEditor() {
               </div>
               {novoStatus !== sol.status && (
                 <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 6, background: "#fffbeb", border: "1px solid #fde68a", fontFamily: FONTS.body, fontSize: 12, color: "#92400e" }}>
-                  ⚠️ O status será alterado de <strong>{statusMap[sol.status]?.label}</strong> para <strong>{statusMap[novoStatus]?.label}</strong> ao salvar.
+                  O status sera alterado de <strong>{statusMap[sol.status]?.label}</strong> para <strong>{statusMap[novoStatus]?.label}</strong> ao salvar.
                 </div>
               )}
             </div>
@@ -1172,7 +1172,7 @@ export function SolicitacaoEditor() {
             {novoStatus === "aprovada" && !sol.permitsGerados && permitNumbers.length > 0 && (
               <div style={{ padding: 20, background: "#f0fdf4", borderRadius: 10, marginBottom: 24, border: "1.5px solid #86efac" }}>
                 <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: "#15803d", display: "block", marginBottom: 12 }}>
-                  📋 {sol.tipo === "chancela" ? "Chancelas" : "Permits"} a gerar ({permitNumbers.length})
+                  {sol.tipo === "chancela" ? "Chancelas" : "Permits"} a gerar ({permitNumbers.length})
                 </label>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 100px 32px", gap: 8, fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, padding: "0 4px" }}>
@@ -1225,7 +1225,7 @@ export function SolicitacaoEditor() {
                     } catch (e) { console.error("Preview:", e); alert("Erro ao gerar preview."); }
                   }}
                     style={{ padding: "6px 14px", borderRadius: 7, border: "1px solid #86efac", background: "#fff", color: "#15803d", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                    👁️ Preview PDF
+                    Preview PDF
                   </button>
                 </div>
               </div>
@@ -1235,7 +1235,7 @@ export function SolicitacaoEditor() {
             {sol.permitsGerados && sol.permitsNumeros?.length > 0 && (
               <div style={{ padding: "14px 20px", background: "#f0fdf4", borderRadius: 10, marginBottom: 24, border: "1px solid #86efac" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  <span style={{ fontSize: 18 }}>✅</span>
+                  <span style={{ fontSize: 18 }}></span>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 800, color: "#15803d" }}>
                       {sol.tipo === "chancela" ? "Chancelas" : "Permits"} gerados
@@ -1264,7 +1264,7 @@ export function SolicitacaoEditor() {
                     load();
                   }}
                     style={{ padding: "6px 14px", borderRadius: 7, border: "1px solid #fca5a5", background: "#fff", color: COLORS.primary, fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>
-                    🔄 Regerar
+                    Regerar
                   </button>
                   <button onClick={async () => {
                     if (!confirm(`Excluir ${sol.tipo === "chancela" ? "chancelas" : "permits"} gerados (${sol.permitsNumeros.join(", ")})? Os PDFs serão removidos permanentemente.`)) return;
@@ -1291,7 +1291,7 @@ export function SolicitacaoEditor() {
                     load();
                   }}
                     style={{ padding: "6px 14px", borderRadius: 7, border: "1px solid #fca5a5", background: "#fff5f5", color: "#dc2626", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>
-                    🗑️ Excluir
+                    Excluir
                   </button>
                 </div>
               </div>
@@ -1301,7 +1301,7 @@ export function SolicitacaoEditor() {
             {sol.resultadoStatus === "pendente_aprovacao" && (
               <div style={{ padding: 20, background: "#faf5ff", borderRadius: 10, marginBottom: 24, border: "1.5px solid #c4b5fd" }}>
                 <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: "#7c3aed", display: "block", marginBottom: 12 }}>
-                  📊 Resultado pendente de aprovação
+                  Resultado pendente de aprovacao
                 </label>
                 <div style={{ background: "#fff", padding: 14, borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, marginBottom: 12 }}>
                   <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.dark, marginBottom: 6 }}>
@@ -1322,11 +1322,11 @@ export function SolicitacaoEditor() {
                 <div style={{ display: "flex", gap: 10 }}>
                   <button onClick={handleAprovarResultado} disabled={saving}
                     style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: "#15803d", color: "#fff", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
-                    ✅ Aprovar Resultado
+                    Aprovar Resultado
                   </button>
                   <button onClick={handleRejeitarResultado} disabled={saving}
                     style={{ padding: "8px 18px", borderRadius: 8, border: "1px solid #fca5a5", background: "#fff5f5", color: COLORS.primary, cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
-                    ❌ Rejeitar
+                    Rejeitar
                   </button>
                 </div>
               </div>
@@ -1335,7 +1335,7 @@ export function SolicitacaoEditor() {
             {/* Resultado aprovado/rejeitado */}
             {sol.resultadoStatus === "aprovado" && (
               <div style={{ padding: "14px 20px", background: "#f0fdf4", borderRadius: 10, marginBottom: 24, border: "1px solid #86efac", display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 18 }}>📊</span>
+                <span style={{ fontSize: 18 }}></span>
                 <div>
                   <div style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 800, color: "#15803d" }}>Resultado aprovado e publicado</div>
                   <a href={sol.resultadoFileUrl} target="_blank" rel="noreferrer" style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.primary }}>Ver resultado</a>
@@ -1351,12 +1351,12 @@ export function SolicitacaoEditor() {
               {novoStatus === "aprovada" && !sol.permitsGerados && permitNumbers.length > 0 && (
                 <button onClick={handleGerarPermitsEAprovar} disabled={saving || gerandoPermits}
                   style={{ padding: "11px 28px", borderRadius: 8, border: "none", background: saving ? COLORS.gray : "#15803d", color: "#fff", cursor: saving ? "wait" : "pointer", fontFamily: FONTS.heading, fontSize: 14, fontWeight: 700 }}>
-                  {gerandoPermits ? "Gerando..." : `📋 Gerar ${sol.tipo === "chancela" ? "Chancelas" : "Permits"}`}
+                  {gerandoPermits ? "Gerando..." : `Gerar ${sol.tipo === "chancela" ? "Chancelas" : "Permits"}`}
                 </button>
               )}
               <button onClick={handleSalvarAnalise} disabled={saving}
                 style={{ padding: "11px 28px", borderRadius: 8, border: "none", background: saving ? COLORS.gray : COLORS.primary, color: "#fff", cursor: saving ? "wait" : "pointer", fontFamily: FONTS.heading, fontSize: 14, fontWeight: 700 }}>
-                {saving ? "Salvando..." : "💾 Salvar análise"}
+                {saving ? "Salvando..." : "Salvar analise"}
               </button>
             </div>
           </div>
@@ -1366,14 +1366,14 @@ export function SolicitacaoEditor() {
         {aba === "historico" && (
           <div style={card}>
             <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 20px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
-              📋 Trilha completa de movimentações ({movimentacoes.length})
+              Trilha completa de movimentacoes ({movimentacoes.length})
             </h3>
             {movimentacoes.length === 0 ? (
               <div style={{ textAlign: "center", padding: "40px", fontFamily: FONTS.body, color: COLORS.gray, fontStyle: "italic" }}>Nenhuma movimentação registrada.</div>
             ) : (
               <div style={{ position: "relative" }}>
                 {[...movimentacoes].reverse().map((mov, i, arr) => {
-                  const mt = movMap[mov.tipoEvento] || { icon: "📋", color: COLORS.gray };
+                  const mt = movMap[mov.tipoEvento] || { icon: "", color: COLORS.gray };
                   const isOrg = mov.autor === "organizador";
                   const isLast = i === arr.length - 1;
                   return (
@@ -1388,7 +1388,7 @@ export function SolicitacaoEditor() {
                       <div style={{ flex: 1, paddingBottom: isLast ? 0 : 24 }}>
                         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
                           <span style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark }}>{mov.descricao}</span>
-                          {!mov.visivel && <span style={{ padding: "2px 7px", borderRadius: 10, fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, background: "#fef3c7", color: "#92400e" }}>🔒 Interno</span>}
+                          {!mov.visivel && <span style={{ padding: "2px 7px", borderRadius: 10, fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, background: "#fef3c7", color: "#92400e" }}>Interno</span>}
                         </div>
                         {mov.statusAnterior && mov.statusNovo && mov.statusAnterior !== mov.statusNovo && (
                           <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 4 }}>
@@ -1396,7 +1396,7 @@ export function SolicitacaoEditor() {
                           </div>
                         )}
                         <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>
-                          {isOrg ? "👤" : "🏛️"} {mov.autorNome} · {fmtDT(mov.criadoEm)}
+                          {mov.autorNome} · {fmtDT(mov.criadoEm)}
                         </div>
                       </div>
                     </div>
@@ -1489,7 +1489,7 @@ function EventoVinculadoSection({
   return (
     <div style={sectionStyle}>
       <div style={labelStyle}>
-        📅 Evento vinculado no calendário
+        Evento vinculado no calendario
       </div>
 
       {/* ── C: JÁ TEM EVENTO VINCULADO ──────────────────────────────────── */}
@@ -1502,11 +1502,11 @@ function EventoVinculadoSection({
           }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, color: COLORS.dark, marginBottom: 4 }}>
-                ✅ {eventoVinculado.title}
+                {eventoVinculado.title}
               </div>
               <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginBottom: 8 }}>
-                📍 {eventoVinculado.city}
-                {eventoVinculado.date && ` · 📅 ${new Date(eventoVinculado.date + "T12:00:00").toLocaleDateString("pt-BR")}`}
+                {eventoVinculado.city}
+                {eventoVinculado.date && ` · ${new Date(eventoVinculado.date + "T12:00:00").toLocaleDateString("pt-BR")}`}
                 {" · "}
                 <span style={{
                   padding: "1px 8px", borderRadius: 10, fontSize: 11, fontWeight: 700,
@@ -1520,18 +1520,18 @@ function EventoVinculadoSection({
                 <button
                   onClick={() => navigate(`/admin/calendario/${eventoVinculado.id}`)}
                   style={{ ...btnBase, background: "#4338ca", color: "#fff", fontSize: 11 }}>
-                  ✏️ Editar evento
+                  Editar evento
                 </button>
                 <button
                   onClick={() => window.open(`/eventos/${eventoVinculado.id}`, "_blank")}
                   style={{ ...btnBase, background: "#f0fdf4", color: "#15803d", border: "1px solid #86efac", fontSize: 11 }}>
-                  👁 Ver no site
+                  Ver no site
                 </button>
                 <button
                   onClick={handleDesvincular}
                   disabled={vinculoSaving}
                   style={{ ...btnBase, background: "#fff5f5", color: "#dc2626", border: "1px solid #fca5a5", fontSize: 11 }}>
-                  🔗 Desvincular
+                  Desvincular
                 </button>
               </div>
             </div>
@@ -1539,7 +1539,7 @@ function EventoVinculadoSection({
 
           {!eventoVinculado.published && (
             <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 6, background: "#fffbeb", border: "1px solid #fde68a", fontFamily: FONTS.body, fontSize: 12, color: "#92400e" }}>
-              ⚠️ O evento ainda <strong>não está publicado</strong> no calendário público. Acesse o editor para publicá-lo quando estiver pronto.
+              O evento ainda <strong>nao esta publicado</strong> no calendário público. Acesse o editor para publicá-lo quando estiver pronto.
             </div>
           )}
         </div>
@@ -1549,7 +1549,7 @@ function EventoVinculadoSection({
           {/* Alerta de pendência quando solicitação aprovada sem evento */}
           {["aprovada", "concluida"].includes(sol.status) && (
             <div style={{ padding: "10px 14px", borderRadius: 8, background: "#fffbeb", border: "1.5px solid #fcd34d", fontFamily: FONTS.body, fontSize: 12, color: "#92400e", marginBottom: 12, display: "flex", gap: 8, alignItems: "flex-start" }}>
-              <span style={{ fontSize: 16 }}>⚠️</span>
+              <span style={{ fontSize: 16 }}></span>
               <span>Solicitação <strong>aprovada sem evento vinculado</strong>. Crie ou vincule um evento para que o permit/chancela apareça no calendário público.</span>
             </div>
           )}
@@ -1560,12 +1560,12 @@ function EventoVinculadoSection({
               <button
                 onClick={() => setVinculoMode("criar")}
                 style={{ ...btnBase, background: "#4338ca", color: "#fff" }}>
-                ✨ Criar evento automaticamente
+                Criar evento automaticamente
               </button>
               <button
                 onClick={() => setVinculoMode("buscar")}
                 style={{ ...btnBase, background: "#fff", color: "#4338ca", border: "1.5px solid #a5b4fc" }}>
-                🔍 Vincular evento existente
+                Vincular evento existente
               </button>
             </div>
           )}
@@ -1594,7 +1594,7 @@ function EventoVinculadoSection({
                     <div>
                       <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark }}>{ev.title}</div>
                       <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>
-                        📍 {ev.city}
+                        {ev.city}
                         {ev.date && ` · ${new Date(ev.date + "T12:00:00").toLocaleDateString("pt-BR")}`}
                         {" · "}
                         <span style={{ color: ev.published ? "#15803d" : "#92400e" }}>
@@ -1641,8 +1641,8 @@ function EventoVinculadoSection({
                   ))}
                 </div>
                 <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 6, background: "#eff6ff", border: "1px solid #93c5fd", fontFamily: FONTS.body, fontSize: 11, color: "#1e40af" }}>
-                  <div style={{ marginBottom: 4 }}>📋 <strong>Status inicial:</strong> o evento será criado como <strong>Previsto</strong> e não publicado.</div>
-                  <div>✅ <strong>Aprovação automática:</strong> quando esta solicitação for aprovada, o evento mudará automaticamente para <strong>Confirmado</strong>.</div>
+                  <div style={{ marginBottom: 4 }}><strong>Status inicial:</strong> o evento será criado como <strong>Previsto</strong> e não publicado.</div>
+                  <div><strong>Aprovacao automatica:</strong> quando esta solicitação for aprovada, o evento mudará automaticamente para <strong>Confirmado</strong>.</div>
                 </div>
 
                 {/* Opção: publicar imediatamente */}
@@ -1669,7 +1669,7 @@ function EventoVinculadoSection({
                   onClick={handleCriar}
                   disabled={vinculoSaving}
                   style={{ ...btnBase, background: vinculoSaving ? COLORS.gray : "#4338ca", color: "#fff" }}>
-                  {vinculoSaving ? "Criando..." : "✅ Confirmar criação"}
+                  {vinculoSaving ? "Criando..." : "Confirmar criacao"}
                 </button>
                 <button onClick={() => setVinculoMode(null)}
                   style={{ ...btnBase, background: "transparent", color: COLORS.gray, border: `1px solid ${COLORS.grayLight}` }}>
@@ -1744,7 +1744,7 @@ function CamposTecnicosView({ sol, card, lbl, val, fmt, arquivos = [] }) {
     if (!ct.modalidades?.length) return <Row label="Modalidades">—</Row>;
     return (
       <div style={{ marginBottom: 20 }}>
-        <SecHead>🏃 Modalidades / Distâncias</SecHead>
+        <SecHead>Modalidades / Distancias</SecHead>
         <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 8 }}>
           <thead>
             <tr style={{ borderBottom: `1.5px solid ${COLORS.grayLight}` }}>
@@ -1779,10 +1779,10 @@ function CamposTecnicosView({ sol, card, lbl, val, fmt, arquivos = [] }) {
     return (
       <div style={card}>
         <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 20px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
-          🏃 Formulário Técnico – Permit
+          Formulario Tecnico – Permit
         </h3>
         <div style={{ marginBottom: 20 }}>
-          <SecHead>⏰ Datas e Horários</SecHead>
+          <SecHead>Datas e Horarios</SecHead>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
             <Row label="Encerramento das inscrições">{ct.dataEncerramentoInscricoes ? fmt(ct.dataEncerramentoInscricoes) : "—"}</Row>
             <Row label="Horário da largada">{ct.horarioLargada || "—"}</Row>
@@ -1790,14 +1790,14 @@ function CamposTecnicosView({ sol, card, lbl, val, fmt, arquivos = [] }) {
         </div>
         <ModalidadesTable />
         <div style={{ marginBottom: 20 }}>
-          <SecHead>💰 Financeiro</SecHead>
+          <SecHead>Financeiro</SecHead>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
             <Row label="Valor da inscrição">{ct.valorInscricao}</Row>
-            <Row label="Premiação em dinheiro">{ct.premiacaoDinheiro ? <span style={{ color: "#15803d", fontWeight: 600 }}>✅ Sim — {ct.valorPremiacaoTotal || "valor não informado"}</span> : <span style={{ color: COLORS.gray }}>Não</span>}</Row>
+            <Row label="Premiação em dinheiro">{ct.premiacaoDinheiro ? <span style={{ color: "#15803d", fontWeight: 600 }}>Sim — {ct.valorPremiacaoTotal || "valor nao informado"}</span> : <span style={{ color: COLORS.gray }}>Nao</span>}</Row>
           </div>
         </div>
         <div style={{ marginBottom: 20 }}>
-          <SecHead>⚙️ Aspectos Técnicos</SecHead>
+          <SecHead>Aspectos Tecnicos</SecHead>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
             <Row label="Sistema de apuração">{ct.sistemaApuracao}</Row>
             <Row label="Empresa de cronometragem">{ct.empresaCronometragem}</Row>
@@ -1805,29 +1805,29 @@ function CamposTecnicosView({ sol, card, lbl, val, fmt, arquivos = [] }) {
           </div>
         </div>
         <div style={{ marginBottom: 20 }}>
-          <SecHead>🏥 Infraestrutura e Seguro</SecHead>
+          <SecHead>Infraestrutura e Seguro</SecHead>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
-            <Row label="Posto médico">{ct.postoMedico ? <span style={{ color: "#15803d", fontWeight: 600 }}>✅ Sim — {ct.quantidadeAmbulancias ? `${ct.quantidadeAmbulancias} ambulância(s)` : "qtd. não informada"}</span> : <span style={{ color: COLORS.gray }}>Não informado</span>}</Row>
+            <Row label="Posto médico">{ct.postoMedico ? <span style={{ color: "#15803d", fontWeight: 600 }}>Sim — {ct.quantidadeAmbulancias ? `${ct.quantidadeAmbulancias} ambulância(s)` : "qtd. não informada"}</span> : <span style={{ color: COLORS.gray }}>Não informado</span>}</Row>
             <Row label="Nº da apólice de seguro">{ct.apoliceSeguros}</Row>
-            <Row label="Lei de Incentivo">{ct.leiIncentivo ? <span style={{ color: "#15803d", fontWeight: 600 }}>✅ Sim</span> : <span style={{ color: COLORS.gray }}>Não</span>}</Row>
+            <Row label="Lei de Incentivo">{ct.leiIncentivo ? <span style={{ color: "#15803d", fontWeight: 600 }}>Sim</span> : <span style={{ color: COLORS.gray }}>Não</span>}</Row>
           </div>
         </div>
         <div style={{ marginBottom: 20 }}>
-          <SecHead>📋 Objetivo, Patrocinadores e Serviços</SecHead>
+          <SecHead>Objetivo, Patrocinadores e Servicos</SecHead>
           <Row label="Objetivo do evento">{ct.objetivoEvento}</Row>
           <Row label="Patrocinadores">{ct.patrocinadores}</Row>
           <Row label="Kit do atleta">{ct.kitAtleta}</Row>
           <Row label="Empresas e serviços">{ct.empresasServicos}</Row>
         </div>
         <div>
-          <SecHead>📁 Documentos Obrigatórios</SecHead>
+          <SecHead>Documentos Obrigatorios</SecHead>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <DocBadge doc={ct.regulamento} label="Regulamento do Evento" arquivos={arquivos} />
             <DocBadge doc={ct.mapaPercurso} label="Mapa do Percurso" arquivos={arquivos} />
           </div>
           {missingDocs.length > 0 && (
             <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 6, background: "#fff5f5", border: "1px solid #fca5a5", fontFamily: FONTS.body, fontSize: 12, color: "#dc2626" }}>
-              ⚠️ Documentos pendentes: {missingDocs.map(k => k === "regulamento" ? "Regulamento" : "Mapa do Percurso").join(", ")}
+              Documentos pendentes: {missingDocs.map(k => k === "regulamento" ? "Regulamento" : "Mapa do Percurso").join(", ")}
             </div>
           )}
         </div>
@@ -1852,10 +1852,10 @@ function CamposTecnicosView({ sol, card, lbl, val, fmt, arquivos = [] }) {
     return (
       <div style={card}>
         <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 20px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
-          🏅 Formulário Técnico – Chancela
+          Formulario Tecnico – Chancela
         </h3>
         <div style={{ marginBottom: 20 }}>
-          <SecHead>🔗 Identificação</SecHead>
+          <SecHead>Identificacao</SecHead>
           <Row label="Link de divulgação">
             {ct.linkDivulgacao
               ? <a href={ct.linkDivulgacao} target="_blank" rel="noopener noreferrer" style={{ color: "#0066cc", wordBreak: "break-all" }}>{ct.linkDivulgacao}</a>
@@ -1865,14 +1865,14 @@ function CamposTecnicosView({ sol, card, lbl, val, fmt, arquivos = [] }) {
         </div>
         <ModalidadesTable />
         <div style={{ marginBottom: 20 }}>
-          <SecHead>💰 Financeiro</SecHead>
+          <SecHead>Financeiro</SecHead>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
             <Row label="Valor da inscrição">{ct.valorInscricao}</Row>
-            <Row label="Premiação em dinheiro">{ct.premiacaoDinheiro ? <span style={{ color: "#15803d", fontWeight: 600 }}>✅ Sim — {ct.valorPremiacaoTotal || "valor não informado"}</span> : <span style={{ color: COLORS.gray }}>Não</span>}</Row>
+            <Row label="Premiação em dinheiro">{ct.premiacaoDinheiro ? <span style={{ color: "#15803d", fontWeight: 600 }}>Sim — {ct.valorPremiacaoTotal || "valor nao informado"}</span> : <span style={{ color: COLORS.gray }}>Nao</span>}</Row>
           </div>
         </div>
         <div style={{ marginBottom: 20 }}>
-          <SecHead>⚙️ Aspectos Técnicos</SecHead>
+          <SecHead>Aspectos Tecnicos</SecHead>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
             <Row label="Sistema de apuração">{ct.sistemaApuracao}</Row>
             <Row label="Empresa de cronometragem">{ct.empresaCronometragem}</Row>
@@ -1880,25 +1880,25 @@ function CamposTecnicosView({ sol, card, lbl, val, fmt, arquivos = [] }) {
           </div>
         </div>
         <div style={{ marginBottom: 20 }}>
-          <SecHead>🏥 Equipe Médica</SecHead>
+          <SecHead>Equipe Medica</SecHead>
           <Row label="Médico responsável (Nome e CRM)">{ct.medicoResponsavel}</Row>
         </div>
         <div style={{ marginBottom: 20 }}>
-          <SecHead>🧾 Dados Fiscais</SecHead>
+          <SecHead>Dados Fiscais</SecHead>
           <Row label="Dados para emissão do recibo">{ct.dadosEmissaoRecibo}</Row>
         </div>
         <div style={{ marginBottom: 20 }}>
-          <SecHead>🛡️ Seguro</SecHead>
+          <SecHead>Seguro</SecHead>
           <Row label="Nº da apólice de seguro">{ct.apoliceSeguros}</Row>
         </div>
         <div>
-          <SecHead>📁 Documentos</SecHead>
+          <SecHead>Documentos</SecHead>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {allDocKeys.map(k => <DocBadge key={k} doc={ct[k]} label={docLabels[k] || k} arquivos={arquivos} />)}
           </div>
           {missingRequired.length > 0 && (
             <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 6, background: "#fff5f5", border: "1px solid #fca5a5", fontFamily: FONTS.body, fontSize: 12, color: "#dc2626" }}>
-              ⚠️ Documentos obrigatórios pendentes: {missingRequired.map(k => docLabels[k]).join(", ")}
+              Documentos obrigatorios pendentes: {missingRequired.map(k => docLabels[k]).join(", ")}
             </div>
           )}
         </div>
@@ -1924,13 +1924,13 @@ function FieldsCustomRows({ ct, tipoBuiltinKeys, Row }) {
   return (
     <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px dashed #e2e8f0" }}>
       <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: "#7c3aed", marginBottom: 12 }}>
-        🔧 Campos Adicionais
+        Campos Adicionais
       </div>
       {customKeys.map(k => {
         const v = ct[k];
         let display;
         if (typeof v === "object" && v !== null && "temArquivo" in v) {
-          display = v.temArquivo ? `✅ ${v.nomeArquivo || "Arquivo enviado"}` : "❌ Arquivo não enviado";
+          display = v.temArquivo ? `${v.nomeArquivo || "Arquivo enviado"}` : "Arquivo nao enviado";
         } else if (typeof v === "boolean") {
           display = v ? "Sim" : "Não";
         } else {
@@ -2015,7 +2015,7 @@ function AbaTaxas({ sol, organizer, onSaved, flash, card, lbl, val, inp }) {
       <div style={card}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <h3 style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, margin: 0 }}>
-            💰 Calculo de Taxas
+            Calculo de Taxas
           </h3>
           {isParceiro && (
             <span style={{ padding: "4px 12px", borderRadius: 16, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0" }}>
@@ -2117,11 +2117,11 @@ function AbaTaxas({ sol, organizer, onSaved, flash, card, lbl, val, inp }) {
         <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
           <button onClick={handleRecalcular} disabled={saving}
             style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.grayDark, fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-            🔄 Recalcular
+            Recalcular
           </button>
           <button onClick={() => { setAjusteAberto(!ajusteAberto); setAjusteValor(taxas.total || recalc.total); }}
             style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: "#7c3aed", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-            ✏️ Ajustar valor
+            Ajustar valor
           </button>
         </div>
 
@@ -2157,7 +2157,7 @@ function AbaTaxas({ sol, organizer, onSaved, flash, card, lbl, val, inp }) {
       {/* Bloco Arbitragem (informativo) */}
       <div style={card}>
         <h3 style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, margin: "0 0 4px" }}>
-          ⚖️ Arbitragem — Referencia (Art. 6)
+          Arbitragem — Referencia (Art. 6)
         </h3>
         <p style={{ fontSize: 12, color: COLORS.gray, margin: "0 0 12px" }}>
           Custeio integral do organizador (Art. 8), acrescido de transporte, hospedagem e alimentacao.
@@ -2462,7 +2462,7 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
     <div style={card}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <h3 style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, margin: 0 }}>
-          🧾 Pagamentos e Recibos
+          Pagamentos e Recibos
         </h3>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {saldo > 0 && (
@@ -2472,7 +2472,7 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
           )}
           {saldo <= 0 && totalPago > 0 && (
             <span style={{ fontSize: 12, fontFamily: FONTS.heading, fontWeight: 700, color: "#15803d", padding: "4px 10px", borderRadius: 12, background: "#f0fdf4", border: "1px solid #86efac" }}>
-              ✅ Quitado
+              Quitado
             </span>
           )}
         </div>
@@ -2482,7 +2482,7 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
       {pagamento.pagadorTerceiro && (
         <div style={{ marginBottom: 16, padding: "12px 16px", borderRadius: 8, background: "#fffbeb", border: "1px solid #fcd34d" }}>
           <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: "#92400e", marginBottom: 8 }}>
-            ⚠️ Pagamento por terceiro
+            Pagamento por terceiro
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 16px", fontSize: 13, fontFamily: FONTS.body }}>
             <div><strong>Permit emitido para:</strong></div>
@@ -2494,7 +2494,7 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
           </div>
           {pagamento.anuenciaAceita && (
             <div style={{ marginTop: 8, fontSize: 11, color: "#15803d" }}>
-              ✅ Anuencia aceita em {pagamento.anuenciaAceitaEm ? new Date(pagamento.anuenciaAceitaEm).toLocaleString("pt-BR") : "—"}
+              Anuencia aceita em {pagamento.anuenciaAceitaEm ? new Date(pagamento.anuenciaAceitaEm).toLocaleString("pt-BR") : "—"}
             </div>
           )}
         </div>
@@ -2551,7 +2551,7 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
               <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                 {pag.reciboNumero ? (
                   <span style={{ fontSize: 12, fontWeight: 700, color: "#15803d", display: "flex", alignItems: "center", gap: 4 }}>
-                    📄 {pag.reciboNumero}
+                    {pag.reciboNumero}
                     {pag.reciboArquivoId && (
                       <button onClick={async () => {
                         const r = await ArquivosService.get(pag.reciboArquivoId);
@@ -2581,12 +2581,12 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <button onClick={() => { setNovoAberto(!novoAberto); setNovoValor(saldo > 0 ? String(saldo) : ""); }}
           style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#15803d", color: "#fff", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-          ✅ Registrar pagamento
+          Registrar pagamento
         </button>
         {saldo > 0 && (
           <button onClick={handleCobrar} disabled={saving}
             style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#d97706", color: "#fff", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-            📨 Cobrar {pagamentos.length > 0 ? "complemento" : "pagamento"}
+            Cobrar {pagamentos.length > 0 ? "complemento" : "pagamento"}
           </button>
         )}
       </div>
