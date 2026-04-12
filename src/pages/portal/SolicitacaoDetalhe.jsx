@@ -668,7 +668,7 @@ export default function SolicitacaoDetalhe() {
           {sol.parecerFMA && (
             <div style={{ background:`${st.color}08`, borderLeft:`3px solid ${st.color}`, borderRadius:"0 8px 8px 0", padding:"12px 16px" }}>
               <div style={{ fontFamily:FONTS.heading, fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:1, color:st.color, marginBottom:4 }}>Manifestacao da FMA</div>
-              <div style={{ fontFamily:FONTS.body, fontSize:13, color:COLORS.dark, lineHeight:1.6 }}>{sol.parecerFMA}</div>
+              <div style={{ fontFamily:FONTS.body, fontSize:13, color:COLORS.dark, lineHeight:1.6, whiteSpace:"pre-line" }}>{sol.parecerFMA}</div>
             </div>
           )}
           {/* Responder pendência */}

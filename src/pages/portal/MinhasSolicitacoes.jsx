@@ -175,7 +175,7 @@ export default function MinhasSolicitacoes() {
                         {sol.parecerFMA && sol.status !== "em_analise" && (
                           <div style={{ marginTop: 8, padding: "8px 12px", background: `${st.color}08`,
                             borderLeft: `3px solid ${st.color}`, borderRadius: "0 6px 6px 0",
-                            fontFamily: FONTS.body, fontSize: 12, color: COLORS.grayDark, lineHeight: 1.5 }}>
+                            fontFamily: FONTS.body, fontSize: 12, color: COLORS.grayDark, lineHeight: 1.5, whiteSpace: "pre-line" }}>
                             <strong>FMA:</strong> {sol.parecerFMA}
                           </div>
                         )}
