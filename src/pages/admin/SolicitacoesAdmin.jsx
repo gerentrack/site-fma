@@ -489,11 +489,12 @@ export function SolicitacaoEditor() {
       }
     }
 
+    // Limpar parecer no Firestore (o anterior já consta no histórico de movimentações)
+    await SolicitacoesService.update(id, { parecerFMA: "" });
+
     flash(`Análise salva com sucesso.${protocoloNovoMensagem}`, "ok");
     setSaving(false);
     await load();
-    // Limpar parecer para nova entrada (o anterior já está salvo na solicitação + histórico)
-    setAnalise(a => ({ ...a, parecerFMA: "" }));
   };
 
   // ── Gerar Permits/Chancelas e Aprovar ───────────────────────────────────────
