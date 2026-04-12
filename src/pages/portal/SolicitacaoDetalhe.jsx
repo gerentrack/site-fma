@@ -824,13 +824,14 @@ export default function SolicitacaoDetalhe() {
                         <div style={{ fontFamily:FONTS.body, fontSize:12, color:COLORS.gray, paddingLeft:28 }}>{arq.descricao} · {fmtSize(arq.tamanho)} · {fmtDT(arq.uploadedAt)}</div>
                       </div>
                       <div style={{ display:"flex", gap:6, flexShrink:0 }}>
-                        {(arq.dataUrl||arq.url) && arq.tipo?.includes("pdf") && (
+                        {(arq.dataUrl||arq.url) && arq.tipo?.includes("pdf") ? (
                           <button onClick={()=>openPdf(arq.dataUrl||arq.url, arq.nome)}
-                            style={{ padding:"6px 14px", borderRadius:7, border:`1px solid ${COLORS.primary}`, background:"transparent", color:COLORS.primary, fontFamily:FONTS.heading, fontSize:11, fontWeight:700, cursor:"pointer" }}>
+                            style={{ padding:"6px 14px", borderRadius:7, background:"#0066cc", color:"#fff", border:"none", fontFamily:FONTS.heading, fontSize:11, fontWeight:700, cursor:"pointer" }}>
                             Visualizar
                           </button>
-                        )}
-                        {(arq.dataUrl||arq.url)&&<a href={arq.dataUrl||arq.url} download={arq.nome} target="_blank" rel="noreferrer" style={{ padding:"6px 14px", borderRadius:7, background:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:11, fontWeight:700, textDecoration:"none" }}>Baixar</a>}
+                        ) : (arq.dataUrl||arq.url) ? (
+                          <a href={arq.dataUrl||arq.url} download={arq.nome} target="_blank" rel="noreferrer" style={{ padding:"6px 14px", borderRadius:7, background:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:11, fontWeight:700, textDecoration:"none" }}>Baixar</a>
+                        ) : null}
                         {!isFMA&&canDelete&&<button onClick={async()=>{ if(!confirm(`Remover "${arq.nome}"?`))return; await ArquivosService.delete(arq.id); load(); }} style={{ padding:"6px 10px", borderRadius:7, border:"1px solid #fca5a5", background:"#fff", color:"#dc2626", fontFamily:FONTS.heading, fontSize:11, fontWeight:700, cursor:"pointer" }}>✕</button>}
                       </div>
                     </div>
