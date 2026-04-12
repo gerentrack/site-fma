@@ -58,15 +58,11 @@ export function solicitacaoParaEvento(solicitacao, opts = {}) {
   // Descrição: usa descricaoEvento + nota sobre a origem da solicitação
   const shortDescription = solicitacao.descricaoEvento
     ? solicitacao.descricaoEvento.slice(0, 200)
-    : `Evento originado de solicitação de ${solicitacao.tipo === "permit" ? "Permit" : "Chancela"} FMA.`;
-
-  const origemNota = solicitacao.protocoloFMA
-    ? `<p><em>Evento originado da solicitação <strong>${solicitacao.protocoloFMA}</strong> aprovada pela FMA.</em></p>`
-    : `<p><em>Evento originado de solicitação de ${solicitacao.tipo === "permit" ? "Permit" : "Chancela"} aprovada pela FMA.</em></p>`;
+    : "";
 
   const fullDescription = solicitacao.descricaoEvento
-    ? `<p>${solicitacao.descricaoEvento}</p>${origemNota}`
-    : origemNota;
+    ? `<p>${solicitacao.descricaoEvento}</p>`
+    : "";
 
   // Campos livres do formulário — se já preenchidos na solicitação
   const campos = solicitacao.campos ?? {};
