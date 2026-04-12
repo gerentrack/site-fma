@@ -13,6 +13,32 @@ import PdfModal, { usePdfModal } from "../../components/ui/PdfModal";
 const catMap    = Object.fromEntries(CALENDAR_CATEGORIES.filter(c => c.value).map(c => [c.value, c]));
 const statusMap = Object.fromEntries(EVENT_STATUS.map(s => [s.value, s]));
 
+const SvgCalendar = ({ size = 18, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+  </svg>
+);
+const SvgClock = ({ size = 18, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+  </svg>
+);
+const SvgPin = ({ size = 18, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+  </svg>
+);
+const SvgUser = ({ size = 18, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </svg>
+);
+const SvgTag = ({ size = 18, color = "currentColor" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
+  </svg>
+);
+
 function fmtDate(d) {
   if (!d) return "";
   return new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
@@ -123,9 +149,9 @@ export default function EventDetailPage() {
           </h1>
 
           <div style={{ display: "flex", gap: 20, flexWrap: "wrap", fontFamily: FONTS.body, fontSize: 15, opacity: 0.9 }}>
-            {dt && <span>📅 {fmtDate(event.date)}</span>}
-            {event.time && <span>🕐 {event.time}</span>}
-            {event.city && <span>📍 {event.location ? `${event.location}, ` : ""}{event.city}</span>}
+            {dt && <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><SvgCalendar size={16} color="#fff" /> {fmtDate(event.date)}</span>}
+            {event.time && <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><SvgClock size={16} color="#fff" /> {event.time}</span>}
+            {event.city && <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><SvgPin size={16} color="#fff" /> {event.location ? `${event.location}, ` : ""}{event.city}</span>}
           </div>
         </div>
       </div>
@@ -176,7 +202,7 @@ export default function EventDetailPage() {
                   {event.modalidadesDetalhes.some(m => m.permitFileUrl || m.resultsFileUrl) && (
                     <div style={{ background: "#fff", borderRadius: 8, padding: "14px 16px", border: `1px solid ${COLORS.grayLight}` }}>
                       <div style={{ fontFamily: FONTS.heading, fontWeight: 800, fontSize: 13, color: COLORS.dark, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                        📋 Permits por Modalidade
+                        Permits por Modalidade
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         {event.modalidadesDetalhes.map((mod, i) => {
@@ -184,8 +210,8 @@ export default function EventDetailPage() {
                           return (
                             <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                               <span style={{ fontFamily: FONTS.heading, fontWeight: 700, fontSize: 12, color: COLORS.dark, minWidth: 60 }}>🏃 {mod.nome}</span>
-                              {mod.permitFileUrl  && <DownloadBtn href={mod.permitFileUrl}  label={mod.permitNumero ? `Permit N\u00BA ${mod.permitNumero}` : "Permit"} icon="📋" onView={openPdf} />}
-                              {mod.resultsFileUrl && <DownloadBtn href={mod.resultsFileUrl} label="Resultados" icon="📊" onView={openPdf} />}
+                              {mod.permitFileUrl  && <DownloadBtn href={mod.permitFileUrl}  label={mod.permitNumero ? `Permit N\u00BA ${mod.permitNumero}` : "Permit"} icon="" onView={openPdf} />}
+                              {mod.resultsFileUrl && <DownloadBtn href={mod.resultsFileUrl} label="Resultados" icon="" onView={openPdf} />}
                             </div>
                           );
                         })}
@@ -197,7 +223,7 @@ export default function EventDetailPage() {
                   {(event.chancelaFileUrl || event.permitFileUrl || event.permitUrl) && (
                     <div style={{ background: "#fff", borderRadius: 8, padding: "14px 16px", border: `1px solid ${COLORS.grayLight}` }}>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                        {(event.permitFileUrl || event.permitUrl) && <DownloadBtn href={event.permitFileUrl || event.permitUrl} label="Permit do Evento" icon="📋" onView={openPdf} />}
+                        {(event.permitFileUrl || event.permitUrl) && <DownloadBtn href={event.permitFileUrl || event.permitUrl} label="Permit do Evento" icon="" onView={openPdf} />}
                         {event.chancelaFileUrl && <DownloadBtn href={event.chancelaFileUrl} label="Chancela FMA" icon="🏅" onView={openPdf} />}
                       </div>
                     </div>
@@ -206,9 +232,9 @@ export default function EventDetailPage() {
               ) : (
                 /* Sem modalidades — exibe arquivos gerais */
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-                  {(event.permitFileUrl || event.permitUrl) && <DownloadBtn href={event.permitFileUrl || event.permitUrl} label="Permit do Evento" icon="📋" onView={openPdf} />}
+                  {(event.permitFileUrl || event.permitUrl) && <DownloadBtn href={event.permitFileUrl || event.permitUrl} label="Permit do Evento" icon="" onView={openPdf} />}
                   {event.chancelaFileUrl && <DownloadBtn href={event.chancelaFileUrl} label="Chancela FMA" icon="🏅" onView={openPdf} />}
-                  {event.resultsFileUrl  && <DownloadBtn href={event.resultsFileUrl}  label="Resultados"   icon="📊" onView={openPdf} />}
+                  {event.resultsFileUrl  && <DownloadBtn href={event.resultsFileUrl}  label="Resultados"   icon="" onView={openPdf} />}
                 </div>
               )}
             </div>
@@ -230,11 +256,11 @@ export default function EventDetailPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 16, position: "sticky", top: 80 }}>
           <div style={{ background: "#fff", borderRadius: 12, padding: "22px 20px", boxShadow: "0 2px 16px rgba(0,0,0,0.08)", display: "flex", flexDirection: "column", gap: 14 }}>
             <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, margin: 0 }}>Detalhes</h3>
-            <InfoRow icon="📅" label="Data" value={fmtDate(event.date)} />
-            <InfoRow icon="🕐" label="Horário" value={event.time} />
-            <InfoRow icon="📍" label="Local" value={[event.location, event.city].filter(Boolean).join(", ")} />
-            <InfoRow icon="🎽" label="Tipo" value={cat.label || event.category} />
-            <InfoRow icon="👤" label="Organizador" value={event.organizer} href={event.externalLink || undefined} />
+            <InfoRow icon={<SvgCalendar />} label="Data" value={fmtDate(event.date)} />
+            <InfoRow icon={<SvgClock />} label="Horario" value={event.time} />
+            <InfoRow icon={<SvgPin />} label="Local" value={[event.location, event.city].filter(Boolean).join(", ")} />
+            <InfoRow icon={<SvgTag />} label="Tipo" value={cat.label || event.category} />
+            <InfoRow icon={<SvgUser />} label="Organizador" value={event.organizer} href={event.externalLink || undefined} />
             <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 4 }}>
               <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 12, fontFamily: FONTS.heading, fontWeight: 700, background: `${stat.color}18`, color: stat.color }}>{stat.label}</span>
             </div>
