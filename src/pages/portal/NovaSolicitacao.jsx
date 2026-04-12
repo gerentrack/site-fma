@@ -19,9 +19,6 @@ import { uploadFile } from "../../services/storageService";
 import { COLORS, FONTS } from "../../styles/colors";
 import { SOLICITACAO_TIPOS } from "../../config/navigation";
 
-function sanitize(str) {
-  return (str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 80);
-}
 import { useCep } from "../../hooks/useCep";
 import CepField from "../../components/common/CepField";
 import { validarCPF, validarCNPJ } from "../../utils/cpfCnpj";
@@ -36,7 +33,11 @@ import {
   calcularTaxaTotal, formatarMoeda, TABELA_PADRAO, PRAZOS,
 } from "../../utils/taxaCalculator";
 
-// ─── Helpers de arquivo ───────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function sanitize(str) {
+  return (str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 80);
+}
+
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const r = new FileReader();
@@ -327,7 +328,8 @@ export default function NovaSolicitacao() {
         const ext = comprovantePagamento.name.includes(".") ? comprovantePagamento.name.split(".").pop() : "pdf";
         const nomeEvento = (formFinal.nomeEvento || "evento").replace(/[^a-zA-Z0-9À-ÿ\s-]/g, "").trim().replace(/\s+/g, "_");
         const nomeComprovante = `Comprovante_Pagamento_${nomeEvento}.${ext}`;
-        const { url, path } = await uploadFile(comprovantePagamento, storagePath);
+        const renamedFile = new File([comprovantePagamento], nomeComprovante, { type: comprovantePagamento.type });
+        const { url, path } = await uploadFile(renamedFile, storagePath);
         const arqR = await ArquivosService.upload({
           solicitacaoId: sol.id, nome: nomeComprovante,
           tamanho: comprovantePagamento.size, tipo: comprovantePagamento.type || "application/octet-stream",
