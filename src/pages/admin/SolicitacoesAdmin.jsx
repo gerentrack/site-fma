@@ -491,7 +491,9 @@ export function SolicitacaoEditor() {
 
     flash(`Análise salva com sucesso.${protocoloNovoMensagem}`, "ok");
     setSaving(false);
-    load();
+    await load();
+    // Limpar parecer para nova entrada (o anterior já está salvo na solicitação + histórico)
+    setAnalise(a => ({ ...a, parecerFMA: "" }));
   };
 
   // ── Gerar Permits/Chancelas e Aprovar ───────────────────────────────────────
