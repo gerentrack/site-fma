@@ -211,7 +211,7 @@ export default function NovaSolicitacao() {
     return e;
   };
 
-  const uploadArquivosPendentes = async (solicitacaoId, ctAtual) => {
+  const uploadArquivosPendentes = async (solicitacaoId, ctAtual, storagePath) => {
     const ctAtualizado = { ...ctAtual };
     const allFields = (getFormConfig()[tipo] || []);
     const fieldMap = Object.fromEntries(allFields.map(f => [f.id, f.label]));
@@ -319,7 +319,7 @@ export default function NovaSolicitacao() {
     if (r.error) { setGlobalError(r.error); setSaving(false); return; }
     const sol = r.data;
 
-    const ctComArquivos = await uploadArquivosPendentes(sol.id, ct);
+    const ctComArquivos = await uploadArquivosPendentes(sol.id, ct, storagePath);
     await SolicitacoesService.update(sol.id, { camposTecnicos: ctComArquivos });
 
     // Upload do comprovante de pagamento (renomeado com o nome do evento)
