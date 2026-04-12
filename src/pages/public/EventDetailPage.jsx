@@ -135,22 +135,6 @@ export default function EventDetailPage() {
 
         {/* Coluna principal */}
         <div>
-          {/* Descrição */}
-          {(event.fullDescription || event.shortDescription || event.description) && (
-            <div style={{ marginBottom: 36 }}>
-              <h2 style={{ fontFamily: FONTS.heading, fontSize: 20, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, marginBottom: 16 }}>Sobre o Evento</h2>
-              {event.fullDescription ? (
-                <div
-                  style={{ fontFamily: FONTS.body, fontSize: 15, lineHeight: 1.8, color: COLORS.dark }}
-                  dangerouslySetInnerHTML={{ __html: event.fullDescription }}
-                />
-              ) : (
-                <p style={{ fontFamily: FONTS.body, fontSize: 15, lineHeight: 1.8, color: COLORS.dark }}>
-                  {event.shortDescription || event.description}
-                </p>
-              )}
-            </div>
-          )}
 
           {/* Modalidades */}
           {event.modalities?.length > 0 && (

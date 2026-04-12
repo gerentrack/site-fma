@@ -802,28 +802,6 @@ export function ResultadoDetalhe() {
           {/* Coluna principal */}
           <div>
             {/* Descrição */}
-            {resultado.descricao && (
-              <div style={{
-                background: "#fff", borderRadius: 14, padding: "24px 28px",
-                boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
-                border: `1px solid ${COLORS.grayLight}`,
-                marginBottom: 20,
-              }}>
-                <h3 style={{
-                  fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800,
-                  textTransform: "uppercase", letterSpacing: 2, color: cfg.color,
-                  margin: "0 0 14px",
-                }}>
-                  Sobre o Evento
-                </h3>
-                <p style={{
-                  fontFamily: FONTS.body, fontSize: 15, color: COLORS.dark,
-                  margin: 0, lineHeight: 1.7,
-                }}>
-                  {resultado.descricao}
-                </p>
-              </div>
-            )}
 
             {/* Evento vinculado do calendário */}
             {evento && (
