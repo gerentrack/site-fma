@@ -691,10 +691,13 @@ export default function SolicitacaoDetalhe() {
                     const sanitize = (s) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 80);
                     const anoR = (sol.dataEvento || "").slice(0, 4) || String(new Date().getFullYear());
                     const folder = `solicitacoes/${anoR}/${sanitize(organizerName)}/${sanitize(sol.nomeEvento)}`;
-                    const { url, path } = await uploadFile(file, folder);
+                    const ext = file.name.includes(".") ? file.name.split(".").pop() : "pdf";
+                    const nomeRenomeado = `Resposta_pendencia_${sanitize(sol.nomeEvento)}.${ext}`;
+                    const renamedFile = new File([file], nomeRenomeado, { type: file.type });
+                    const { url, path } = await uploadFile(renamedFile, folder);
                     if (url) {
                       await ArquivosService.upload({
-                        solicitacaoId: id, nome: file.name, tamanho: file.size,
+                        solicitacaoId: id, nome: nomeRenomeado, tamanho: file.size,
                         tipo: file.type || "application/octet-stream",
                         descricao: `Resposta a pendencia: ${respostaPendencia.trim().slice(0, 60)}`,
                         categoria: "complementar", url, storagePath: path,
