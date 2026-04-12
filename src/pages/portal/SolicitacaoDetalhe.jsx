@@ -18,6 +18,7 @@ import { defaultCamposTecnicosPermit, defaultCamposTecnicosChancela, novaModalid
 import { formatarMoeda } from "../../utils/taxaCalculator";
 import { PAGAMENTO_STATUS } from "../../config/navigation";
 import { notificarFmaComprovanteAnexado, notificarFmaResultadoEnviado, notificarFmaPendenciaRespondida } from "../../services/emailService";
+import PdfModal, { usePdfModal } from "../../components/ui/PdfModal";
 
 const statusMap     = Object.fromEntries(SOLICITACAO_STATUS.map(s => [s.value, s]));
 const tipoMap       = Object.fromEntries(SOLICITACAO_TIPOS.map(t => [t.value, t]));
@@ -579,6 +580,7 @@ export default function SolicitacaoDetalhe() {
   const [respostaPendencia, setRespostaPendencia] = useState("");
   const [enviandoResposta, setEnviandoResposta] = useState(false);
   const respostaFileRef = useRef(null);
+  const { pdfModal, openPdf, closePdf } = usePdfModal();
 
   const load = useCallback(async () => {
     const [sr,ar,mr] = await Promise.all([
@@ -815,13 +817,19 @@ export default function SolicitacaoDetalhe() {
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:4 }}>
                           <span style={{fontSize:20}}>{arq.tipo?.includes("pdf")?"":arq.tipo?.includes("image")?"":""}</span>
-                          <span style={{ fontFamily:FONTS.heading, fontSize:14, fontWeight:700, color:COLORS.dark, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{arq.nome}</span>
+                          <span style={{ fontFamily:FONTS.heading, fontSize:13, fontWeight:700, color:COLORS.dark, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{arq.nome}</span>
                           <span style={{ padding:"2px 8px", borderRadius:20, fontSize:10, fontFamily:FONTS.heading, fontWeight:700, background:`${cat.color}15`, color:cat.color }}>{cat.icon} {cat.label}</span>
                           {isFMA&&<span style={{ padding:"2px 8px", borderRadius:20, fontSize:10, fontFamily:FONTS.heading, fontWeight:700, background:"#eff6ff", color:"#0066cc" }}>FMA</span>}
                         </div>
                         <div style={{ fontFamily:FONTS.body, fontSize:12, color:COLORS.gray, paddingLeft:28 }}>{arq.descricao} · {fmtSize(arq.tamanho)} · {fmtDT(arq.uploadedAt)}</div>
                       </div>
-                      <div style={{ display:"flex", gap:8, flexShrink:0 }}>
+                      <div style={{ display:"flex", gap:6, flexShrink:0 }}>
+                        {(arq.dataUrl||arq.url) && arq.tipo?.includes("pdf") && (
+                          <button onClick={()=>openPdf(arq.dataUrl||arq.url, arq.nome)}
+                            style={{ padding:"6px 14px", borderRadius:7, border:`1px solid ${COLORS.primary}`, background:"transparent", color:COLORS.primary, fontFamily:FONTS.heading, fontSize:11, fontWeight:700, cursor:"pointer" }}>
+                            Visualizar
+                          </button>
+                        )}
                         {(arq.dataUrl||arq.url)&&<a href={arq.dataUrl||arq.url} download={arq.nome} target="_blank" rel="noreferrer" style={{ padding:"6px 14px", borderRadius:7, background:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:11, fontWeight:700, textDecoration:"none" }}>Baixar</a>}
                         {!isFMA&&canDelete&&<button onClick={async()=>{ if(!confirm(`Remover "${arq.nome}"?`))return; await ArquivosService.delete(arq.id); load(); }} style={{ padding:"6px 10px", borderRadius:7, border:"1px solid #fca5a5", background:"#fff", color:"#dc2626", fontFamily:FONTS.heading, fontSize:11, fontWeight:700, cursor:"pointer" }}>✕</button>}
                       </div>
@@ -854,6 +862,7 @@ export default function SolicitacaoDetalhe() {
           </div>
         )}
       </div>
+      <PdfModal url={pdfModal.url} title={pdfModal.title} onClose={closePdf} />
     </>
   );
 }
