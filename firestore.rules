@@ -104,7 +104,7 @@ service cloud.firestore {
     }
     match /counters/{docId} {
       allow read: if true;
-      allow write: if isAuth();
+      allow write: if isAdminRole();
     }
 
     // ── Anuidades (leitura/escrita: admin ou referee) ──
@@ -113,16 +113,16 @@ service cloud.firestore {
       allow write: if isAuth() && (isAdminRole() || "referee" in getUserData().roles || getUserData().role == "referee");
     }
 
-    // ── Relatórios de Arbitragem (leitura/escrita: autenticado) ──
+    // ── Relatórios de Arbitragem (leitura: autenticado; escrita: admin ou referee) ──
     match /relatoriosArbitragem/{docId} {
       allow read: if isAuth();
-      allow write: if isAuth();
+      allow write: if isAuth() && (isAdminRole() || "referee" in getUserData().roles || getUserData().role == "referee");
     }
 
-    // ── Reembolsos (leitura: autenticado; escrita: autenticado — árbitro envia, admin aprova) ──
+    // ── Reembolsos (leitura: autenticado; escrita: admin ou referee) ──
     match /reembolsos/{docId} {
       allow read: if isAuth();
-      allow write: if isAuth();
+      allow write: if isAuth() && (isAdminRole() || "referee" in getUserData().roles || getUserData().role == "referee");
     }
 
     // ── Diárias (leitura: autenticado; escrita: admin) ──
@@ -143,10 +143,10 @@ service cloud.firestore {
       allow write: if isAdminRole();
     }
 
-    // ── Mensagens / Envio de Documentos (leitura/escrita: qualquer autenticado da intranet) ──
+    // ── Mensagens / Envio de Documentos (leitura: autenticado; escrita: admin ou referee) ──
     match /envioDocumentos/{docId} {
       allow read: if isAuth();
-      allow write: if isAuth();
+      allow write: if isAuth() && (isAdminRole() || "referee" in getUserData().roles || getUserData().role == "referee");
     }
 
     // ── Usuários (leitura: autenticado; escrita: admin do painel OU referee admin da intranet) ──
