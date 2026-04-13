@@ -34,6 +34,12 @@ export function IntranetProvider({ children }) {
     return result;
   }, []);
 
+  const loginWithGoogle = useCallback(async () => {
+    const result = await intranetAuthAPI.loginWithGoogle();
+    if (result.data) setSession(result.data.session);
+    return result;
+  }, []);
+
   const logout = useCallback(async () => {
     await intranetAuthAPI.logout();
     setSession(null);
@@ -46,7 +52,7 @@ export function IntranetProvider({ children }) {
 
   return (
     <IntranetContext.Provider value={{
-      session, loading, login, logout,
+      session, loading, login, loginWithGoogle, logout,
       isAuthenticated, isAdmin, isCoordinator, canManage,
       refereeId:           session?.refereeId || null,
       email:               session?.email     || "",

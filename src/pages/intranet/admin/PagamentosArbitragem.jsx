@@ -8,6 +8,7 @@ import { RefereeAssignmentsService, ReembolsosService, RefereesService } from ".
 import { notificarReembolso, notificarDiariaPaga } from "../../../services/emailService";
 import { COLORS, FONTS } from "../../../styles/colors";
 import { REFEREE_FUNCTIONS } from "../../../config/navigation";
+import PixModal from "../../../components/ui/PixModal";
 
 const fnMap = Object.fromEntries((REFEREE_FUNCTIONS || []).map(f => [f.value, f.label]));
 const CATS = { transporte: "Transporte", hospedagem: "Hospedagem", alimentacao: "Alimentacao", outro: "Outro" };
@@ -62,11 +63,13 @@ export default function PagamentosArbitragem() {
   const totalPago = totalDiariasPago + totalReembPago;
   const totalPendente = totalDiariasPend + totalReembAprov;
 
-  const confirmarPagamento = async () => {
-    if (!modalPagar || !modalData) return;
+  const confirmarPagamento = async (dataOverride) => {
+    if (!modalPagar) return;
+    const dataPgto = dataOverride || modalData;
+    if (!dataPgto) return;
     setActionLoading(modalPagar.id);
     if (modalPagar.type === "diaria") {
-      await RefereeAssignmentsService.update(modalPagar.id, { diariaPaga: true, diariaPagaEm: modalData });
+      await RefereeAssignmentsService.update(modalPagar.id, { diariaPaga: true, diariaPagaEm: dataPgto });
       if (notifyEmail) {
         const a = assignments.find(x => x.id === modalPagar.id);
         const ref = a && referees[a.refereeId];
@@ -76,7 +79,7 @@ export default function PagamentosArbitragem() {
         }
       }
     } else {
-      await ReembolsosService.update(modalPagar.id, { status: "pago", pagoEm: modalData });
+      await ReembolsosService.update(modalPagar.id, { status: "pago", pagoEm: dataPgto });
       if (notifyEmail) {
         const r = reembolsos.find(x => x.id === modalPagar.id);
         if (r) { const ref = referees[r.refereeId]; if (ref?.email) notificarReembolso({ arbitroEmail: ref.email, arbitroNome: ref.name, status: "pago", categoria: CATS[r.categoria] || r.categoria, valor: r.valor, valorAprovado: r.valorAprovado }).catch(() => {}); }
@@ -291,20 +294,31 @@ export default function PagamentosArbitragem() {
           </div>
         )}
       </div>
-      {/* Modal data de pagamento */}
-      {modalPagar && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setModalPagar(null)}>
-          <div style={{ background: "#fff", borderRadius: 14, padding: 24, width: 320 }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 800, color: COLORS.dark, margin: "0 0 16px" }}>Data do Pagamento</h3>
-            <input type="date" value={modalData} onChange={e => setModalData(e.target.value)}
-              style={{ width: "100%", padding: "10px 12px", border: `1px solid ${COLORS.grayLight}`, borderRadius: 8, fontSize: 14, boxSizing: "border-box", marginBottom: 16 }} />
-            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-              <button onClick={() => setModalPagar(null)} style={{ padding: "8px 18px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", fontSize: 13, cursor: "pointer" }}>Cancelar</button>
-              <button onClick={confirmarPagamento} disabled={actionLoading} style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: "#15803d", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Confirmar</button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modal PIX + confirmacao de pagamento */}
+      {modalPagar && (() => {
+        let ref = null, valor = 0, desc = "";
+        if (modalPagar.type === "diaria") {
+          const a = assignments.find(x => x.id === modalPagar.id);
+          ref = a && referees[a.refereeId];
+          valor = a ? (a.valorDiaria || 0) + (a.transporte || 0) + (a.hospedagem || 0) + (a.alimentacao || 0) : 0;
+          desc = a?.event?.title ? `Diaria ${a.event.title}` : "Diaria";
+        } else {
+          const r = reembolsos.find(x => x.id === modalPagar.id);
+          ref = r && referees[r.refereeId];
+          valor = r ? (r.valorAprovado ?? r.valor) || 0 : 0;
+          desc = r ? `Reembolso ${CATS[r.categoria] || ""}` : "Reembolso";
+        }
+        return (
+          <PixModal
+            referee={ref}
+            valor={valor}
+            descricao={desc}
+            loading={!!actionLoading}
+            onClose={() => setModalPagar(null)}
+            onConfirm={(data) => confirmarPagamento(data)}
+          />
+        );
+      })()}
 
       {/* Modal aprovar reembolso */}
       {modalAprovar && (

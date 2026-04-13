@@ -11,12 +11,13 @@ import {
 
 import {
   signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword,
+  signInWithPopup,
   updatePassword as fbUpdatePassword,
   updateEmail as fbUpdateEmail,
   EmailAuthProvider, reauthenticateWithCredential, onAuthStateChanged,
 } from "firebase/auth";
 
-import { db, auth, createAuthUserSafe } from "../firebase";
+import { db, auth, createAuthUserSafe, googleProvider } from "../firebase";
 import { garantirProtocolo } from "../utils/protocolo";
 
 import {
@@ -406,6 +407,53 @@ export const calendarAPI = {
   },
   update: async (id,data) => { const item=await patchDoc("calendar",id,data); return item?ok(item):err("Não encontrado."); },
   delete: async (id)      => { await removeDoc("calendar",id); return ok(true); },
+
+  /**
+   * Exclui um evento do calendário e todos os registros órfãos relacionados:
+   * refereeEvents (+ availability, assignments, relatórios, diárias, avaliações)
+   * e resultados (+ arquivos no Storage).
+   */
+  deleteCascade: async (id, deleteStorageFile) => {
+    // 1. Buscar refereeEvents vinculados via calendarRef
+    const refEvents = (await readCol("refereeEvents")).filter(e => e.calendarRef === id);
+    for (const refEvt of refEvents) {
+      const eid = refEvt.id;
+      // Limpar availability, assignments, relatórios, diárias, avaliações do refereeEvent
+      const [avails, assigns, rels, dias, avals] = await Promise.all([
+        readCol("refereeAvailability"),
+        readCol("refereeAssignments"),
+        readCol("relatoriosArbitragem"),
+        readCol("diarias"),
+        readCol("avaliacoes"),
+      ]);
+      await Promise.all([
+        ...avails.filter(a => a.eventId === eid).map(a => removeDoc("refereeAvailability", a.id)),
+        ...assigns.filter(a => a.eventId === eid).map(a => removeDoc("refereeAssignments", a.id)),
+        ...rels.filter(r => r.eventId === eid).map(r => removeDoc("relatoriosArbitragem", r.id)),
+        ...dias.filter(d => d.eventId === eid).map(d => removeDoc("diarias", d.id)),
+        ...avals.filter(a => a.eventId === eid).map(a => removeDoc("avaliacoes", a.id)),
+      ]);
+      await removeDoc("refereeEvents", eid);
+    }
+
+    // 2. Buscar resultados vinculados via eventoId
+    const resultados = (await readCol("resultados")).filter(r => r.eventoId === id);
+    for (const res of resultados) {
+      if (res.fileUrl && deleteStorageFile) deleteStorageFile(res.fileUrl).catch(() => {});
+      await removeDoc("resultados", res.id);
+    }
+
+    // 3. Limpar referência em solicitações (não deleta a solicitação, apenas desvincula)
+    const solicitacoes = (await readCol("solicitacoes")).filter(s => s.eventoCalendarioId === id || s.eventoId === id);
+    for (const sol of solicitacoes) {
+      await patchDoc("solicitacoes", sol.id, { eventoCalendarioId: "", eventoId: "" });
+    }
+
+    // 4. Deletar o evento do calendário
+    await removeDoc("calendar", id);
+    return ok(true);
+  },
+
   getYears: async () => {
     const items=await readCol("calendar");
     return ok([...new Set(items.map(e=>e.date?.slice(0,4)).filter(Boolean))].sort((a,b)=>b-a));
@@ -623,6 +671,50 @@ export const intranetAuthAPI = {
       return ok({ session, referee: safe });
     } catch (e) {
       if (["auth/invalid-credential","auth/wrong-password","auth/user-not-found"].includes(e.code)) return err("Credenciais inválidas.");
+      return err(e.message);
+    }
+  },
+  loginWithGoogle: async () => {
+    try {
+      const cred = await signInWithPopup(auth, googleProvider);
+      const email = cred.user.email;
+      const uid   = cred.user.uid;
+
+      // 1. Tentar pelo uid direto
+      let profile = await readDoc("users", uid);
+      if (profile && hasRole(profile, "referee")) {
+        const referee = await readDoc("referees", profile.refId);
+        if (!referee || referee.status !== "ativo") { await signOut(auth); return err("Árbitro inativo ou não encontrado."); }
+        const session = {
+          refereeId: referee.id, uid, email: referee.email, name: referee.name, role: referee.role, loginAt: now(),
+          mustChangePassword: referee.mustChangePassword || false,
+          profileComplete: referee.profileComplete || false,
+          emailVerified: referee.emailVerified || false,
+        };
+        return ok({ session, referee });
+      }
+
+      // 2. Buscar por email na coleção referees (conta existente com email/senha, primeiro login via Google)
+      const allReferees = await readCol("referees");
+      const referee = allReferees.find(r => r.email === email);
+      if (!referee) { await signOut(auth); return err("Conta não encontrada. Faça o cadastro com e-mail e senha primeiro."); }
+      if (referee.status !== "ativo") { await signOut(auth); return err("Árbitro inativo ou não encontrado."); }
+
+      // 3. Vincular: atualizar o doc users para apontar para o novo uid do Google
+      const allUsers = await readCol("users");
+      const existingUser = allUsers.find(u => u.refId === referee.id && hasRole(u, "referee"));
+      if (existingUser) {
+        await setDoc(doc(db, "users", uid), { ...existingUser, uid, id: uid });
+        if (existingUser.id !== uid) await deleteDoc(doc(db, "users", existingUser.id));
+      }
+
+      const session = {
+        refereeId: referee.id, uid, email: referee.email, name: referee.name, role: referee.role, loginAt: now(),
+        mustChangePassword: false, profileComplete: referee.profileComplete || false, emailVerified: referee.emailVerified || false,
+      };
+      return ok({ session, referee });
+    } catch (e) {
+      if (e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request") return { data: null, error: null };
       return err(e.message);
     }
   },
@@ -894,6 +986,43 @@ export const organizerAuthAPI = {
       return ok({ session, organizer: safe });
     } catch (e) {
       if (["auth/invalid-credential","auth/wrong-password","auth/user-not-found"].includes(e.code)) return err("Credenciais inválidas.");
+      return err(e.message);
+    }
+  },
+  loginWithGoogle: async () => {
+    try {
+      const cred = await signInWithPopup(auth, googleProvider);
+      const email = cred.user.email;
+      const uid   = cred.user.uid;
+
+      // 1. Tentar pelo uid direto
+      let profile = await readDoc("users", uid);
+      if (profile && hasRole(profile, "organizer")) {
+        const org = await readDoc("organizers", profile.refId);
+        if (!org) { await signOut(auth); return err("Conta não encontrada."); }
+        const orgAtivo = org.status === "ativo" || org.active === true;
+        const session = { organizerId: org.id, uid, email: org.email, name: org.name, loginAt: now(), active: orgAtivo, motivoDesativacao: org.motivoDesativacao || "", emailVerified: org.emailVerified || false };
+        return ok({ session, organizer: org });
+      }
+
+      // 2. Buscar por email na coleção organizers (conta existente, primeiro login via Google)
+      const allOrgs = await readCol("organizers");
+      const org = allOrgs.find(o => o.email === email);
+      if (!org) { await signOut(auth); return err("Conta não encontrada. Faça o cadastro com e-mail e senha primeiro."); }
+      const orgAtivo = org.status === "ativo" || org.active === true;
+
+      // 3. Vincular: atualizar o doc users para apontar para o novo uid do Google
+      const allUsers = await readCol("users");
+      const existingUser = allUsers.find(u => u.refId === org.id && hasRole(u, "organizer"));
+      if (existingUser) {
+        await setDoc(doc(db, "users", uid), { ...existingUser, uid, id: uid });
+        if (existingUser.id !== uid) await deleteDoc(doc(db, "users", existingUser.id));
+      }
+
+      const session = { organizerId: org.id, uid, email: org.email, name: org.name, loginAt: now(), active: orgAtivo, motivoDesativacao: org.motivoDesativacao || "", emailVerified: org.emailVerified || false };
+      return ok({ session, organizer: org });
+    } catch (e) {
+      if (e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request") return { data: null, error: null };
       return err(e.message);
     }
   },

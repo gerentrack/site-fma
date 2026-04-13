@@ -34,6 +34,12 @@ export function OrganizerProvider({ children }) {
     return result;
   }, []);
 
+  const loginWithGoogle = useCallback(async () => {
+    const result = await organizerAuthAPI.loginWithGoogle();
+    if (result.data) setSession(result.data.session);
+    return result;
+  }, []);
+
   const logout = useCallback(async () => {
     await organizerAuthAPI.logout();
     setSession(null);
@@ -56,6 +62,7 @@ export function OrganizerProvider({ children }) {
       session,
       loading,
       login,
+      loginWithGoogle,
       logout,
       register,
       isAuthenticated,

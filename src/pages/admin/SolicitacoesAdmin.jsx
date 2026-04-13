@@ -36,6 +36,7 @@ import { gerarReciboPdf } from "../../services/reciboPdfService";
 import { notificarStatusSolicitacao, notificarPagamentoConfirmado, notificarCobrancaPagamento, notificarArquivoFmaEnviado, notificarPermitGerado, notificarResultadoStatus } from "../../services/emailService";
 import { getProximoNumero, reservarNumeros, setContador, formatarNumero } from "../../utils/permitCounter";
 import { gerarPermitPdf, gerarChancelaPdf, preloadAssets } from "../../services/permitPdfService";
+import { analisarSolicitacaoFn } from "../../firebase";
 
 // ── Constantes e helpers ──────────────────────────────────────────────────────
 const statusMap = Object.fromEntries(SOLICITACAO_STATUS.map(s => [s.value, s]));
@@ -361,6 +362,7 @@ export function SolicitacaoEditor() {
     responsavelFMA: "", parecerFMA: "", observacaoFMA: "",
   });
   const [novoStatus, setNovoStatus] = useState("");
+  const [iaLoading, setIaLoading] = useState(false);
 
   // Upload pela FMA
   const [uploading, setUploading] = useState(false);
@@ -836,6 +838,7 @@ export function SolicitacaoEditor() {
 
   return (
     <AdminLayout>
+      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
       <div style={{ padding: "32px 32px 60px", maxWidth: 980, margin: "0 auto" }}>
 
         {/* Header */}
@@ -1146,9 +1149,48 @@ export function SolicitacaoEditor() {
             })()}
 
             <div style={{ marginBottom: 20 }}>
-              <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, display: "block", marginBottom: 5 }}>
-                Parecer FMA <span style={{ fontFamily: FONTS.body, fontSize: 10, fontWeight: 400, textTransform: "none" }}>(visivel ao organizador)</span>
-              </label>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+                <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray }}>
+                  Parecer FMA <span style={{ fontFamily: FONTS.body, fontSize: 10, fontWeight: 400, textTransform: "none" }}>(visivel ao organizador)</span>
+                </label>
+                <button type="button" disabled={iaLoading}
+                  onClick={async () => {
+                    setIaLoading(true);
+                    try {
+                      const ct = normalizarCamposTecnicos(sol);
+                      const payload = {
+                        tipo: sol.tipo,
+                        nomeEvento: sol.nomeEvento || sol.titulo || "",
+                        dataEvento: sol.dataEvento || "",
+                        cidadeEvento: sol.cidadeEvento || "",
+                        localEvento: sol.localEvento || "",
+                        descricaoEvento: sol.descricaoEvento || "",
+                        organizador: org ? { nome: org.name, email: org.email, cidade: org.city || "", telefone: org.phone || "" } : {},
+                        camposTecnicos: ct,
+                      };
+                      const result = await analisarSolicitacaoFn({ solicitacao: payload });
+                      if (result.data?.parecer) {
+                        setAnalise(a => ({ ...a, parecerFMA: result.data.parecer }));
+                        flash("Parecer gerado pela IA. Revise antes de salvar.", "ok");
+                      }
+                    } catch (err) {
+                      console.error("Erro IA:", err);
+                      flash("Erro ao analisar com IA: " + (err.message || "Tente novamente."), "err");
+                    }
+                    setIaLoading(false);
+                  }}
+                  style={{ padding: "6px 14px", borderRadius: 6, border: "1.5px solid #7c3aed", background: iaLoading ? "#ede9fe" : "#f5f3ff",
+                    color: "#7c3aed", cursor: iaLoading ? "not-allowed" : "pointer", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700,
+                    display: "flex", alignItems: "center", gap: 6, transition: "all 0.15s" }}
+                  onMouseEnter={e => { if (!iaLoading) e.currentTarget.style.background = "#ede9fe"; }}
+                  onMouseLeave={e => { if (!iaLoading) e.currentTarget.style.background = "#f5f3ff"; }}>
+                  {iaLoading ? (
+                    <><span style={{ display: "inline-block", width: 14, height: 14, border: "2px solid #c4b5fd", borderTopColor: "#7c3aed", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> Analisando...</>
+                  ) : (
+                    <>Analisar com IA</>
+                  )}
+                </button>
+              </div>
               <textarea value={analise.parecerFMA} onChange={e => setAnalise(a => ({ ...a, parecerFMA: e.target.value }))}
                 rows={5} placeholder="Descreva o parecer técnico, documentos necessários, condicionantes da aprovação, motivo do indeferimento, etc."
                 style={{ ...inp(), resize: "vertical", lineHeight: 1.5 }} />

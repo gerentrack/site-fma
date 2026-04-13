@@ -145,6 +145,7 @@ export const CalendarService = {
   create: (data) => calendarAPI.create(data),
   update: (id, data) => calendarAPI.update(id, data),
   delete: (id) => calendarAPI.delete(id),
+  deleteCascade: (id, deleteStorageFile) => calendarAPI.deleteCascade(id, deleteStorageFile),
   publish: (id) => calendarAPI.update(id, { published: true }),
   unpublish: (id) => calendarAPI.update(id, { published: false }),
   getCities: () => calendarAPI.getCities(),

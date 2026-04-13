@@ -8,6 +8,7 @@ import { RefereeAssignmentsService, RefereesService } from "../../../services/in
 import { notificarDiariaPaga } from "../../../services/emailService";
 import { COLORS, FONTS } from "../../../styles/colors";
 import { REFEREE_FUNCTIONS } from "../../../config/navigation";
+import PixModal from "../../../components/ui/PixModal";
 
 const fnMap = Object.fromEntries((REFEREE_FUNCTIONS || []).map(f => [f.value, f.label]));
 function fmt(v) { return (v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
@@ -18,6 +19,8 @@ export default function DiariasAdmin() {
   const [loading, setLoading] = useState(true);
   const [filtroStatus, setFiltroStatus] = useState("");
   const [filtroArbitro, setFiltroArbitro] = useState("");
+  const [pixModal, setPixModal] = useState(null); // assignment id
+  const [pagando, setPagando] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -44,18 +47,20 @@ export default function DiariasAdmin() {
   const totalPago = assignments.filter(a => a.diariaPaga).reduce((s, a) => s + (a.valorDiaria || 0) + (a.transporte || 0) + (a.hospedagem || 0) + (a.alimentacao || 0), 0);
   const totalPendente = assignments.filter(a => !a.diariaPaga).reduce((s, a) => s + (a.valorDiaria || 0) + (a.transporte || 0) + (a.hospedagem || 0) + (a.alimentacao || 0), 0);
 
-  const handlePagar = async (id) => {
-    const dt = prompt("Data do pagamento (DD/MM/AAAA):", new Date().toLocaleDateString("pt-BR"));
-    if (!dt) return;
-    const partes = dt.split("/");
-    const dataISO = partes.length === 3 ? `${partes[2]}-${partes[1]}-${partes[0]}` : new Date().toISOString().slice(0, 10);
-    await RefereeAssignmentsService.update(id, { diariaPaga: true, diariaPagaEm: dataISO });
-    const a = assignments.find(x => x.id === id);
+  const handlePagar = (id) => setPixModal(id);
+
+  const confirmarPagar = async (dataISO) => {
+    if (!pixModal || !dataISO) return;
+    setPagando(true);
+    await RefereeAssignmentsService.update(pixModal, { diariaPaga: true, diariaPagaEm: dataISO });
+    const a = assignments.find(x => x.id === pixModal);
     const ref = a && refMap[a.refereeId];
     if (ref?.email && a?.event) {
       const total = (a.valorDiaria || 0) + (a.transporte || 0) + (a.hospedagem || 0) + (a.alimentacao || 0);
       notificarDiariaPaga({ arbitroEmail: ref.email, arbitroNome: ref.name, evento: a.event.title, valor: total }).catch(() => {});
     }
+    setPagando(false);
+    setPixModal(null);
     fetchData();
   };
   const handleDesfazerPago = async (id) => {
@@ -165,6 +170,21 @@ export default function DiariasAdmin() {
           </div>
         )}
       </div>
+      {pixModal && (() => {
+        const a = assignments.find(x => x.id === pixModal);
+        const ref = a && refMap[a.refereeId];
+        const total = a ? (a.valorDiaria || 0) + (a.transporte || 0) + (a.hospedagem || 0) + (a.alimentacao || 0) : 0;
+        return (
+          <PixModal
+            referee={ref}
+            valor={total}
+            descricao={a?.event?.title ? `Diaria ${a.event.title}` : "Diaria"}
+            loading={pagando}
+            onClose={() => setPixModal(null)}
+            onConfirm={confirmarPagar}
+          />
+        );
+      })()}
     </IntranetLayout>
   );
 }

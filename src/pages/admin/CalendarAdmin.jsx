@@ -62,7 +62,7 @@ export function CalendarList() {
   useEffect(() => { load(); }, [load]);
 
   const handleDelete = async (id) => {
-    if (!confirm("Excluir este evento permanentemente?")) return;
+    if (!confirm("Excluir este evento e todos os registros relacionados (arbitragem, resultados, etc.) permanentemente?")) return;
     try {
       const ev = items.find(e => e.id === id);
       if (ev) {
@@ -71,7 +71,7 @@ export function CalendarList() {
           [m.permitFileUrl, m.resultsFileUrl].filter(Boolean).forEach(url => deleteFile(url).catch(() => {}));
         });
       }
-      await CalendarService.delete(id);
+      await CalendarService.deleteCascade(id, deleteFile);
       load();
     } catch (err) {
       console.error("Erro ao excluir evento:", err);
@@ -94,7 +94,7 @@ export function CalendarList() {
   const handleBulkDelete = async (ids) => {
     const count = ids.length;
     if (!count) return;
-    if (!confirm(`Excluir ${count} evento(s) permanentemente?`)) return;
+    if (!confirm(`Excluir ${count} evento(s) e todos os registros relacionados permanentemente?`)) return;
     setBulkDeleting(true);
     for (const id of ids) {
       const ev = items.find(e => e.id === id);
@@ -104,7 +104,7 @@ export function CalendarList() {
           [m.permitFileUrl, m.resultsFileUrl].filter(Boolean).forEach(url => deleteFile(url).catch(() => {}));
         });
       }
-      await CalendarService.delete(id).catch(() => {});
+      await CalendarService.deleteCascade(id, deleteFile).catch(() => {});
     }
     setSelected(new Set());
     setBulkDeleting(false);
