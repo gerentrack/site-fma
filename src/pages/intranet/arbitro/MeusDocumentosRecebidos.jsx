@@ -284,12 +284,12 @@ export default function MeusDocumentosRecebidos() {
 
                 {destTipo === "nivel" && (
                   <div style={{ display: "flex", gap: 12 }}>
-                    {["A", "B", "C", "NI"].map(n => (
-                      <label key={n} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13 }}>
-                        <input type="checkbox" checked={destNiveis.includes(n)}
-                          onChange={e => setDestNiveis(prev => e.target.checked ? [...prev, n] : prev.filter(x => x !== n))}
+                    {[{v:"A",l:"A"},{v:"B",l:"B"},{v:"C",l:"C"},{v:"NI",l:"NAR"}].map(n => (
+                      <label key={n.v} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13 }}>
+                        <input type="checkbox" checked={destNiveis.includes(n.v)}
+                          onChange={e => setDestNiveis(prev => e.target.checked ? [...prev, n.v] : prev.filter(x => x !== n.v))}
                           style={{ accentColor: COLORS.primary }} />
-                        Nivel {n}
+                        Nivel {n.l}
                       </label>
                     ))}
                   </div>

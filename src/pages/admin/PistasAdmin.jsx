@@ -58,7 +58,7 @@ export function PistasList() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <div>
             <h1 style={{ fontFamily: FONTS.heading, fontWeight: 800, fontSize: 26, textTransform: "uppercase", color: COLORS.dark, margin: 0 }}>
-              🔵 Pistas Homologadas
+              Pistas Homologadas
             </h1>
             <p style={{ color: COLORS.gray, fontSize: 13, margin: "4px 0 0" }}>Gerenciar pistas e percursos homologados pela FMA</p>
           </div>
@@ -78,7 +78,7 @@ export function PistasList() {
           <div style={{ textAlign: "center", padding: 40, color: COLORS.gray }}>Carregando…</div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: 40, color: COLORS.gray }}>
-            <div style={{ fontSize: 32, marginBottom: 8 }}>🔵</div>
+            <div style={{ marginBottom: 8 }}></div>
             <div>Nenhuma pista cadastrada ainda.</div>
             <button onClick={() => navigate("/admin/pistas/novo")}
               style={{ marginTop: 16, padding: "8px 20px", background: COLORS.primary, color: "#fff", border: "none", borderRadius: 8, fontFamily: FONTS.heading, fontWeight: 700, cursor: "pointer" }}>

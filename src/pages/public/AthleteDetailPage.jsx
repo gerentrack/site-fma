@@ -18,6 +18,7 @@ import { COLORS, FONTS } from "../../styles/colors";
 import { AthleteContentService } from "../../services/index";
 import { ATHLETE_CONTENT_CATEGORIES } from "../../config/navigation";
 import PdfModal, { usePdfModal } from "../../components/ui/PdfModal";
+import Icon from "../../utils/icons";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -58,7 +59,7 @@ function DownloadButton({ href, label, onView }) {
       onMouseEnter={e => (e.currentTarget.style.background = "#990000")}
       onMouseLeave={e => (e.currentTarget.style.background = COLORS.primary)}
     >
-      <span style={{ fontSize: 18 }}>📎</span>
+      <Icon name="Download" size={18} />
       {label || "Visualizar Documento"}
     </button>
   );
@@ -98,7 +99,7 @@ function ExternalButton({ href }) {
         e.currentTarget.style.color = COLORS.primary;
       }}
     >
-      <span style={{ fontSize: 18 }}>🔗</span>
+      <Icon name="ExternalLink" size={18} />
       Acessar Link Externo
     </a>
   );
@@ -132,7 +133,7 @@ function RelatedCard({ item }) {
         }}
       >
         <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark, lineHeight: 1.3 }}>
-          {item.featured && <span style={{ color: "#f59e0b", marginRight: 4 }}>⭐</span>}
+          {item.featured && <span style={{ color: "#f59e0b", marginRight: 4 }}><Icon name="Star" size={12} /></span>}
           {item.title}
         </div>
         {item.summary && (
@@ -144,8 +145,8 @@ function RelatedCard({ item }) {
           </div>
         )}
         <div style={{ marginTop: 6, display: "flex", gap: 4, fontSize: 12 }}>
-          {item.fileUrl && <span title="Arquivo disponível">📎</span>}
-          {item.externalLink && <span title="Link externo">🔗</span>}
+          {item.fileUrl && <span title="Arquivo disponível"><Icon name="Download" size={12} /></span>}
+          {item.externalLink && <span title="Link externo"><Icon name="ExternalLink" size={12} /></span>}
         </div>
       </div>
     </Link>
@@ -192,7 +193,7 @@ export default function AthleteDetailPage() {
   if (status === "loading") {
     return (
       <div style={{ padding: "80px 24px", textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray }}>
-        ⏳ Carregando...
+        Carregando...
       </div>
     );
   }
@@ -201,7 +202,7 @@ export default function AthleteDetailPage() {
   if (status === "notfound") {
     return (
       <div style={{ padding: "80px 24px", textAlign: "center" }}>
-        <div style={{ fontSize: 52, marginBottom: 14 }}>🏃</div>
+        <div style={{ marginBottom: 14 }}></div>
         <h1 style={{ fontFamily: FONTS.heading, fontSize: 28, color: COLORS.primary, textTransform: "uppercase", margin: "0 0 10px" }}>
           Conteúdo não encontrado
         </h1>
@@ -218,7 +219,7 @@ export default function AthleteDetailPage() {
     );
   }
 
-  const cat = catMap[item.category] || { color: COLORS.primary, icon: "📋", label: item.category };
+  const cat = catMap[item.category] || { color: COLORS.primary, icon: "ClipboardList", label: item.category };
 
   return (
     <div>
@@ -259,7 +260,7 @@ export default function AthleteDetailPage() {
               fontFamily: FONTS.heading, fontWeight: 700,
               background: `${cat.color}cc`, color: "#fff",
             }}>
-              {cat.icon} {cat.label}
+              <Icon name={cat.icon} size={12} /> {cat.label}
             </span>
             {item.featured && (
               <span style={{
@@ -267,7 +268,7 @@ export default function AthleteDetailPage() {
                 fontFamily: FONTS.heading, fontWeight: 700,
                 background: "#f59e0b", color: "#fff",
               }}>
-                ⭐ Destaque
+                Destaque
               </span>
             )}
           </div>
@@ -410,7 +411,7 @@ export default function AthleteDetailPage() {
                   fontFamily: FONTS.heading, fontWeight: 700,
                   background: `${cat.color}15`, color: cat.color,
                 }}>
-                  {cat.icon} {cat.label}
+                  <Icon name={cat.icon} size={12} /> {cat.label}
                 </span>
               </div>
 
@@ -438,7 +439,7 @@ export default function AthleteDetailPage() {
                         onClick={() => openPdf(item.fileUrl, item.fileLabel || "Documento")}
                         style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 7, background: `${COLORS.primary}10`, color: COLORS.primary, border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, width: "100%" }}
                       >
-                        📎 {item.fileLabel || "Visualizar Documento"}
+                        <Icon name="Download" size={14} /> {item.fileLabel || "Visualizar Documento"}
                       </button>
                     )}
                     {item.externalLink && (
@@ -448,7 +449,7 @@ export default function AthleteDetailPage() {
                         rel="noreferrer"
                         style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 7, background: `${COLORS.grayLight}`, color: COLORS.dark, textDecoration: "none", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}
                       >
-                        🔗 Acessar Link Externo
+                        <Icon name="ExternalLink" size={14} /> Acessar Link Externo
                       </a>
                     )}
                   </div>
@@ -471,7 +472,7 @@ export default function AthleteDetailPage() {
                 color: COLORS.dark, margin: "0 0 14px",
                 paddingBottom: 10, borderBottom: `1px solid ${COLORS.grayLight}`,
               }}>
-                {cat.icon} Outros em "{cat.label}"
+                <Icon name={cat.icon} size={12} /> Outros em "{cat.label}"
               </h3>
               {related.map(r => (
                 <RelatedCard key={r.id} item={r} />

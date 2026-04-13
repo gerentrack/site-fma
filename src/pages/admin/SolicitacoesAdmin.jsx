@@ -147,9 +147,11 @@ export function SolicitacoesList() {
         else if (arq.url?.includes("firebasestorage.googleapis.com")) await deleteFile(arq.url).catch(() => {});
         await ArquivosService.delete(arq.id).catch(() => {});
       }
-      // 2. Excluir movimentações do Firestore
+      // 2. Excluir pagamentos do Firestore
+      await PagamentosService.deleteBySolicitacao(id).catch(() => {});
+      // 3. Excluir movimentações do Firestore
       await MovimentacoesService.deleteBySolicitacao(id).catch(() => {});
-      // 3. Excluir a solicitação do Firestore
+      // 4. Excluir a solicitação do Firestore
       await SolicitacoesService.delete(id).catch(() => {});
     }
     setSelected(new Set());

@@ -133,43 +133,43 @@ export const PUBLIC_NAV = [
  */
 export const ADMIN_NAV = [
   // ── Visão geral ──
-  { label: "Dashboard",              icon: "📊", path: "/admin",                   minLevel: "viewer" },
+  { label: "Dashboard",              icon: "BarChart3", path: "/admin",                   minLevel: "viewer" },
 
   // ── Conteúdo editorial ──
-  { label: "Notícias",               icon: "📰", path: "/admin/noticias",          minLevel: "editor", section: "noticias",       group: "Conteúdo" },
-  { label: "Calendário",             icon: "🗓️", path: "/admin/calendario",        minLevel: "editor", section: "calendario" },
-  { label: "Resultados",             icon: "🏆", path: "/admin/resultados",        minLevel: "editor", section: "resultados" },
-  { label: "Galeria",                icon: "📷", path: "/admin/galeria",           minLevel: "editor", section: "galeria" },
-  { label: "Documentos",             icon: "📄", path: "/admin/documentos",        minLevel: "editor", section: "documentos" },
-  { label: "Páginas Institucionais", icon: "🏛️", path: "/admin/institucional",     minLevel: "editor", section: "institucional" },
-  { label: "Equipes",                icon: "🏃", path: "/admin/equipes",           minLevel: "editor", section: "equipes" },
-  { label: "Banners",                icon: "🖼️", path: "/admin/banners",           minLevel: "editor", section: "banners" },
-  { label: "Pistas Homologadas",     icon: "🔵", path: "/admin/pistas",            minLevel: "editor", section: "pistas" },
-  { label: "Conteúdo de Atletas",    icon: "👟", path: "/admin/atletas",           minLevel: "editor", section: "atletas" },
-  { label: "Conteúdo de Árbitros",   icon: "⚖️", path: "/admin/arbitros-conteudo", minLevel: "editor", section: "arbitros" },
+  { label: "Notícias",               icon: "Newspaper", path: "/admin/noticias",          minLevel: "editor", section: "noticias",       group: "Conteúdo" },
+  { label: "Calendário",             icon: "Calendar", path: "/admin/calendario",        minLevel: "editor", section: "calendario" },
+  { label: "Resultados",             icon: "Trophy", path: "/admin/resultados",        minLevel: "editor", section: "resultados" },
+  { label: "Galeria",                icon: "Camera", path: "/admin/galeria",           minLevel: "editor", section: "galeria" },
+  { label: "Documentos",             icon: "FileText", path: "/admin/documentos",        minLevel: "editor", section: "documentos" },
+  { label: "Páginas Institucionais", icon: "Landmark", path: "/admin/institucional",     minLevel: "editor", section: "institucional" },
+  { label: "Equipes",                icon: "PersonStanding", path: "/admin/equipes",           minLevel: "editor", section: "equipes" },
+  { label: "Banners",                icon: "Image", path: "/admin/banners",           minLevel: "editor", section: "banners" },
+  { label: "Pistas Homologadas",     icon: "MapPinned", path: "/admin/pistas",            minLevel: "editor", section: "pistas" },
+  { label: "Conteúdo de Atletas",    icon: "Footprints", path: "/admin/atletas",           minLevel: "editor", section: "atletas" },
+  { label: "Conteúdo de Árbitros",   icon: "Scale", path: "/admin/arbitros-conteudo", minLevel: "editor", section: "arbitros" },
 
   // ── Site ──
-  { label: "Parceiros",              icon: "🤝", path: "/admin/parceiros",         minLevel: "editor", section: "parceiros",      group: "Site" },
-  { label: "Redes Sociais",          icon: "📱", path: "/admin/redes-sociais",     minLevel: "editor", section: "redes" },
-  { label: "Rodapé",                 icon: "⚙️", path: "/admin/rodape",            minLevel: "editor", section: "rodape" },
-  { label: "Importar Calendário",    icon: "📥", path: "/admin/importar",          minLevel: "editor", section: "calendario" },
+  { label: "Parceiros",              icon: "Handshake", path: "/admin/parceiros",         minLevel: "editor", section: "parceiros",      group: "Site" },
+  { label: "Redes Sociais",          icon: "Smartphone", path: "/admin/redes-sociais",     minLevel: "editor", section: "redes" },
+  { label: "Rodapé",                 icon: "Settings", path: "/admin/rodape",            minLevel: "editor", section: "rodape" },
+  { label: "Importar Calendário",    icon: "Download", path: "/admin/importar",          minLevel: "editor", section: "calendario" },
 
   // ── Portal (solicitações / organizadores) ──
-  { label: "Solicitações",           icon: "📋", path: "/admin/solicitacoes",      minLevel: "admin",                             group: "Portal" },
-  { label: "Organizadores",          icon: "🏢", path: "/admin/organizadores",     minLevel: "admin" },
-  { label: "Financeiro",             icon: "💰", path: "/admin/financeiro",        minLevel: "admin" },
+  { label: "Solicitações",           icon: "ClipboardList", path: "/admin/solicitacoes",      minLevel: "admin",                             group: "Portal" },
+  { label: "Organizadores",          icon: "Building2", path: "/admin/organizadores",     minLevel: "admin" },
+  { label: "Financeiro",             icon: "CircleDollarSign", path: "/admin/financeiro",        minLevel: "admin" },
 
   // ── Intranet ──
-  { label: "Árbitros",               icon: "⚖️", path: "/admin/arbitros",          minLevel: "admin",                             group: "Intranet" },
-  { label: "Anuidades",              icon: "💳", path: "/admin/anuidades",         minLevel: "admin" },
-  { label: "Mensagens",              icon: "📨", path: "/admin/mensagens",        minLevel: "admin" },
-  { label: "Escalas",                icon: "📅", path: "/admin/escalas",           minLevel: "admin" },
+  { label: "Árbitros",               icon: "Scale", path: "/admin/arbitros",          minLevel: "admin",                             group: "Intranet" },
+  { label: "Anuidades",              icon: "CreditCard", path: "/admin/anuidades",         minLevel: "admin" },
+  { label: "Mensagens",              icon: "Mail", path: "/admin/mensagens",        minLevel: "admin" },
+  { label: "Escalas",                icon: "CalendarDays", path: "/admin/escalas",           minLevel: "admin" },
 
   // ── Gestão ──
-  { label: "Usuários",               icon: "👤", path: "/admin/usuarios",          minLevel: "admin",                             group: "Gestão" },
-  { label: "Formulários",            icon: "🔧", path: "/admin/formularios",       minLevel: "master" },
-  { label: "Taxas",                  icon: "💲", path: "/admin/taxas",             minLevel: "admin" },
-  { label: "Limpeza do Storage",     icon: "🧹", path: "/admin/storage-cleanup",   minLevel: "master" },
+  { label: "Usuários",               icon: "UserCog", path: "/admin/usuarios",          minLevel: "admin",                             group: "Gestão" },
+  { label: "Formulários",            icon: "Settings", path: "/admin/formularios",       minLevel: "master" },
+  { label: "Taxas",                  icon: "Banknote", path: "/admin/taxas",             minLevel: "admin" },
+  { label: "Limpeza do Storage",     icon: "Trash2", path: "/admin/storage-cleanup",   minLevel: "master" },
 ];
 
 export const QUICK_ACCESS = [
@@ -185,13 +185,13 @@ export const QUICK_ACCESS = [
 // ─── Categorias ───────────────────────────────────────────────────────────────
 
 export const NEWS_CATEGORIES = [
-  { value: "",              label: "Todas",           color: "#6b7280", icon: "📰" },
-  { value: "arbitragem",   label: "Arbitragem",      color: "#cc0000", icon: "⚖️" },
-  { value: "competicao",   label: "Competição",      color: "#0066cc", icon: "🏆" },
-  { value: "atletismo",    label: "Atletismo",       color: "#007733", icon: "🏃" },
-  { value: "corrida",      label: "Corrida de Rua",  color: "#884400", icon: "🏅" },
-  { value: "institucional",label: "Institucional",   color: "#5a3e8a", icon: "🏛️" },
-  { value: "geral",        label: "Geral",           color: "#374151", icon: "📋" },
+  { value: "",              label: "Todas",           color: "#6b7280", icon: "Newspaper" },
+  { value: "arbitragem",   label: "Arbitragem",      color: "#cc0000", icon: "Scale" },
+  { value: "competicao",   label: "Competição",      color: "#0066cc", icon: "Trophy" },
+  { value: "atletismo",    label: "Atletismo",       color: "#007733", icon: "PersonStanding" },
+  { value: "corrida",      label: "Corrida de Rua",  color: "#884400", icon: "Medal" },
+  { value: "institucional",label: "Institucional",   color: "#5a3e8a", icon: "Landmark" },
+  { value: "geral",        label: "Geral",           color: "#374151", icon: "ClipboardList" },
 ];
 
 export const CALENDAR_CATEGORIES = [
@@ -229,21 +229,21 @@ export const DOCUMENT_CATEGORIES = [
 ];
 
 export const REFEREE_CONTENT_CATEGORIES = [
-  { value: "",              label: "Todos",               color: "#6b7280", icon: "📋" },
-  { value: "cadastro",      label: "Cadastro",            color: "#cc0000", icon: "📝" },
-  { value: "disponibilidade",label: "Disponibilidade",   color: "#0066cc", icon: "📅" },
-  { value: "formulario",    label: "Formulários",         color: "#007733", icon: "📄" },
-  { value: "documento",     label: "Documentos",          color: "#5a3e00", icon: "🗂️" },
-  { value: "comunicado",    label: "Comunicados",         color: "#7c3aed", icon: "📢" },
-  { value: "orientacao",    label: "Orientações",         color: "#884400", icon: "📌" },
-  { value: "material",      label: "Materiais e Relatórios", color: "#0891b2", icon: "📊" },
+  { value: "",              label: "Todos",               color: "#6b7280", icon: "ClipboardList" },
+  { value: "cadastro",      label: "Cadastro",            color: "#cc0000", icon: "Pencil" },
+  { value: "disponibilidade",label: "Disponibilidade",   color: "#0066cc", icon: "CalendarDays" },
+  { value: "formulario",    label: "Formulários",         color: "#007733", icon: "FileText" },
+  { value: "documento",     label: "Documentos",          color: "#5a3e00", icon: "FolderOpen" },
+  { value: "comunicado",    label: "Comunicados",         color: "#7c3aed", icon: "Megaphone" },
+  { value: "orientacao",    label: "Orientações",         color: "#884400", icon: "Flag" },
+  { value: "material",      label: "Materiais e Relatórios", color: "#0891b2", icon: "BarChart3" },
 ];
 
 export const REFEREE_CATEGORIES = [
   { value: "A",   label: "Nível A", color: "#cc0000" },
   { value: "B",   label: "Nível B", color: "#0066cc" },
   { value: "C",   label: "Nível C", color: "#007733" },
-  { value: "NI",  label: "NI",      color: "#884400" },
+  { value: "NI",  label: "NAR",     color: "#884400" },
 ];
 
 export const REFEREE_LEVELS = REFEREE_CATEGORIES;
@@ -269,64 +269,64 @@ export const REFEREE_FUNCTIONS = [
 
 export const INTRANET_NAV_ARBITRO = [
   // ── Início ──
-  { label: "Inicio",                icon: "🏠", path: "/intranet" },
+  { label: "Inicio",                icon: "Home", path: "/intranet" },
   // ── Minha Arbitragem ──
-  { label: "Disponibilidade",       icon: "📅", path: "/intranet/disponibilidade",  group: "Minha Arbitragem" },
-  { label: "Minhas Escalas",        icon: "📋", path: "/intranet/escalas" },
-  { label: "Historico",             icon: "📊", path: "/intranet/historico" },
-  { label: "Mapa",                  icon: "🗺️", path: "/intranet/mapa" },
-  { label: "Calendario",            icon: "🗓️", path: "/intranet/calendario" },
-  { label: "Meus Reembolsos",       icon: "🧾", path: "/intranet/reembolsos" },
+  { label: "Disponibilidade",       icon: "CalendarDays", path: "/intranet/disponibilidade",  group: "Minha Arbitragem" },
+  { label: "Minhas Escalas",        icon: "ClipboardList", path: "/intranet/escalas" },
+  { label: "Historico",             icon: "BarChart3", path: "/intranet/historico" },
+  { label: "Mapa",                  icon: "Map", path: "/intranet/mapa" },
+  { label: "Calendario",            icon: "Calendar", path: "/intranet/calendario" },
+  { label: "Meus Reembolsos",       icon: "Receipt", path: "/intranet/reembolsos" },
   // ── Comunicacao ──
-  { label: "Mensagens",             icon: "📨", path: "/intranet/mensagens",        group: "Comunicacao" },
-  { label: "Documentos",            icon: "📄", path: "/intranet/documentos" },
+  { label: "Mensagens",             icon: "Mail", path: "/intranet/mensagens",        group: "Comunicacao" },
+  { label: "Documentos",            icon: "FileText", path: "/intranet/documentos" },
   // ── Minha Conta ──
-  { label: "Meus Dados",            icon: "👤", path: "/intranet/perfil",           group: "Minha Conta" },
-  { label: "Minha Anuidade",        icon: "💳", path: "/intranet/anuidade" },
-  { label: "Privacidade (LGPD)",    icon: "🔒", path: "/intranet/lgpd" },
+  { label: "Meus Dados",            icon: "UserCog", path: "/intranet/perfil",           group: "Minha Conta" },
+  { label: "Minha Anuidade",        icon: "CreditCard", path: "/intranet/anuidade" },
+  { label: "Privacidade (LGPD)",    icon: "Shield", path: "/intranet/lgpd" },
 ];
 
 export const INTRANET_NAV_ADMIN = [
   // ── Início ──
-  { label: "Inicio",                icon: "🏠", path: "/intranet" },
+  { label: "Inicio",                icon: "Home", path: "/intranet" },
   // ── Minha Arbitragem ──
-  { label: "Disponibilidade",       icon: "📅", path: "/intranet/disponibilidade",  group: "Minha Arbitragem" },
-  { label: "Minhas Escalas",        icon: "📋", path: "/intranet/escalas" },
-  { label: "Meus Reembolsos",       icon: "🧾", path: "/intranet/reembolsos" },
+  { label: "Disponibilidade",       icon: "CalendarDays", path: "/intranet/disponibilidade",  group: "Minha Arbitragem" },
+  { label: "Minhas Escalas",        icon: "ClipboardList", path: "/intranet/escalas" },
+  { label: "Meus Reembolsos",       icon: "Receipt", path: "/intranet/reembolsos" },
   // ── Gestao de Eventos ──
-  { label: "Eventos",               icon: "🗓️", path: "/intranet/admin/eventos",    group: "Gestao" },
-  { label: "Escalacao",             icon: "📋", path: "/intranet/admin/escalacao" },
-  { label: "Historico",             icon: "📊", path: "/intranet/admin/historico" },
+  { label: "Eventos",               icon: "Calendar", path: "/intranet/admin/eventos",    group: "Gestao" },
+  { label: "Escalacao",             icon: "ClipboardList", path: "/intranet/admin/escalacao" },
+  { label: "Historico",             icon: "BarChart3", path: "/intranet/admin/historico" },
   // ── Gestao de Arbitros ──
-  { label: "Arbitros",              icon: "👥", path: "/intranet/admin/arbitros",    group: "Arbitros" },
-  { label: "Avaliacoes",            icon: "⭐", path: "/intranet/admin/avaliacoes" },
+  { label: "Arbitros",              icon: "Users", path: "/intranet/admin/arbitros",    group: "Arbitros" },
+  { label: "Avaliacoes",            icon: "Star", path: "/intranet/admin/avaliacoes" },
   // ── Financeiro ──
-  { label: "Financeiro",            icon: "💰", path: "/intranet/admin/financeiro",  group: "Financeiro" },
-  { label: "Pagamentos",            icon: "💵", path: "/intranet/admin/pagamentos" },
-  { label: "Anuidades",             icon: "💳", path: "/intranet/admin/anuidades" },
+  { label: "Financeiro",            icon: "CircleDollarSign", path: "/intranet/admin/financeiro",  group: "Financeiro" },
+  { label: "Pagamentos",            icon: "Banknote", path: "/intranet/admin/pagamentos" },
+  { label: "Anuidades",             icon: "CreditCard", path: "/intranet/admin/anuidades" },
   // ── Relatorios ──
-  { label: "Relatorios Arbitragem", icon: "📝", path: "/intranet/admin/relatorios-arbitragem", group: "Relatorios" },
-  { label: "Relatorio Arbitros",    icon: "📑", path: "/intranet/admin/relatorio" },
-  { label: "Indicadores",           icon: "📈", path: "/intranet/admin/indicadores" },
+  { label: "Relatorios Arbitragem", icon: "Pencil", path: "/intranet/admin/relatorios-arbitragem", group: "Relatorios" },
+  { label: "Relatorio Arbitros",    icon: "FileSpreadsheet", path: "/intranet/admin/relatorio" },
+  { label: "Indicadores",           icon: "TrendingUp", path: "/intranet/admin/indicadores" },
   // ── Comunicacao ──
-  { label: "Mensagens",             icon: "📨", path: "/intranet/mensagens",        group: "Comunicacao" },
-  { label: "Mural de Avisos",       icon: "📌", path: "/intranet/admin/mural" },
-  { label: "Documentos",            icon: "📄", path: "/intranet/documentos" },
+  { label: "Mensagens",             icon: "Mail", path: "/intranet/mensagens",        group: "Comunicacao" },
+  { label: "Mural de Avisos",       icon: "Flag", path: "/intranet/admin/mural" },
+  { label: "Documentos",            icon: "FileText", path: "/intranet/documentos" },
   // ── Minha Conta ──
-  { label: "Meus Dados",            icon: "👤", path: "/intranet/perfil",           group: "Minha Conta" },
-  { label: "Minha Anuidade",        icon: "💳", path: "/intranet/anuidade" },
-  { label: "Privacidade (LGPD)",    icon: "🔒", path: "/intranet/lgpd" },
+  { label: "Meus Dados",            icon: "UserCog", path: "/intranet/perfil",           group: "Minha Conta" },
+  { label: "Minha Anuidade",        icon: "CreditCard", path: "/intranet/anuidade" },
+  { label: "Privacidade (LGPD)",    icon: "Shield", path: "/intranet/lgpd" },
 ];
 
 export const ATHLETE_CONTENT_CATEGORIES = [
-  { value: "",             label: "Todos",                  color: "#6b7280", icon: "📋" },
-  { value: "cadastro",     label: "Cadastro de Atletas",    color: "#cc0000", icon: "📝" },
-  { value: "cancelamento", label: "Cancelamento",           color: "#884400", icon: "❌" },
-  { value: "lista",        label: "Lista de Atletas",       color: "#0066cc", icon: "👥" },
-  { value: "orientacao",   label: "Orientações",            color: "#007733", icon: "📌" },
-  { value: "documento",    label: "Documentos",             color: "#5a3e00", icon: "📄" },
-  { value: "comunicado",   label: "Comunicados",            color: "#7c3aed", icon: "📢" },
-  { value: "link",         label: "Links Úteis",            color: "#0891b2", icon: "🔗" },
+  { value: "",             label: "Todos",                  color: "#6b7280", icon: "ClipboardList" },
+  { value: "cadastro",     label: "Cadastro de Atletas",    color: "#cc0000", icon: "Pencil" },
+  { value: "cancelamento", label: "Cancelamento",           color: "#884400", icon: "CircleX" },
+  { value: "lista",        label: "Lista de Atletas",       color: "#0066cc", icon: "Users" },
+  { value: "orientacao",   label: "Orientações",            color: "#007733", icon: "Flag" },
+  { value: "documento",    label: "Documentos",             color: "#5a3e00", icon: "FileText" },
+  { value: "comunicado",   label: "Comunicados",            color: "#7c3aed", icon: "Megaphone" },
+  { value: "link",         label: "Links Úteis",            color: "#0891b2", icon: "Link2" },
 ];
 
 export const ATHLETE_CATEGORIES = [
@@ -340,14 +340,14 @@ export const ATHLETE_CATEGORIES = [
 ];
 
 export const SOCIAL_NETWORKS = [
-  { value: "instagram", label: "Instagram",  icon: "📸" },
-  { value: "facebook",  label: "Facebook",   icon: "👍" },
-  { value: "youtube",   label: "YouTube",    icon: "▶️" },
-  { value: "whatsapp",  label: "WhatsApp",   icon: "💬" },
-  { value: "twitter",   label: "X (Twitter)",icon: "✖️" },
-  { value: "tiktok",    label: "TikTok",     icon: "🎵" },
-  { value: "linkedin",  label: "LinkedIn",   icon: "💼" },
-  { value: "outro",     label: "Outro",      icon: "🔗" },
+  { value: "instagram", label: "Instagram",  icon: "Camera" },
+  { value: "facebook",  label: "Facebook",   icon: "Heart" },
+  { value: "youtube",   label: "YouTube",    icon: "Play" },
+  { value: "whatsapp",  label: "WhatsApp",   icon: "MessageSquare" },
+  { value: "twitter",   label: "X (Twitter)",icon: "X" },
+  { value: "tiktok",    label: "TikTok",     icon: "Play" },
+  { value: "linkedin",  label: "LinkedIn",   icon: "Building" },
+  { value: "outro",     label: "Outro",      icon: "Globe" },
 ];
 
 // ─── Portal de Solicitações ───────────────────────────────────────────────────
@@ -429,8 +429,8 @@ export const LGPD_RETENCAO = {
 };
 
 export const ARQUIVO_CATEGORIAS = [
-  { value: "obrigatorio",   label: "Documento Obrigatório", icon: "📌", color: "#cc0000" },
-  { value: "complementar",  label: "Documento Complementar", icon: "📎", color: "#6b7280" },
-  { value: "resposta_fma",  label: "Documento FMA",          icon: "🏛️", color: "#0066cc" },
-  { value: "resultado",    label: "Resultado",              icon: "📊", color: "#7c3aed" },
+  { value: "obrigatorio",   label: "Documento Obrigatório", icon: "Flag", color: "#cc0000" },
+  { value: "complementar",  label: "Documento Complementar", icon: "FileUp", color: "#6b7280" },
+  { value: "resposta_fma",  label: "Documento FMA",          icon: "Landmark", color: "#0066cc" },
+  { value: "resultado",    label: "Resultado",              icon: "BarChart3", color: "#7c3aed" },
 ];

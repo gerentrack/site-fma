@@ -2,13 +2,15 @@
  * StorageCleanup.jsx — Ferramenta de limpeza Firebase (Storage + Firestore).
  * Rota: /admin/storage-cleanup
  *
- * Aba "Storage":    arquivos no Storage sem referência no Firestore (órfãos)
- * Aba "Firestore":  documentos no Firestore com URLs de Storage que não existem mais (referências quebradas)
+ * Aba "Storage":       arquivos no Storage sem referência no Firestore (órfãos)
+ * Aba "Firestore":     documentos no Firestore com URLs de Storage que não existem mais (referências quebradas)
+ * Aba "Docs Órfãos":   documentos filhos (pagamentos, movimentações, arquivos) cuja solicitação não existe mais
  */
 import { useState } from "react";
 import { ref, listAll, getDownloadURL, deleteObject, getMetadata } from "firebase/storage";
-import { collection, getDocs, doc as docRef, updateDoc } from "firebase/firestore";
+import { collection, getDocs, doc as docRef, updateDoc, deleteDoc } from "firebase/firestore";
 import { storage, db } from "../../firebase";
+import { deleteFile } from "../../services/storageService";
 import AdminLayout from "../../components/admin/AdminLayout";
 import { COLORS, FONTS } from "../../styles/colors";
 
@@ -237,7 +239,6 @@ function StorageTab() {
       )}
       {status === "done" && orphans.length === 0 && (
         <div style={{ ...sty.card, textAlign: "center", padding: "48px 24px" }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
           <p style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 700, color: "#15803d", margin: 0 }}>Nenhum arquivo órfão!</p>
         </div>
       )}
@@ -434,8 +435,225 @@ function FirestoreTab() {
       )}
       {status === "done" && broken.length === 0 && (
         <div style={{ ...sty.card, textAlign: "center", padding: "48px 24px" }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
-          <p style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 700, color: "#15803d", margin: 0 }}>Nenhuma referência quebrada!</p>
+          <p style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 700, color: "#15803d", margin: 0 }}>Nenhuma referencia quebrada!</p>
+        </div>
+      )}
+      {log.length > 0 && (
+        <div style={sty.card}>
+          <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, color: COLORS.dark, margin: "0 0 12px", textTransform: "uppercase" }}>Log</h3>
+          <div style={sty.logBox}>{log.join("\n")}</div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ─── Aba Docs Órfãos (pagamentos, movimentações, arquivos sem solicitação) ──
+
+const ORPHAN_COLLECTIONS = [
+  // Filhos de solicitações
+  { col: "solicitacaoArquivos", fk: "solicitacaoId", parent: "solicitacoes", label: "Arquivos de solicitação", hasStorage: true },
+  { col: "pagamentos",         fk: "solicitacaoId", parent: "solicitacoes", label: "Pagamentos",              hasStorage: false },
+  { col: "movimentacoes",      fk: "solicitacaoId", parent: "solicitacoes", label: "Movimentações",           hasStorage: false },
+  // Eventos de arbitragem órfãos (calendarRef → calendar inexistente)
+  { col: "refereeEvents",       fk: "calendarRef", parent: "calendar", label: "Eventos árbitro (sem evento calendário)", hasStorage: false, fkOptional: true },
+  // Filhos de eventos de arbitragem
+  { col: "refereeAssignments",  fk: "eventId", parent: "refereeEvents", label: "Escalações (diárias)",     hasStorage: false },
+  { col: "refereeAvailability", fk: "eventId", parent: "refereeEvents", label: "Disponibilidades árbitro", hasStorage: false },
+  { col: "reembolsos",          fk: "eventId", parent: "refereeEvents", label: "Reembolsos",               hasStorage: false },
+  { col: "relatoriosArbitragem",fk: "eventId", parent: "refereeEvents", label: "Relatórios arbitragem",    hasStorage: false },
+  { col: "diarias",             fk: "eventId", parent: "refereeEvents", label: "Diárias",                  hasStorage: false },
+  { col: "avaliacoes",          fk: "eventId", parent: "refereeEvents", label: "Avaliações",               hasStorage: false },
+];
+
+function OrphanDocsTab() {
+  const [status, setStatus] = useState("idle");
+  const [log, setLog] = useState([]);
+  const [orphans, setOrphans] = useState([]); // { col, docId, fk, label, title, data }
+  const [selected, setSelected] = useState(new Set());
+  const [deleting, setDeleting] = useState(false);
+  const [stats, setStats] = useState(null);
+
+  const addLog = (msg) => setLog(p => [...p, `[${new Date().toLocaleTimeString()}] ${msg}`]);
+
+  const scan = async () => {
+    setStatus("scanning"); setLog([]); setOrphans([]); setSelected(new Set()); setStats(null);
+    try {
+      // Carregar IDs das coleções-pai
+      const parentCols = [...new Set(ORPHAN_COLLECTIONS.map(c => c.parent))];
+      const parentIds = {};
+      for (const p of parentCols) {
+        const snap = await getDocs(collection(db, p));
+        parentIds[p] = new Set(snap.docs.map(d => d.id));
+        addLog(`${p}: ${parentIds[p].size} docs`);
+      }
+
+      let totalDocs = 0;
+      const orphanList = [];
+
+      for (const { col, fk, parent, label, hasStorage, fkOptional } of ORPHAN_COLLECTIONS) {
+        try {
+          const snap = await getDocs(collection(db, col));
+          addLog(`  ${col}: ${snap.size} docs`);
+          totalDocs += snap.size;
+          const ids = parentIds[parent];
+
+          for (const d of snap.docs) {
+            const data = d.data();
+            const refId = data[fk];
+            // Se FK é opcional (ex: refereeEvents manuais sem calendarRef), pular docs sem FK
+            if (!refId) { if (!fkOptional) continue; else continue; }
+            if (!ids.has(refId)) {
+              orphanList.push({
+                col, docId: d.id, fk: refId, label, hasStorage, parent,
+                title: data.nome || data.descricao || data.tipo || data.title || data.event || d.id,
+                storageUrl: data.url || data.storagePath || "",
+              });
+            }
+          }
+        } catch (e) { addLog(`  ${col}: erro - ${e.message}`); }
+      }
+
+      addLog(`Total: ${totalDocs} docs varridos | ${orphanList.length} órfãos`);
+      setOrphans(orphanList);
+      const totalParents = Object.values(parentIds).reduce((s, set) => s + set.size, 0);
+      setStats({ totalDocs, totalOrphans: orphanList.length, totalParents });
+      setStatus("done");
+    } catch (e) { addLog(`ERRO: ${e.message}`); setStatus("error"); }
+  };
+
+  const key = (o) => `${o.col}/${o.docId}`;
+  const toggleSelect = (k) => setSelected(p => { const n = new Set(p); n.has(k) ? n.delete(k) : n.add(k); return n; });
+  const selectAll = () => setSelected(selected.size === orphans.length ? new Set() : new Set(orphans.map(key)));
+
+  // Coleções filhas de refereeEvents para cascata
+  const REF_EVENT_CHILDREN = ["refereeAssignments", "refereeAvailability", "reembolsos", "relatoriosArbitragem", "diarias", "avaliacoes"];
+
+  const deleteSelected = async () => {
+    if (!selected.size || !confirm(`Excluir ${selected.size} documento(s) órfão(s) do Firestore?\nArquivos no Storage também serão removidos.\nAção irreversível.`)) return;
+    setDeleting(true);
+    let deleted = 0;
+    const removedKeys = new Set();
+    for (const o of orphans) {
+      if (!selected.has(key(o))) continue;
+      try {
+        // Se for arquivo com Storage, excluir do Storage primeiro
+        if (o.hasStorage && o.storageUrl) {
+          await deleteFile(o.storageUrl).catch(() => {});
+        }
+        // Se for refereeEvent, excluir filhos em cascata
+        if (o.col === "refereeEvents") {
+          for (const childCol of REF_EVENT_CHILDREN) {
+            const childSnap = await getDocs(collection(db, childCol));
+            const children = childSnap.docs.filter(d => d.data().eventId === o.docId);
+            for (const c of children) {
+              await deleteDoc(docRef(db, childCol, c.id));
+              addLog(`  Cascata: ${childCol}/${c.id}`);
+              deleted++;
+              removedKeys.add(`${childCol}/${c.id}`);
+            }
+          }
+        }
+        await deleteDoc(docRef(db, o.col, o.docId));
+        deleted++;
+        removedKeys.add(key(o));
+        addLog(`Excluído: ${o.col}/${o.docId}`);
+      } catch (e) { addLog(`Erro: ${o.col}/${o.docId} - ${e.message}`); }
+    }
+    addLog(`${deleted} documento(s) excluído(s).`);
+    setOrphans(p => p.filter(o => !selected.has(key(o)) && !removedKeys.has(key(o))));
+    setSelected(new Set()); setDeleting(false);
+  };
+
+  // Agrupar por coleção para exibição
+  const grouped = ORPHAN_COLLECTIONS.map(c => ({
+    ...c,
+    items: orphans.filter(o => o.col === c.col),
+  })).filter(g => g.items.length > 0);
+
+  return (
+    <>
+      <p style={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.gray, margin: "0 0 20px" }}>
+        Documentos no Firestore (pagamentos, movimentações, arquivos) cuja <strong>solicitação não existe mais</strong>.
+      </p>
+      <div style={{ marginBottom: 24 }}>
+        <button onClick={scan} disabled={status === "scanning"}
+          style={{ ...sty.btn, background: "#7c3aed", color: "#fff", opacity: status === "scanning" ? 0.6 : 1 }}>
+          {status === "scanning" ? "Varrendo..." : "Iniciar Varredura"}
+        </button>
+      </div>
+      {stats && (
+        <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
+          {[
+            { label: "Docs-pai ativos", value: stats.totalParents, color: COLORS.dark },
+            { label: "Docs filhos varridos", value: stats.totalDocs, color: "#7c3aed" },
+            { label: "Órfãos", value: stats.totalOrphans, color: stats.totalOrphans > 0 ? "#dc2626" : "#15803d" },
+          ].map((s, i) => (
+            <div key={i} style={{ ...sty.card, flex: 1, textAlign: "center", marginBottom: 0 }}>
+              <div style={{ fontFamily: FONTS.heading, fontSize: 32, fontWeight: 900, color: s.color }}>{s.value}</div>
+              <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      {orphans.length > 0 && (
+        <div style={sty.card}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <h2 style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 800, color: COLORS.dark, margin: 0, textTransform: "uppercase" }}>
+              Documentos órfãos ({orphans.length})
+            </h2>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={selectAll} style={{ ...sty.btnSm, background: COLORS.grayLight, color: COLORS.dark }}>
+                {selected.size === orphans.length ? "Desmarcar" : "Selecionar todos"}
+              </button>
+              <button onClick={deleteSelected} disabled={!selected.size || deleting}
+                style={{ ...sty.btnSm, background: selected.size ? "#dc2626" : COLORS.grayLight, color: selected.size ? "#fff" : COLORS.gray }}>
+                {deleting ? "Excluindo..." : `Excluir (${selected.size})`}
+              </button>
+            </div>
+          </div>
+          <div style={{ maxHeight: 500, overflow: "auto" }}>
+            {grouped.map(g => (
+              <div key={g.col} style={{ marginBottom: 20 }}>
+                <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, color: "#7c3aed", margin: "0 0 8px", textTransform: "uppercase" }}>
+                  {g.label} ({g.items.length})
+                </h3>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: FONTS.body, fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ borderBottom: `2px solid ${COLORS.grayLight}`, textAlign: "left" }}>
+                      <th style={{ ...sty.th, width: 32 }}></th>
+                      <th style={sty.th}>Doc ID</th>
+                      <th style={sty.th}>Descrição</th>
+                      <th style={sty.th}>Pai inexistente</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {g.items.map(o => {
+                      const k = key(o);
+                      return (
+                        <tr key={k} onClick={() => toggleSelect(k)}
+                          style={{ borderBottom: `1px solid ${COLORS.grayLight}`, cursor: "pointer", background: selected.has(k) ? "#fff5f5" : "transparent" }}>
+                          <td style={{ padding: "8px 6px" }}><input type="checkbox" checked={selected.has(k)} readOnly /></td>
+                          <td style={{ padding: "8px 6px", color: COLORS.dark, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 11, fontFamily: "monospace" }}
+                            title={o.docId}>{o.docId}</td>
+                          <td style={{ padding: "8px 6px", color: COLORS.dark }}>{o.title}</td>
+                          <td style={{ padding: "8px 6px", fontSize: 11, color: "#dc2626", fontFamily: "monospace" }}
+                            title={`${o.parent}/${o.fk}`}>
+                            <span style={{ color: COLORS.gray }}>{o.parent}/</span>{o.fk.substring(0, 16)}...
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {status === "done" && orphans.length === 0 && (
+        <div style={{ ...sty.card, textAlign: "center", padding: "48px 24px" }}>
+          <p style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 700, color: "#15803d", margin: 0 }}>Nenhum documento orfao!</p>
         </div>
       )}
       {log.length > 0 && (
@@ -476,11 +694,14 @@ export default function StorageCleanup() {
         </h1>
 
         <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: `1px solid ${COLORS.grayLight}` }}>
-          {tabBtn("storage", "Storage", "🗄️", COLORS.primary)}
-          {tabBtn("firestore", "Firestore", "🗃️", "#0066cc")}
+          {tabBtn("storage", "Storage", "", COLORS.primary)}
+          {tabBtn("firestore", "Firestore", "", "#0066cc")}
+          {tabBtn("orphans", "Docs Orfaos", "", "#7c3aed")}
         </div>
 
-        {tab === "storage" ? <StorageTab /> : <FirestoreTab />}
+        {tab === "storage" && <StorageTab />}
+        {tab === "firestore" && <FirestoreTab />}
+        {tab === "orphans" && <OrphanDocsTab />}
       </div>
     </AdminLayout>
   );

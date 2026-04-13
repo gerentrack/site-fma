@@ -63,7 +63,7 @@ export async function gerarDeclaracaoArbitroPdf(dados) {
 
   // Corpo
   pdf.setFontSize(11); pdf.setFont("helvetica", "normal");
-  const nivelLabel = { A: "Nivel A", B: "Nivel B", C: "Nivel C", NI: "NI" }[dados.nivel] || dados.nivel;
+  const nivelLabel = { A: "Nivel A", B: "Nivel B", C: "Nivel C", NI: "NAR" }[dados.nivel] || dados.nivel;
 
   const texto = `Declaramos, para os devidos fins, que ${dados.nome}, inscrito(a) no CPF sob o n. ${maskCpf(dados.cpf)}, e arbitro(a) registrado(a) junto a Federacao Mineira de Atletismo, classificado(a) no ${nivelLabel}${dados.registroCbat ? `, com registro CBAT n. ${dados.registroCbat}` : ""}.`;
 

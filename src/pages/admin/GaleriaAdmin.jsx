@@ -11,14 +11,15 @@ import AdminLayout from "../../components/admin/AdminLayout";
 import { GalleryService } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
 import { deleteFile } from "../../services/storageService";
+import Icon from "../../utils/icons";
 
 // ─── Categorias ───────────────────────────────────────────────────────────────
 const CATS = [
-  { value: "corrida",       label: "🏅 Corridas de Rua" },
-  { value: "pista",         label: "🏟️ Pista e Campo"   },
-  { value: "trail",         label: "🏔️ Trail Run"        },
-  { value: "institucional", label: "🏛️ Institucional"    },
-  { value: "outro",         label: "📷 Outro"             },
+  { value: "corrida",       label: "Corridas de Rua" },
+  { value: "pista",         label: "Pista e Campo"   },
+  { value: "trail",         label: "Trail Run"        },
+  { value: "institucional", label: "Institucional"    },
+  { value: "outro",         label: "Outro"             },
 ];
 const catLabel = (v) => CATS.find(c => c.value === v)?.label || v;
 
@@ -85,7 +86,7 @@ export function GaleriaList() {
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
           <div>
-            <h1 style={{ fontFamily: FONTS.heading, fontSize: 26, fontWeight: 900, color: COLORS.dark, textTransform: "uppercase", margin: 0 }}>📷 Galeria de Fotos</h1>
+            <h1 style={{ fontFamily: FONTS.heading, fontSize: 26, fontWeight: 900, color: COLORS.dark, textTransform: "uppercase", margin: 0 }}>Galeria de Fotos</h1>
             <p style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, margin: "4px 0 0" }}>{items.length} álbum{items.length !== 1 ? "ns" : ""} cadastrado{items.length !== 1 ? "s" : ""}</p>
           </div>
           <button onClick={() => navigate("/admin/galeria/novo")} style={{ padding: "11px 22px", borderRadius: 8, border: "none", background: COLORS.primary, color: "#fff", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer", textTransform: "uppercase" }}>
@@ -107,10 +108,9 @@ export function GaleriaList() {
         </div>
 
         {loading ? (
-          <div style={{ textAlign: "center", padding: 60, fontFamily: FONTS.body, color: COLORS.gray }}>⏳ Carregando...</div>
+          <div style={{ textAlign: "center", padding: 60, fontFamily: FONTS.body, color: COLORS.gray }}>Carregando...</div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: "56px 24px", background: "#fff", borderRadius: 12 }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
             <p style={{ fontFamily: FONTS.heading, fontSize: 16, color: COLORS.gray }}>Nenhum álbum encontrado.</p>
             <button onClick={() => navigate("/admin/galeria/novo")} style={{ marginTop: 14, padding: "10px 22px", borderRadius: 8, border: "none", background: COLORS.primary, color: "#fff", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Criar álbum</button>
           </div>
@@ -129,7 +129,7 @@ export function GaleriaList() {
                   {album.cover ? (
                     <img src={album.cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   ) : (
-                    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>📷</div>
+                    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: COLORS.gray }}>IMG</div>
                   )}
                 </div>
                 {/* Título */}
@@ -151,8 +151,8 @@ export function GaleriaList() {
                     style={{ padding: "5px 10px", borderRadius: 7, border: `1px solid ${album.published ? "#86efac" : COLORS.grayLight}`, background: album.published ? "#f0fdf4" : "#fff", color: album.published ? "#15803d" : COLORS.gray, fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                     {album.published ? "✓ Pub" : "Pub"}
                   </button>
-                  <button onClick={() => navigate(`/admin/galeria/${album.id}`)} style={{ padding: "5px 10px", borderRadius: 7, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.dark, fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✏️</button>
-                  <button onClick={() => handleDelete(album.id)} style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid #fca5a5", background: "#fff", color: "#dc2626", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>🗑️</button>
+                  <button onClick={() => navigate(`/admin/galeria/${album.id}`)} style={{ padding: "5px 10px", borderRadius: 7, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.dark, fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer" }}><Icon name="Pencil" size={14} /></button>
+                  <button onClick={() => handleDelete(album.id)} style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid #fca5a5", background: "#fff", color: "#dc2626", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer" }}><Icon name="Trash2" size={14} /></button>
                 </div>
               </div>
             ))}
@@ -226,7 +226,7 @@ export function GaleriaEditor() {
     navigate("/admin/galeria");
   };
 
-  if (loading) return <AdminLayout><div style={{ padding: 60, textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray }}>⏳ Carregando...</div></AdminLayout>;
+  if (loading) return <AdminLayout><div style={{ padding: 60, textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray }}>Carregando...</div></AdminLayout>;
 
   return (
     <AdminLayout>
@@ -236,12 +236,12 @@ export function GaleriaEditor() {
           <div>
             <button onClick={() => navigate("/admin/galeria")} style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: 8 }}>← Galeria</button>
             <h1 style={{ fontFamily: FONTS.heading, fontSize: 24, fontWeight: 900, color: COLORS.dark, textTransform: "uppercase", margin: 0 }}>
-              {isNew ? "📷 Novo Álbum" : "✏️ Editar Álbum"}
+              {isNew ? "Novo Álbum" : "Editar Álbum"}
             </h1>
           </div>
           {!isNew && (
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => window.open(`/galeria/${id}`, "_blank")} style={{ padding: "9px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>👁️ Ver</button>
+              <button onClick={() => window.open(`/galeria/${id}`, "_blank")} style={{ padding: "9px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Ver</button>
               <button
                 onClick={async () => { form.published ? await GalleryService.unpublish(id) : await GalleryService.publish(id); navigate("/admin/galeria"); }}
                 style={{ padding: "9px 16px", borderRadius: 8, border: "none", background: form.published ? "#fff5f5" : "#f0fdf4", color: form.published ? "#dc2626" : "#15803d", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
@@ -251,11 +251,11 @@ export function GaleriaEditor() {
           )}
         </div>
 
-        {error && <div style={{ background: "#fff5f5", border: "1px solid #fca5a5", borderRadius: 8, padding: "10px 14px", marginBottom: 18, fontFamily: FONTS.body, fontSize: 13, color: "#dc2626" }}>⚠️ {error}</div>}
+        {error && <div style={{ background: "#fff5f5", border: "1px solid #fca5a5", borderRadius: 8, padding: "10px 14px", marginBottom: 18, fontFamily: FONTS.body, fontSize: 13, color: "#dc2626" }}>{error}</div>}
 
         {/* Informações básicas */}
         <div style={card}>
-          <SectionTitle>📋 Informações do álbum</SectionTitle>
+          <SectionTitle>Informações do álbum</SectionTitle>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
               <label style={lbl}>Título *</label>
@@ -295,7 +295,7 @@ export function GaleriaEditor() {
 
         {/* Gerenciamento de fotos */}
         <div style={card}>
-          <SectionTitle>🖼️ Fotos do álbum — {form.images.length} imagem{form.images.length !== 1 ? "ns" : ""}</SectionTitle>
+          <SectionTitle>Fotos do álbum — {form.images.length} imagem{form.images.length !== 1 ? "ns" : ""}</SectionTitle>
 
           {/* Adicionar foto */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 180px auto", gap: 10, marginBottom: 20 }}>
@@ -320,7 +320,7 @@ export function GaleriaEditor() {
           {/* Lista de fotos */}
           {form.images.length === 0 ? (
             <div style={{ textAlign: "center", padding: "32px 16px", background: COLORS.offWhite, borderRadius: 10, border: `1.5px dashed ${COLORS.grayLight}` }}>
-              <div style={{ fontSize: 40, marginBottom: 10 }}>🖼️</div>
+              <div style={{ marginBottom: 10 }}></div>
               <p style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, margin: 0 }}>Nenhuma foto adicionada. Use o formulário acima para inserir URLs.</p>
             </div>
           ) : (
@@ -358,7 +358,7 @@ export function GaleriaEditor() {
         <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
           <button onClick={() => navigate("/admin/galeria")} style={{ padding: "11px 20px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Cancelar</button>
           <button onClick={handleSave} disabled={saving} style={{ padding: "11px 24px", borderRadius: 8, border: "none", background: saving ? COLORS.gray : COLORS.primary, color: "#fff", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer" }}>
-            {saving ? "Salvando..." : isNew ? "💾 Criar álbum" : "💾 Salvar alterações"}
+            {saving ? "Salvando..." : isNew ? "Criar álbum" : "Salvar alterações"}
           </button>
         </div>
       </div>

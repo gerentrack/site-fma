@@ -20,6 +20,7 @@ import { COLORS, FONTS } from "../../styles/colors";
 import { NewsService } from "../../services/index";
 import NewsCard from "../../components/ui/NewsCard";
 import { NEWS_CATEGORIES } from "../../config/navigation";
+import Icon from "../../utils/icons";
 
 const catMap = Object.fromEntries(NEWS_CATEGORIES.filter(c => c.value).map(c => [c.value, c]));
 
@@ -122,7 +123,7 @@ function Gallery({ images }) {
   return (
     <div style={{ marginTop: 48 }}>
       <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 2, color: COLORS.dark, margin: "0 0 16px", paddingBottom: 12, borderBottom: `2px solid ${COLORS.primary}` }}>
-        📸 Galeria de Fotos ({images.length})
+        <Icon name="Camera" size={14} /> Galeria de Fotos ({images.length})
       </h3>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 10 }}>
         {images.map((src, i) => (
@@ -159,7 +160,7 @@ function RelatedNews({ items }) {
   return (
     <div style={{ marginTop: 64, paddingTop: 40, borderTop: `2px solid ${COLORS.grayLight}` }}>
       <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 2, color: COLORS.dark, margin: "0 0 24px" }}>
-        📰 Notícias Relacionadas
+        <Icon name="Newspaper" size={14} /> Notícias Relacionadas
       </h3>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 22 }}>
         {items.map(item => <NewsCard key={item.id} item={item} showTags />)}
@@ -202,7 +203,7 @@ export default function NewsDetailPage() {
     return (
       <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f7f7f7" }}>
         <div style={{ textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
+          <div style={{ marginBottom: 12 }}></div>
           Carregando notícia...
         </div>
       </div>
@@ -214,7 +215,7 @@ export default function NewsDetailPage() {
     return (
       <div style={{ minHeight: "60vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#f7f7f7" }}>
         <div style={{ textAlign: "center", padding: "40px 24px" }}>
-          <div style={{ fontSize: 52, marginBottom: 16 }}>📰</div>
+          <div style={{ marginBottom: 16 }}></div>
           <h1 style={{ fontFamily: FONTS.heading, fontSize: 32, fontWeight: 900, textTransform: "uppercase", color: COLORS.primary, margin: "0 0 12px" }}>
             Notícia não encontrada
           </h1>
@@ -229,7 +230,7 @@ export default function NewsDetailPage() {
     );
   }
 
-  const cat = catMap[news.category] || { label: "Notícia", color: COLORS.primary, icon: "📰" };
+  const cat = catMap[news.category] || { label: "Notícia", color: COLORS.primary, icon: "Newspaper" };
   const gallery = Array.isArray(news.gallery) ? news.gallery : [];
   const tags = Array.isArray(news.tags) ? news.tags : [];
   const mins = readingTime(news.content || "");
@@ -263,11 +264,11 @@ export default function NewsDetailPage() {
 
           {/* Badges */}
           <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-            <Link to={`/noticias?categoria=${news.category}`} style={{ padding: "4px 14px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: cat.color, color: "#fff", textDecoration: "none", textTransform: "uppercase" }}>
-              {cat.icon} {cat.label}
+            <Link to={`/noticias?categoria=${news.category}`} style={{ padding: "4px 14px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: cat.color, color: "#fff", textDecoration: "none", textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <Icon name={cat.icon} size={12} /> {cat.label}
             </Link>
             {news.featured && (
-              <span style={{ padding: "4px 14px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: "#f59e0b", color: "#fff" }}>⭐ Destaque</span>
+              <span style={{ padding: "4px 14px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: "#f59e0b", color: "#fff" }}>Destaque</span>
             )}
           </div>
 
@@ -278,10 +279,10 @@ export default function NewsDetailPage() {
 
           {/* Metadados */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 16, fontFamily: FONTS.body, fontSize: 13, opacity: 0.85, alignItems: "center" }}>
-            {news.date && <span>📅 {fmt(news.date)}</span>}
-            {news.author && <span>✍️ {news.author}</span>}
-            {news.content && <span>⏱️ {mins} min de leitura</span>}
-            {gallery.length > 0 && <span>📸 {gallery.length} foto{gallery.length > 1 ? "s" : ""}</span>}
+            {news.date && <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="Calendar" size={14} /> {fmt(news.date)}</span>}
+            {news.author && <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="Pencil" size={14} /> {news.author}</span>}
+            {news.content && <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="Clock" size={14} /> {mins} min de leitura</span>}
+            {gallery.length > 0 && <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="Camera" size={14} /> {gallery.length} foto{gallery.length > 1 ? "s" : ""}</span>}
           </div>
         </div>
       </div>
@@ -331,7 +332,7 @@ export default function NewsDetailPage() {
             <span style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray }}>Compartilhar:</span>
             <button onClick={share}
               style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 18px", borderRadius: 8, background: copied ? "#007733" : COLORS.dark, color: "#fff", border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, transition: "background 0.2s" }}>
-              {copied ? "✅ Link copiado!" : "🔗 Copiar link"}
+              {copied ? "Link copiado!" : "Copiar link"}
             </button>
             <a href={`https://wa.me/?text=${encodeURIComponent(news.title + " — " + window.location.href)}`} target="_blank" rel="noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 18px", borderRadius: 8, background: "#25d366", color: "#fff", textDecoration: "none", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700 }}>
@@ -357,7 +358,7 @@ export default function NewsDetailPage() {
             </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {[
-                { label: "Categoria", value: <Link to={`/noticias?categoria=${news.category}`} style={{ color: cat.color, textDecoration: "none", fontWeight: 700, fontFamily: FONTS.heading, fontSize: 13 }}>{cat.icon} {cat.label}</Link> },
+                { label: "Categoria", value: <Link to={`/noticias?categoria=${news.category}`} style={{ color: cat.color, textDecoration: "none", fontWeight: 700, fontFamily: FONTS.heading, fontSize: 13, display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name={cat.icon} size={13} /> {cat.label}</Link> },
                 { label: "Publicado em", value: news.date ? new Date(news.date + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }) : "—" },
                 { label: "Autor", value: news.author || "Redação FMA" },
                 { label: "Leitura", value: `~${mins} minuto${mins > 1 ? "s" : ""}` },
@@ -377,7 +378,7 @@ export default function NewsDetailPage() {
             </Link>
             {news.category && (
               <Link to={`/noticias?categoria=${news.category}`} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 8, background: `${cat.color}12`, color: cat.color, textDecoration: "none", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700 }}>
-                {cat.icon} Mais em {cat.label}
+                <Icon name={cat.icon} size={14} /> Mais em {cat.label}
               </Link>
             )}
           </div>
@@ -385,7 +386,7 @@ export default function NewsDetailPage() {
           {/* Tags da notícia */}
           {tags.length > 0 && (
             <div style={{ background: "#fff", borderRadius: 12, padding: "16px 18px", boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
-              <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, marginBottom: 10 }}>🏷️ Tags</div>
+              <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, marginBottom: 10, display: "flex", alignItems: "center", gap: 4 }}><Icon name="Tag" size={12} /> Tags</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {tags.map(tag => (
                   <Link key={tag} to={`/noticias?tag=${encodeURIComponent(tag)}`}

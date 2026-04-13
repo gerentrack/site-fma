@@ -21,7 +21,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import AdminLayout from "../../components/admin/AdminLayout";
 import { COLORS, FONTS } from "../../styles/colors";
 import { SOLICITACAO_STATUS, SOLICITACAO_TIPOS } from "../../config/navigation";
-import { OrganizersService, SolicitacoesService, ArquivosService, MovimentacoesService } from "../../services/index";
+import { OrganizersService, SolicitacoesService, ArquivosService, MovimentacoesService, PagamentosService } from "../../services/index";
 import { deleteFile } from "../../services/storageService";
 import { calcularTaxaModalidade, formatarMoeda, TABELA_PADRAO } from "../../utils/taxaCalculator";
 import { notificarContaStatus } from "../../services/emailService";
@@ -45,7 +45,7 @@ function maskDoc(v = "") {
 }
 
 function StatusBadge({ status }) {
-  const s = statusMap[status] || { label: status, color: COLORS.gray, bg: "#f3f4f6", icon: "📋" };
+  const s = statusMap[status] || { label: status, color: COLORS.gray, bg: "#f3f4f6", icon: "" };
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 9px",
       borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700,
@@ -112,7 +112,7 @@ export function OrganizadoresList() {
             <h1 style={{ fontFamily: FONTS.heading, fontSize: 28, fontWeight: 900, textTransform: "uppercase", color: COLORS.dark, margin: 0 }}>Organizadores</h1>
           </div>
           <Link to="/admin/solicitacoes" style={{ padding: "10px 18px", borderRadius: 8, background: COLORS.primary, color: "#fff", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, textDecoration: "none" }}>
-            📋 Ver Solicitações
+            Ver Solicitações
           </Link>
         </div>
 
@@ -139,8 +139,8 @@ export function OrganizadoresList() {
             <select value={filterActive} onChange={e => setFilterActive(e.target.value)}
               style={{ padding: "9px 13px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 13, cursor: "pointer" }}>
               <option value="">Todos</option>
-              <option value="ativo">✅ Ativos</option>
-              <option value="inativo">🔒 Inativos</option>
+              <option value="ativo">Ativos</option>
+              <option value="inativo">Inativos</option>
             </select>
           </div>
         </div>
@@ -148,7 +148,7 @@ export function OrganizadoresList() {
         {/* Tabela */}
         <div style={card}>
           {loading ? (
-            <div style={{ textAlign: "center", padding: "40px", fontFamily: FONTS.body, color: COLORS.gray }}>⏳ Carregando...</div>
+            <div style={{ textAlign: "center", padding: "40px", fontFamily: FONTS.body, color: COLORS.gray }}>Carregando...</div>
           ) : filtered.length === 0 ? (
             <div style={{ textAlign: "center", padding: "40px", fontFamily: FONTS.body, color: COLORS.gray }}>Nenhum organizador encontrado.</div>
           ) : (
@@ -173,7 +173,7 @@ export function OrganizadoresList() {
                       </td>
                       <td style={{ padding: "12px" }}>
                         <span style={{ padding: "2px 9px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: item.tipoPessoa === "pj" ? "#eff6ff" : "#f0fdf4", color: item.tipoPessoa === "pj" ? "#1d4ed8" : "#15803d" }}>
-                          {item.tipoPessoa === "pj" ? "🏢 PJ" : "👤 PF"}
+                          {item.tipoPessoa === "pj" ? "PJ" : "PF"}
                         </span>
                       </td>
                       <td style={{ padding: "12px", fontFamily: FONTS.body, fontSize: 13, color: COLORS.grayDark }}>{item.city}{item.state ? ` / ${item.state}` : ""}</td>
@@ -188,7 +188,7 @@ export function OrganizadoresList() {
                           style={{ padding: "5px 12px", borderRadius: 20, border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, transition: "all 0.15s",
                             background: item.active ? "#f0fdf4" : "#f3f4f6",
                             color: item.active ? "#15803d" : "#6b7280" }}>
-                          {item.active ? "✅ Ativo" : "🔒 Inativo"}
+                          {item.active ? "Ativo" : "Inativo"}
                         </button>
                       </td>
                       <td style={{ padding: "12px" }}>
@@ -293,6 +293,7 @@ export function OrganizadorEditor() {
         else if (arq.url?.includes("firebasestorage.googleapis.com")) await deleteFile(arq.url).catch(() => {});
         await ArquivosService.delete(arq.id).catch(() => {});
       }
+      await PagamentosService.deleteBySolicitacao(sol.id).catch(() => {});
       await MovimentacoesService.deleteBySolicitacao(sol.id).catch(() => {});
       await SolicitacoesService.delete(sol.id).catch(() => {});
     }
@@ -306,7 +307,7 @@ export function OrganizadorEditor() {
   if (loading) {
     return (
       <AdminLayout>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", fontFamily: FONTS.body, color: COLORS.gray }}>⏳ Carregando...</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", fontFamily: FONTS.body, color: COLORS.gray }}>Carregando...</div>
       </AdminLayout>
     );
   }
@@ -332,10 +333,10 @@ export function OrganizadorEditor() {
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
               <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: organizer.tipoPessoa === "pj" ? "#eff6ff" : "#f0fdf4", color: organizer.tipoPessoa === "pj" ? "#1d4ed8" : "#15803d" }}>
-                {organizer.tipoPessoa === "pj" ? "🏢 Pessoa Jurídica" : "👤 Pessoa Física"}
+                {organizer.tipoPessoa === "pj" ? "Pessoa Jurídica" : "Pessoa Física"}
               </span>
               <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: organizer.active ? "#f0fdf4" : "#f3f4f6", color: organizer.active ? "#15803d" : "#6b7280" }}>
-                {organizer.active ? "✅ Conta ativa" : "🔒 Conta inativa"}
+                {organizer.active ? "Conta ativa" : "Conta inativa"}
               </span>
               {!organizer.active && organizer.motivoDesativacao && (
                 <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: "#fff5f5", color: "#dc2626" }}>
@@ -349,25 +350,25 @@ export function OrganizadorEditor() {
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={handleToggleActive}
               style={{ padding: "10px 18px", borderRadius: 8, border: `2px solid ${organizer.active ? "#fca5a5" : "#86efac"}`, background: "#fff", color: organizer.active ? COLORS.primary : "#15803d", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700 }}>
-              {organizer.active ? "🔒 Desativar conta" : "✅ Ativar conta"}
+              {organizer.active ? "Desativar conta" : "Ativar conta"}
             </button>
             <button onClick={() => setShowDeleteModal(true)}
               style={{ padding: "10px 18px", borderRadius: 8, border: "2px solid #dc2626", background: "#fff", color: "#dc2626", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700 }}>
-              🗑️ Excluir conta
+              Excluir conta
             </button>
           </div>
         </div>
 
         {msg.text && (
           <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 8, fontFamily: FONTS.body, fontSize: 13, background: msg.type === "ok" ? "#f0fdf4" : "#fff5f5", color: msg.type === "ok" ? "#15803d" : "#dc2626", border: `1px solid ${msg.type === "ok" ? "#86efac" : "#fca5a5"}` }}>
-            {msg.type === "ok" ? "✅" : "⚠️"} {msg.text}
+            {msg.text}
           </div>
         )}
 
         {/* Dados cadastrais */}
         <div style={card}>
           <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 18px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
-            📋 Dados cadastrais
+            Dados cadastrais
           </h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
             {lbl("Nome completo / Razão social")}{val(organizer.name)}
@@ -383,7 +384,7 @@ export function OrganizadorEditor() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px", marginTop: 8, borderTop: `1px solid ${COLORS.grayLight}`, paddingTop: 16 }}>
             {lbl("Cadastrado em")}{val(fmtDT(organizer.createdAt))}
             {lbl("Última atualização")}{val(fmtDT(organizer.updatedAt))}
-            {lbl("E-mail verificado")}{val(organizer.emailVerified ? "✅ Sim" : "⏳ Não")}
+            {lbl("E-mail verificado")}{val(organizer.emailVerified ? "Sim" : "Não")}
           </div>
         </div>
 
@@ -393,7 +394,7 @@ export function OrganizadorEditor() {
         {/* Solicitações do organizador */}
         <div style={card}>
           <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 16px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
-            📋 Solicitações ({solicitacoes.length})
+            Solicitações ({solicitacoes.length})
           </h3>
 
           {/* Mini-dashboard de status */}
@@ -413,13 +414,13 @@ export function OrganizadorEditor() {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {solicitacoes.map(sol => {
-                const tipo = tipoMap[sol.tipo] || { label: sol.tipo, icon: "📋" };
+                const tipo = tipoMap[sol.tipo] || { label: sol.tipo, icon: "" };
                 return (
                   <div key={sol.id} style={{ display: "flex", gap: 14, alignItems: "center", padding: "12px 14px", borderRadius: 10, border: `1px solid ${COLORS.grayLight}`, background: "#fafafa", flexWrap: "wrap" }}>
                     <span style={{ padding: "2px 9px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: sol.tipo === "permit" ? "#fff3cd" : "#e3f8f0", color: sol.tipo === "permit" ? "#856404" : "#065f46", flexShrink: 0 }}>{tipo.icon} {tipo.label}</span>
                     <div style={{ flex: 1, minWidth: 160 }}>
                       <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark }}>{sol.nomeEvento}</div>
-                      <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>📅 {fmt(sol.dataEvento)} · 📍 {sol.cidadeEvento}</div>
+                      <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>{fmt(sol.dataEvento)} · {sol.cidadeEvento}</div>
                     </div>
                     <StatusBadge status={sol.status} />
                     <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, whiteSpace: "nowrap" }}>{fmt(sol.criadoEm)}</div>
@@ -442,7 +443,7 @@ export function OrganizadorEditor() {
           <div onClick={e => e.stopPropagation()}
             style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 480, padding: "28px 32px", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-              <span style={{ fontSize: 28 }}>🗑️</span>
+              <span style={{ fontSize: 18 }}></span>
               <div>
                 <h3 style={{ fontFamily: FONTS.heading, fontSize: 18, fontWeight: 900, color: "#dc2626", margin: 0, textTransform: "uppercase" }}>Excluir conta</h3>
                 <p style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, margin: "4px 0 0" }}>{organizer.name}</p>
@@ -479,7 +480,7 @@ export function OrganizadorEditor() {
           <div onClick={e => e.stopPropagation()}
             style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: 480, padding: "28px 32px", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-              <span style={{ fontSize: 28 }}>🔒</span>
+              <span style={{ fontSize: 18 }}></span>
               <div>
                 <h3 style={{ fontFamily: FONTS.heading, fontSize: 18, fontWeight: 900, color: COLORS.dark, margin: 0, textTransform: "uppercase" }}>Desativar conta</h3>
                 <p style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, margin: "4px 0 0" }}>{organizer.name}</p>
@@ -558,7 +559,7 @@ function ParceriaSection({ organizer, organizerId, onSaved, flash, card }) {
   return (
     <div style={card}>
       <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 16px", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
-        🤝 Parceria FMA
+        Parceria FMA
       </h3>
 
       <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", fontFamily: FONTS.body, fontSize: 14, marginBottom: 16 }}>

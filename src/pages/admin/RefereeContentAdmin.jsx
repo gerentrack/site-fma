@@ -88,9 +88,9 @@ export function RefereeContentList() {
     { key: "category", label: "Categoria", render: v => <CatBadge category={v} /> },
     { key: "_docs", label: "Conteúdo", render: (_, row) => (
       <div style={{ fontSize: 14, display: "flex", gap: 4 }}>
-        {row.content && <span title="Texto">📝</span>}
-        {row.fileUrl && <span title="Arquivo">📎</span>}
-        {row.externalLink && <span title="Link">🔗</span>}
+        {row.content && <span title="Texto">T</span>}
+        {row.fileUrl && <span title="Arquivo">F</span>}
+        {row.externalLink && <span title="Link">L</span>}
       </div>
     )},
     { key: "publishedAt", label: "Publicação", render: v => v ? new Date(v + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "—" },
@@ -128,7 +128,7 @@ export function RefereeContentList() {
         </div>
 
         <div style={{ display: "flex", gap: 12, marginBottom: 20, alignItems: "center" }}>
-          <input placeholder="🔍 Buscar título..." value={search} onChange={e => setSearch(e.target.value)}
+          <input placeholder="Buscar título..." value={search} onChange={e => setSearch(e.target.value)}
             style={{ padding: "9px 14px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 13, outline: "none", minWidth: 220 }} />
           {(filterCat || search) && (
             <button onClick={() => { setFilterCat(""); setSearch(""); }}
@@ -206,7 +206,7 @@ export function RefereeContentEditor() {
             <FormField label="Resumo" hint="Exibido nos cards da listagem pública">
               <TextArea value={values.summary} onChange={v => set("summary", v)} rows={2} placeholder="Breve descrição..." />
             </FormField>
-            <CheckboxInput checked={values.featured} onChange={v => set("featured", v)} label="⭐ Marcar como destaque" />
+            <CheckboxInput checked={values.featured} onChange={v => set("featured", v)} label="Marcar como destaque" />
           </div>
         </div>
 
@@ -231,17 +231,17 @@ export function RefereeContentEditor() {
           {sec("Arquivo, Link e Imagem")}
           <div style={{ display: "grid", gap: 14 }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <FormField label="📎 URL do Arquivo">
+              <FormField label="URL do Arquivo">
                 <TextInput value={values.fileUrl} onChange={v => set("fileUrl", v)} placeholder="https://...documento.pdf" type="url" />
               </FormField>
               <FormField label="Texto do Botão de Download">
                 <TextInput value={values.fileLabel} onChange={v => set("fileLabel", v)} placeholder="Baixar Formulário (PDF)" />
               </FormField>
             </div>
-            <FormField label="🔗 Link Externo">
+            <FormField label="Link Externo">
               <TextInput value={values.externalLink} onChange={v => set("externalLink", v)} placeholder="https://..." type="url" />
             </FormField>
-            <FileUpload label="🖼️ Imagem" value={values.image} onChange={v => set("image", v)} folder="arbitros" hint="Opcional. Recomendado: 600x340px." mode="both" />
+            <FileUpload label="Imagem" value={values.image} onChange={v => set("image", v)} folder="arbitros" hint="Opcional. Recomendado: 600x340px." mode="both" />
           </div>
         </div>
 

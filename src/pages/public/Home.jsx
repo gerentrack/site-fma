@@ -123,11 +123,11 @@ function FeaturedNewsBlock({ featured, regular }) {
           >
             <div style={{ position: "relative" }}>
               <img src={featured.image || "https://placehold.co/800x500/cc0000/fff?text=Notícia"} alt={featured.title} style={{ width: "100%", height: 280, objectFit: "cover", display: "block" }} />
-              <div style={{ position: "absolute", top: 14, left: 14, background: COLORS.primary, color: "#fff", fontSize: 10, fontWeight: 700, padding: "3px 12px", borderRadius: 20, fontFamily: FONTS.heading, letterSpacing: 1, textTransform: "uppercase" }}>⭐ Destaque</div>
+              <div style={{ position: "absolute", top: 14, left: 14, background: COLORS.primary, color: "#fff", fontSize: 10, fontWeight: 700, padding: "3px 12px", borderRadius: 20, fontFamily: FONTS.heading, letterSpacing: 1, textTransform: "uppercase" }}>Destaque</div>
             </div>
             <div style={{ padding: "22px 24px 26px", background: "#fff" }}>
               <p style={{ fontFamily: FONTS.body, fontSize: 11.5, color: COLORS.gray, margin: "0 0 8px" }}>
-                📅 {featured.date ? new Date(featured.date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" }) : ""}
+                {featured.date ? new Date(featured.date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" }) : ""}
               </p>
               <h3 style={{ fontFamily: FONTS.heading, fontSize: 20, fontWeight: 800, color: COLORS.dark, margin: "0 0 10px", lineHeight: 1.3 }}>{featured.title}</h3>
               <p style={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.gray, margin: "0 0 16px", lineHeight: 1.6 }}>{featured.excerpt}</p>

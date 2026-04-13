@@ -22,15 +22,16 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { GalleryService } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
+import Icon from "../../utils/icons";
 
 // ─── Config de categorias ─────────────────────────────────────────────────────
 
 const CAT_META = {
-  corrida:       { icon: "🏅", label: "Corridas de Rua", color: "#cc0000",  bg: "#fff0f0",  border: "#fecaca" },
-  pista:         { icon: "🏟️", label: "Pista e Campo",   color: "#0066cc",  bg: "#eff6ff",  border: "#bfdbfe" },
-  trail:         { icon: "🏔️", label: "Trail Run",       color: "#15803d",  bg: "#f0fdf4",  border: "#86efac" },
-  institucional: { icon: "🏛️", label: "Institucional",   color: "#7c3aed",  bg: "#f5f3ff",  border: "#ddd6fe" },
-  outro:         { icon: "📷", label: "Outros",           color: "#92400e",  bg: "#fffbeb",  border: "#fde68a" },
+  corrida:       { icon: "Medal", label: "Corridas de Rua", color: "#cc0000",  bg: "#fff0f0",  border: "#fecaca" },
+  pista:         { icon: "Building", label: "Pista e Campo",   color: "#0066cc",  bg: "#eff6ff",  border: "#bfdbfe" },
+  trail:         { icon: "Mountain", label: "Trail Run",       color: "#15803d",  bg: "#f0fdf4",  border: "#86efac" },
+  institucional: { icon: "Landmark", label: "Institucional",   color: "#7c3aed",  bg: "#f5f3ff",  border: "#ddd6fe" },
+  outro:         { icon: "Camera", label: "Outros",           color: "#92400e",  bg: "#fffbeb",  border: "#fde68a" },
 };
 
 function catMeta(cat) {
@@ -100,7 +101,7 @@ function ListagemHero({ total }) {
         fontSize: "clamp(6rem, 13vw, 10rem)",
         color: "rgba(255,255,255,0.03)", letterSpacing: -6,
         userSelect: "none", pointerEvents: "none", lineHeight: 1,
-      }}>📷</div>
+      }}></div>
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 32px" }}>
         <div style={{
@@ -114,7 +115,7 @@ function ListagemHero({ total }) {
         <div style={{ display: "flex", alignItems: "flex-end", gap: 32, flexWrap: "wrap" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12 }}>
-              <span style={{ fontSize: 42 }}>📸</span>
+              <span><Icon name="Camera" size={42} /></span>
               <h1 style={{
                 fontFamily: FONTS.heading,
                 fontSize: "clamp(2rem, 5vw, 3rem)",
@@ -168,7 +169,7 @@ function CategoriasBar({ categorias, ativa, onChange }) {
       marginBottom: 16,
     }}>
       {/* "Todos" */}
-      {[{ value: "", label: "Todos", icon: "📷" }, ...categorias.map(c => ({ value: c, ...catMeta(c) }))].map(cat => {
+      {[{ value: "", label: "Todos", icon: "Camera" }, ...categorias.map(c => ({ value: c, ...catMeta(c) }))].map(cat => {
         const active = cat.value === ativa;
         const meta   = cat.value ? catMeta(cat.value) : { color: COLORS.dark };
         return (
@@ -185,7 +186,7 @@ function CategoriasBar({ categorias, ativa, onChange }) {
               cursor: "pointer", transition: "all 0.15s", whiteSpace: "nowrap",
             }}
           >
-            <span>{cat.icon}</span> {cat.label}
+            <Icon name={cat.icon} size={14} /> {cat.label}
           </button>
         );
       })}
@@ -204,7 +205,7 @@ function BuscaBar({ busca, onChange }) {
         position: "absolute", left: 14, top: "50%",
         transform: "translateY(-50%)", fontSize: 15, color: COLORS.gray,
         pointerEvents: "none",
-      }}>🔍</span>
+      }}><Icon name="Search" size={14} /></span>
       <input
         type="search"
         value={busca}
@@ -271,7 +272,7 @@ function AlbumCard({ album }) {
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 52,
             }}>
-              {meta.icon}
+              <Icon name={meta.icon} size={52} />
             </div>
           )}
 
@@ -293,7 +294,7 @@ function AlbumCard({ album }) {
               fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800,
               letterSpacing: 0.5,
             }}>
-              📷 {count} foto{count !== 1 ? "s" : ""}
+              <Icon name="Camera" size={12} /> {count} foto{count !== 1 ? "s" : ""}
             </div>
           )}
 
@@ -306,7 +307,7 @@ function AlbumCard({ album }) {
             fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800,
             textTransform: "uppercase", letterSpacing: 1,
           }}>
-            {meta.icon} {meta.label}
+            <Icon name={meta.icon} size={12} /> {meta.label}
           </div>
 
           {/* Ícone "ver álbum" no hover */}
@@ -321,7 +322,7 @@ function AlbumCard({ album }) {
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 22, boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
               }}>
-                ▶️
+                <Icon name="Play" size={22} />
               </div>
             </div>
           )}
@@ -354,7 +355,7 @@ function AlbumCard({ album }) {
             fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray,
             display: "flex", alignItems: "center", gap: 12,
           }}>
-            <span>📅 {fmtDateShort(album.date)}</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><Icon name="Calendar" size={12} /> {fmtDateShort(album.date)}</span>
           </div>
         </div>
       </article>
@@ -371,7 +372,7 @@ function EmptyState({ onReset }) {
       background: "#fff", borderRadius: 16,
       border: `1.5px dashed ${COLORS.grayLight}`,
     }}>
-      <div style={{ fontSize: 52, marginBottom: 16 }}>📭</div>
+      <div style={{ marginBottom: 16 }}></div>
       <p style={{
         fontFamily: FONTS.heading, fontSize: 16, fontWeight: 700,
         color: COLORS.gray, margin: "0 0 8px",
@@ -655,7 +656,7 @@ export function GaleriaAlbum() {
 
   if (erro || !album) return (
     <div style={{ maxWidth: 700, margin: "60px auto", padding: "0 32px", textAlign: "center" }}>
-      <div style={{ fontSize: 52, marginBottom: 16 }}>🔍</div>
+      <div style={{ marginBottom: 16 }}></div>
       <h2 style={{ fontFamily: FONTS.heading, fontSize: 22, color: COLORS.dark }}>Álbum não encontrado</h2>
       <button onClick={() => navigate("/galeria")} style={{
         marginTop: 16, padding: "10px 22px", borderRadius: 9,
@@ -727,7 +728,7 @@ export function GaleriaAlbum() {
               textTransform: "uppercase", letterSpacing: 1,
               background: meta.color, color: "#fff",
             }}>
-              {meta.icon} {meta.label}
+              <Icon name={meta.icon} size={12} /> {meta.label}
             </span>
           </div>
 
@@ -746,8 +747,8 @@ export function GaleriaAlbum() {
             fontFamily: FONTS.body, fontSize: 14,
             color: "rgba(255,255,255,0.65)",
           }}>
-            <span>📅 {fmtDate(album.date)}</span>
-            {total > 0 && <span>📷 {total} foto{total !== 1 ? "s" : ""}</span>}
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="Calendar" size={14} /> {fmtDate(album.date)}</span>
+            {total > 0 && <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="Camera" size={14} /> {total} foto{total !== 1 ? "s" : ""}</span>}
           </div>
 
           {album.description && (
@@ -770,7 +771,7 @@ export function GaleriaAlbum() {
             background: "#fff", borderRadius: 16,
             border: `1.5px dashed ${COLORS.grayLight}`,
           }}>
-            <div style={{ fontSize: 52, marginBottom: 16 }}>📷</div>
+            <div style={{ marginBottom: 16 }}></div>
             <p style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 700, color: COLORS.gray, margin: 0 }}>
               Nenhuma foto neste álbum ainda.
             </p>
@@ -782,7 +783,7 @@ export function GaleriaAlbum() {
               fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray,
               marginBottom: 20, display: "flex", alignItems: "center", gap: 8,
             }}>
-              <span>💡</span> Clique em qualquer foto para ampliar
+              <Icon name="Info" size={14} /> Clique em qualquer foto para ampliar
             </div>
 
             {/* Grid */}
@@ -868,7 +869,7 @@ function PhotoThumb({ url, caption, index, onClick, color }) {
           display: "flex", alignItems: "center", justifyContent: "center",
           fontSize: 32,
         }}>
-          📷
+          <Icon name="Camera" size={32} />
         </div>
       )}
 
@@ -886,7 +887,7 @@ function PhotoThumb({ url, caption, index, onClick, color }) {
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 16,
           }}>
-            🔍
+            <Icon name="Search" size={16} />
           </div>
         )}
       </div>

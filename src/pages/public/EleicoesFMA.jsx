@@ -15,6 +15,7 @@ import { Link } from "react-router-dom";
 import { DocumentsService } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
 import PdfModal, { usePdfModal } from "../../components/ui/PdfModal";
+import Icon from "../../utils/icons";
 
 // ─── Utilitários ──────────────────────────────────────────────────────────────
 
@@ -74,7 +75,7 @@ function DocItem({ doc, onViewPdf }) {
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: 18,
       }}>
-        🗳️
+        <Icon name="Vote" size={18} />
       </div>
 
       {/* Info */}
@@ -90,7 +91,7 @@ function DocItem({ doc, onViewPdf }) {
         </div>
         {(doc.description || doc.date) && (
           <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 2 }}>
-            {doc.date && <span>📅 {fmtDate(doc.date)}</span>}
+            {doc.date && <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><Icon name="Calendar" size={11} /> {fmtDate(doc.date)}</span>}
             {doc.description && <span> — {doc.description}</span>}
           </div>
         )}
@@ -116,7 +117,7 @@ function DocItem({ doc, onViewPdf }) {
               cursor: "pointer",
               textTransform: "uppercase", letterSpacing: 0.5,
             }}>
-            📄 Visualizar
+            <Icon name="FileText" size={12} /> Visualizar
           </button>
         ) : (
           <span style={{
@@ -185,7 +186,7 @@ export default function EleicoesFMA() {
           <div style={{ display: "flex", alignItems: "flex-end", gap: 32, flexWrap: "wrap" }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
-                <span style={{ fontSize: 40 }}>🗳️</span>
+                <span><Icon name="Vote" size={40} /></span>
                 <h1 style={{
                   fontFamily: FONTS.heading, fontSize: "clamp(2rem,5vw,3rem)",
                   fontWeight: 900, color: "#fff", margin: 0,
@@ -223,7 +224,7 @@ export default function EleicoesFMA() {
           <div style={{ textAlign: "center", padding: "64px 24px",
             background: "#fff", borderRadius: 16,
             border: `1.5px dashed ${COLORS.grayLight}` }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🗳️</div>
+            <div style={{ marginBottom: 16 }}></div>
             <p style={{ fontFamily: FONTS.heading, fontSize: 16,
               fontWeight: 700, color: COLORS.gray, margin: "0 0 8px" }}>
               Nenhum documento de eleição publicado ainda.

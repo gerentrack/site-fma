@@ -10,6 +10,7 @@ import { RefereeEventsService, RefereeAssignmentsService, RefereesService } from
 import { uploadFile } from "../../../services/storageService";
 import { notificarEventoCancelado } from "../../../services/emailService";
 import { COLORS, FONTS } from "../../../styles/colors";
+import Icon from "../../../utils/icons";
 import { CALENDAR_CATEGORIES } from "../../../config/navigation";
 
 const catOpts = (CALENDAR_CATEGORIES || []).filter(c => c.value);
@@ -51,9 +52,9 @@ export function IntranetEventList() {
     const r = await RefereeEventsService.importFromCalendar();
     setImporting(false);
     if (r.data) {
-      setImportMsg(r.data.imported > 0 ? `✅ ${r.data.imported} evento(s) importado(s) com sucesso!` : "ℹ️ Nenhum evento novo para importar.");
+      setImportMsg(r.data.imported > 0 ? `${r.data.imported} evento(s) importado(s) com sucesso!` : "Nenhum evento novo para importar.");
       load();
-    } else setImportMsg("❌ Erro ao importar.");
+    } else setImportMsg("Erro ao importar.");
   };
 
   const handleDelete = async (evt) => {
@@ -87,13 +88,13 @@ export function IntranetEventList() {
       <div style={{ padding: 36 }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 28 }}>
           <div>
-            <h1 style={{ fontFamily: FONTS.heading, fontSize: 26, fontWeight: 900, textTransform: "uppercase", color: COLORS.dark, margin: "0 0 6px" }}>🗓️ Eventos</h1>
+            <h1 style={{ fontFamily: FONTS.heading, fontSize: 26, fontWeight: 900, textTransform: "uppercase", color: COLORS.dark, margin: "0 0 6px" }}>Eventos</h1>
             <p style={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.gray, margin: 0 }}>Gerencie provas e importe do Calendário FMA.</p>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button onClick={handleImport} disabled={importing}
               style={{ padding: "11px 18px", borderRadius: 8, background: importing ? COLORS.gray : COLORS.dark, color: "#fff", border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700 }}>
-              {importing ? "Importando..." : "📥 Importar do Calendário FMA"}
+              {importing ? "Importando..." : "Importar do Calendário FMA"}
             </button>
             <button onClick={() => navigate("/intranet/admin/eventos/novo")}
               style={{ padding: "11px 22px", borderRadius: 8, background: COLORS.primary, color: "#fff", border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700 }}>
@@ -103,7 +104,7 @@ export function IntranetEventList() {
         </div>
 
         {importMsg && (
-          <div style={{ background: importMsg.startsWith("✅") ? "#e6f9ee" : importMsg.startsWith("ℹ") ? "#eff6ff" : "#fff5f5", border: `1px solid ${importMsg.startsWith("✅") ? "#86efac" : importMsg.startsWith("ℹ") ? "#93c5fd" : "#fca5a5"}`, borderRadius: 8, padding: "10px 16px", marginBottom: 20, fontFamily: FONTS.body, fontSize: 13, color: COLORS.dark }}>
+          <div style={{ background: importMsg.includes("sucesso") ? "#e6f9ee" : importMsg.includes("Nenhum") ? "#eff6ff" : "#fff5f5", border: `1px solid ${importMsg.includes("sucesso") ? "#86efac" : importMsg.includes("Nenhum") ? "#93c5fd" : "#fca5a5"}`, borderRadius: 8, padding: "10px 16px", marginBottom: 20, fontFamily: FONTS.body, fontSize: 13, color: COLORS.dark }}>
             {importMsg}
           </div>
         )}
@@ -118,13 +119,13 @@ export function IntranetEventList() {
           </select>
           <select value={filterCat} onChange={e => setFilterCat(e.target.value)} style={{ padding: "9px 12px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 13, outline: "none" }}>
             <option value="">Todos os tipos</option>
-            {catOpts.map(c => <option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
+            {catOpts.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
           </select>
           <span style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, marginLeft: "auto" }}>{filtered.length} evento(s)</span>
         </div>
 
         {loading ? (
-          <div style={{ padding: "60px 0", textAlign: "center", color: COLORS.gray, fontFamily: FONTS.body }}>⏳ Carregando...</div>
+          <div style={{ padding: "60px 0", textAlign: "center", color: COLORS.gray, fontFamily: FONTS.body }}>Carregando...</div>
         ) : (
           <div style={{ background: "#fff", borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -139,7 +140,7 @@ export function IntranetEventList() {
                 {filtered.length === 0 ? (
                   <tr><td colSpan={7} style={{ padding: "40px 14px", textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray }}>Nenhum evento encontrado.</td></tr>
                 ) : filtered.map(evt => {
-                  const cat = catMap[evt.category] || { color: COLORS.gray, icon: "📅", label: evt.category };
+                  const cat = catMap[evt.category] || { color: COLORS.gray, icon: "Calendar", label: evt.category };
                   const st = STATUS_COLORS[evt.status] || STATUS_COLORS.aberto;
                   return (
                     <tr key={evt.id} style={{ borderBottom: `1px solid ${COLORS.grayLight}` }}
@@ -156,13 +157,13 @@ export function IntranetEventList() {
                         <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>{evt.city}{evt.location ? ` — ${evt.location}` : ""}</div>
                       </td>
                       <td style={{ padding: "14px 14px" }}>
-                        <span style={{ padding: "2px 8px", borderRadius: 20, fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, background: `${cat.color}15`, color: cat.color }}>{cat.icon} {cat.label}</span>
+                        <span style={{ padding: "2px 8px", borderRadius: 20, fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, background: `${cat.color}15`, color: cat.color }}><Icon name={cat.icon} size={12} /> {cat.label}</span>
                       </td>
                       <td style={{ padding: "14px 14px" }}>
                         <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, background: st.bg, color: st.color }}>{st.label}</span>
                       </td>
                       <td style={{ padding: "14px 14px" }}>
-                        <span style={{ fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, color: COLORS.gray }}>{evt.source === "calendar" ? "📅 FMA" : "✋ Manual"}</span>
+                        <span style={{ fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, color: COLORS.gray }}>{evt.source === "calendar" ? "FMA" : "Manual"}</span>
                       </td>
                       <td style={{ padding: "14px 14px", textAlign: "center" }}>
                         <span style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark }}>{evt.refereesNeeded || "—"}</span>
@@ -171,7 +172,7 @@ export function IntranetEventList() {
                         <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
                           <button onClick={() => navigate(`/intranet/admin/escalacao/${evt.id}`)}
                             style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #93c5fd", background: "#eff6ff", color: "#0066cc", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
-                            ⚖️ Escalar
+                            Escalar
                           </button>
                           <button onClick={() => navigate(`/intranet/admin/eventos/${evt.id}`)}
                             style={{ padding: "5px 10px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.dark, cursor: "pointer", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
@@ -269,7 +270,7 @@ export function IntranetEventEditor() {
               <div>
                 {lbl("Tipo")}
                 <select value={form.category} onChange={e => set("category", e.target.value)} style={sel()}>
-                  {catOpts.map(c => <option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
+                  {catOpts.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
               </div>
             </div>

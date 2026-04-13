@@ -69,7 +69,7 @@ export default function FooterAdmin() {
 
         {/* Logo & Identidade Visual */}
         <div style={sectionStyle}>
-          {sectionTitle("🖼️ Logo & Identidade Visual")}
+          {sectionTitle("Logo & Identidade Visual")}
 
           {/* Preview do logo atual */}
           {values.logoUrl && (

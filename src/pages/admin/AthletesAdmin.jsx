@@ -144,10 +144,10 @@ export function AthleteContentList() {
       label: "Conteúdo",
       render: (_, row) => (
         <div style={{ fontSize: 15, display: "flex", gap: 4 }}>
-          {row.content && <span title="Texto completo">📝</span>}
-          {row.fileUrl && <span title="Arquivo anexo">📎</span>}
-          {row.externalLink && <span title="Link externo">🔗</span>}
-          {row.image && <span title="Imagem">🖼️</span>}
+          {row.content && <span title="Texto completo">T</span>}
+          {row.fileUrl && <span title="Arquivo anexo">F</span>}
+          {row.externalLink && <span title="Link externo">L</span>}
+          {row.image && <span title="Imagem">I</span>}
         </div>
       ),
     },
@@ -211,7 +211,7 @@ export function AthleteContentList() {
         {/* Barra de busca */}
         <div style={{ display: "flex", gap: 12, marginBottom: 20, alignItems: "center" }}>
           <input
-            placeholder="🔍 Buscar por título..."
+            placeholder="Buscar por título..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{ padding: "9px 14px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 13, outline: "none", minWidth: 240 }}
@@ -351,7 +351,7 @@ export function AthleteContentEditor() {
               <CheckboxInput
                 checked={values.featured}
                 onChange={v => set("featured", v)}
-                label="⭐ Marcar como destaque (aparece primeiro e com visual diferenciado)"
+                label="Marcar como destaque (aparece primeiro e com visual diferenciado)"
               />
             </div>
           </div>
@@ -390,7 +390,7 @@ export function AthleteContentEditor() {
           {sec("Arquivo, Link e Imagem")}
           <div style={{ display: "grid", gap: 16 }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              <FormField label="📎 URL do Arquivo" hint="PDF, DOCX, XLS — cole a URL completa do arquivo hospedado">
+              <FormField label="URL do Arquivo" hint="PDF, DOCX, XLS — cole a URL completa do arquivo hospedado">
                 <TextInput
                   value={values.fileUrl}
                   onChange={v => set("fileUrl", v)}
@@ -407,7 +407,7 @@ export function AthleteContentEditor() {
               </FormField>
             </div>
 
-            <FormField label="🔗 Link Externo" hint="URL de um portal, formulário online ou site externo">
+            <FormField label="Link Externo" hint="URL de um portal, formulário online ou site externo">
               <TextInput
                 value={values.externalLink}
                 onChange={v => set("externalLink", v)}
@@ -417,7 +417,7 @@ export function AthleteContentEditor() {
             </FormField>
 
             <FileUpload
-              label="🖼️ Imagem"
+              label="Imagem"
               value={values.image}
               onChange={v => set("image", v)}
               folder="atletas"

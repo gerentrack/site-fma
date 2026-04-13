@@ -16,6 +16,7 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "../../components/admin/AdminLayout";
 import { COLORS, FONTS } from "../../styles/colors";
+import Icon from "../../utils/icons";
 import {
   getFormConfig, saveFormConfig, resetFormConfig,
   FORM_SECTIONS, PERMIT_FIELDS_DEFAULT, CHANCELA_FIELDS_DEFAULT,
@@ -34,8 +35,8 @@ const TYPE_LABELS = {
 };
 
 const TYPE_ICONS = {
-  text: "📝", textarea: "📄", number: "🔢", date: "📅",
-  time: "⏰", select: "📋", checkbox: "☑️", upload: "📎",
+  text: "T", textarea: "Aa", number: "#", date: "D",
+  time: "H", select: "L", checkbox: "V", upload: "U",
 };
 
 const SECTIONS_ORDER = {
@@ -152,7 +153,7 @@ export default function FormConfigAdmin() {
 
         {/* Abas Permit / Chancela */}
         <div style={{ display: "flex", gap: 0, marginBottom: 24, background: "#fff", borderRadius: 10, padding: 4, boxShadow: "0 1px 6px rgba(0,0,0,0.06)", width: "fit-content" }}>
-          {[{ v: "permit", l: "🏃 Permit" }, { v: "chancela", l: "🏅 Chancela" }].map(t => (
+          {[{ v: "permit", l: "Permit" }, { v: "chancela", l: "Chancela" }].map(t => (
             <button key={t.v} onClick={() => setTipo(t.v)}
               style={{ padding: "9px 24px", borderRadius: 7, border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, transition: "all 0.15s",
                 background: tipo === t.v ? COLORS.dark : "transparent",
@@ -243,11 +244,11 @@ export default function FormConfigAdmin() {
         <div style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
           <button onClick={handleReset}
             style={{ padding: "10px 18px", borderRadius: 8, border: "1px solid #fca5a5", background: "#fff5f5", color: "#dc2626", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-            🔄 Resetar para padrão
+            Resetar para padrão
           </button>
           <button onClick={handleSave}
             style={{ padding: "11px 28px", borderRadius: 8, border: "none", background: saved ? "#15803d" : COLORS.dark, color: "#fff", fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, cursor: "pointer", transition: "background 0.2s" }}>
-            {saved ? "✅ Salvo!" : "💾 Salvar configuração"}
+            {saved ? "Salvo!" : "Salvar configuração"}
           </button>
         </div>
       </div>
@@ -269,7 +270,7 @@ function FieldRow({ field: f, isFirst, isLast, isEditing, onToggleActive, onTogg
     }}>
       {/* Tipo icon */}
       <span style={{ fontSize: 16, paddingTop: 2, flexShrink: 0 }} title={TYPE_LABELS[f.type] || f.type}>
-        {TYPE_ICONS[f.type] || "📝"}
+        {TYPE_ICONS[f.type] || "T"}
       </span>
 
       {/* Label e hint */}
@@ -305,18 +306,18 @@ function FieldRow({ field: f, isFirst, isLast, isEditing, onToggleActive, onTogg
       <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
         {/* Editar label */}
         <button onClick={onEditStart} title="Editar label"
-          style={iconBtn("#e0f2fe", "#0369a1")}>✏️</button>
+          style={iconBtn("#e0f2fe", "#0369a1")}><Icon name="Pencil" size={13} /></button>
 
         {/* Obrigatório */}
         <button onClick={onToggleRequired} title={f.required ? "Tornar opcional" : "Tornar obrigatório"}
           style={iconBtn(f.required ? "#fef3c7" : "#f9fafb", f.required ? "#92400e" : "#94a3b8")}>
-          {f.required ? "❗" : "○"}
+          {f.required ? "!" : "○"}
         </button>
 
         {/* Ativo/inativo */}
         <button onClick={onToggleActive} title={f.active ? "Ocultar campo" : "Mostrar campo"}
           style={iconBtn(f.active ? "#dcfce7" : "#fee2e2", f.active ? "#15803d" : "#dc2626")}>
-          {f.active ? "👁" : "🚫"}
+          {f.active ? <Icon name="Eye" size={13} /> : <Icon name="CircleX" size={13} />}
         </button>
 
         {/* Mover cima/baixo */}
@@ -328,7 +329,7 @@ function FieldRow({ field: f, isFirst, isLast, isEditing, onToggleActive, onTogg
         {/* Excluir (só custom) */}
         {onDelete && (
           <button onClick={onDelete} title="Excluir campo customizado"
-            style={iconBtn("#fff5f5", "#dc2626")}>🗑️</button>
+            style={iconBtn("#fff5f5", "#dc2626")}><Icon name="Trash2" size={13} /></button>
         )}
       </div>
     </div>

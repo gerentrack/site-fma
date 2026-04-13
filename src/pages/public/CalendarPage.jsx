@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { COLORS, FONTS } from "../../styles/colors";
 import { CalendarService } from "../../services/index";
 import { CALENDAR_CATEGORIES, EVENT_STATUS } from "../../config/navigation";
+import Icon from "../../utils/icons";
 
 const catMap    = Object.fromEntries(CALENDAR_CATEGORIES.filter(c => c.value).map(c => [c.value, c]));
 const statusMap = Object.fromEntries(EVENT_STATUS.map(s => [s.value, s]));
@@ -84,13 +85,13 @@ function ListView({ events }) {
                       {/* Detalhes */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-                          {ev.featured && <span style={{ fontSize: 13 }}>⭐</span>}
+                          {ev.featured && <span style={{ fontSize: 13 }}><Icon name="Star" size={13} /></span>}
                           <span style={{ fontFamily: FONTS.heading, fontSize: 15, fontWeight: 700, color: COLORS.dark }}>{ev.title}</span>
                         </div>
                         <div style={{ fontFamily: FONTS.body, fontSize: 12.5, color: COLORS.gray, display: "flex", gap: 14, flexWrap: "wrap" }}>
-                          {ev.time && <span>🕐 {ev.time}</span>}
-                          {ev.city && <span>📍 {ev.city}</span>}
-                          {ev.organizer && <span>👤 {ev.organizer}</span>}
+                          {ev.time && <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><Icon name="Clock" size={12} /> {ev.time}</span>}
+                          {ev.city && <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><Icon name="MapPin" size={12} /> {ev.city}</span>}
+                          {ev.organizer && <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><Icon name="Users" size={12} /> {ev.organizer}</span>}
                         </div>
                         {ev.shortDescription && (
                           <div style={{ fontFamily: FONTS.body, fontSize: 12.5, color: COLORS.gray, marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -102,13 +103,13 @@ function ListView({ events }) {
                       {/* Direita: tipo + status + docs */}
                       <div style={{ flexShrink: 0, textAlign: "right", display: "flex", flexDirection: "column", gap: 5, alignItems: "flex-end" }}>
                         <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: `${cat.color || COLORS.primary}18`, color: cat.color || COLORS.primary }}>
-                          {cat.icon} {cat.label || ev.category}
+                          <Icon name={cat.icon} size={12} /> {cat.label || ev.category}
                         </span>
                         <StatusBadge status={ev.status} />
                         <div style={{ fontSize: 15, display: "flex", gap: 3 }}>
-                          {(ev.permitFileUrl || ev.permitUrl) && <span title="Permit disponível">📋</span>}
-                          {ev.chancelaFileUrl && <span title="Chancela disponível">🏅</span>}
-                          {ev.resultsFileUrl && <span title="Resultados disponíveis">📊</span>}
+                          {(ev.permitFileUrl || ev.permitUrl) && <span title="Permit disponível"><Icon name="ClipboardList" size={14} /></span>}
+                          {ev.chancelaFileUrl && <span title="Chancela disponível"><Icon name="Medal" size={14} /></span>}
+                          {ev.resultsFileUrl && <span title="Resultados disponíveis"><Icon name="BarChart3" size={14} /></span>}
                         </div>
                       </div>
                     </div>
@@ -141,12 +142,12 @@ function CardsView({ events }) {
               <div style={{ height: 150, background: ev.coverImage ? `url(${ev.coverImage}) center/cover` : `linear-gradient(135deg, ${cat.color || COLORS.primary} 0%, ${COLORS.dark} 100%)`, position: "relative", flexShrink: 0 }}>
                 <div style={{ position: "absolute", top: 10, left: 10 }}>
                   <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, background: "rgba(255,255,255,0.9)", color: cat.color || COLORS.primary }}>
-                    {cat.icon} {cat.label || ev.category}
+                    <Icon name={cat.icon} size={11} /> {cat.label || ev.category}
                   </span>
                 </div>
                 {ev.featured && (
                   <div style={{ position: "absolute", top: 10, right: 10 }}>
-                    <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, background: "#f59e0b", color: "#fff" }}>⭐ Destaque</span>
+                    <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, background: "#f59e0b", color: "#fff" }}>Destaque</span>
                   </div>
                 )}
                 {ev.date && (
@@ -166,7 +167,7 @@ function CardsView({ events }) {
                 <StatusBadge status={ev.status} />
                 <div style={{ fontFamily: FONTS.heading, fontSize: 14.5, fontWeight: 700, color: COLORS.dark, lineHeight: 1.3 }}>{ev.title}</div>
                 <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>
-                  {ev.time && `🕐 ${ev.time} · `}📍 {ev.city}
+                  {ev.time && `${ev.time} · `}{ev.city}
                 </div>
                 {ev.shortDescription && (
                   <div style={{ fontFamily: FONTS.body, fontSize: 12.5, color: COLORS.gray, lineHeight: 1.5, marginTop: 4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
@@ -174,10 +175,10 @@ function CardsView({ events }) {
                   </div>
                 )}
                 <div style={{ marginTop: "auto", paddingTop: 10, display: "flex", gap: 4, fontSize: 14 }}>
-                  {(ev.permitFileUrl || ev.permitUrl) && <span title="Permit">📋</span>}
-                  {ev.chancelaFileUrl && <span title="Chancela">🏅</span>}
-                  {ev.resultsFileUrl && <span title="Resultados">📊</span>}
-                  {ev.externalLink && <span title="Link externo">🔗</span>}
+                  {(ev.permitFileUrl || ev.permitUrl) && <span title="Permit"><Icon name="ClipboardList" size={14} /></span>}
+                  {ev.chancelaFileUrl && <span title="Chancela"><Icon name="Medal" size={14} /></span>}
+                  {ev.resultsFileUrl && <span title="Resultados"><Icon name="BarChart3" size={14} /></span>}
+                  {ev.externalLink && <span title="Link externo"><Icon name="ExternalLink" size={14} /></span>}
                 </div>
               </div>
             </div>
@@ -266,7 +267,7 @@ function MonthlyView({ events, year, month }) {
 function EmptyState() {
   return (
     <div style={{ padding: "64px 0", textAlign: "center", fontFamily: FONTS.body }}>
-      <div style={{ fontSize: 48, marginBottom: 12 }}>🗓️</div>
+      <div style={{ marginBottom: 12 }}></div>
       <p style={{ color: COLORS.gray, fontSize: 15 }}>Nenhum evento encontrado para os filtros selecionados.</p>
     </div>
   );
@@ -372,7 +373,7 @@ export default function CalendarPage() {
 
           {/* Busca textual */}
           <div style={{ position: "relative", flexGrow: 1, minWidth: 200 }}>
-            <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: COLORS.gray, pointerEvents: "none" }}>🔍</span>
+            <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: COLORS.gray, pointerEvents: "none" }}><Icon name="Search" size={14} /></span>
             <input
               type="search"
               value={filterBusca}
@@ -383,16 +384,16 @@ export default function CalendarPage() {
           </div>
           <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
             style={{ padding: "8px 12px", borderRadius: 7, border: `1px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 13, outline: "none", background: "#fff" }}>
-            <option value="">🎽 Todos os Tipos</option>
+            <option value="">Todos os Tipos</option>
             {CALENDAR_CATEGORIES.filter(c => c.value).map(c => (
-              <option key={c.value} value={c.value}>{c.icon} {c.label}</option>
+              <option key={c.value} value={c.value}>{c.label}</option>
             ))}
           </select>
 
           {/* Ano */}
           <select value={filterYear} onChange={e => setFilterYear(e.target.value)}
             style={{ padding: "8px 12px", borderRadius: 7, border: `1px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 13, outline: "none", background: "#fff" }}>
-            <option value="">📅 Todos os Anos</option>
+            <option value="">Todos os Anos</option>
             {years.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
 
@@ -406,7 +407,7 @@ export default function CalendarPage() {
           {/* Cidade */}
           <select value={filterCity} onChange={e => setFilterCity(e.target.value)}
             style={{ padding: "8px 12px", borderRadius: 7, border: `1px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 13, outline: "none", background: "#fff" }}>
-            <option value="">📍 Todas as Cidades</option>
+            <option value="">Todas as Cidades</option>
             {cities.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
 
@@ -419,7 +420,7 @@ export default function CalendarPage() {
 
           {/* Spacer + modos */}
           <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
-            {[["lista","☰ Lista"],["cards","⊞ Cards"],["mensal","📅 Mensal"]].map(([mode, label]) => (
+            {[["lista","Lista"],["cards","Cards"],["mensal","Mensal"]].map(([mode, label]) => (
               <button key={mode} onClick={() => setViewMode(mode)}
                 style={{ padding: "7px 13px", borderRadius: 7, border: `1px solid ${viewMode === mode ? COLORS.primary : COLORS.grayLight}`, background: viewMode === mode ? COLORS.primary : "#fff", color: viewMode === mode ? "#fff" : COLORS.gray, fontFamily: FONTS.heading, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
                 {label}
@@ -453,7 +454,7 @@ export default function CalendarPage() {
         )}
 
         {loading ? (
-          <div style={{ padding: "60px 0", textAlign: "center", color: COLORS.gray, fontFamily: FONTS.body }}>⏳ Carregando eventos...</div>
+          <div style={{ padding: "60px 0", textAlign: "center", color: COLORS.gray, fontFamily: FONTS.body }}>Carregando eventos...</div>
         ) : viewMode === "lista"  ? <ListView events={filtered} />
           : viewMode === "cards"  ? <CardsView events={filtered} />
           : <MonthlyView events={allEvents} year={calYear} month={calMonth} />

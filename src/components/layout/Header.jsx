@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { COLORS, FONTS } from "../../styles/colors";
 import NavItem from "../ui/NavItem";
+import Icon from "../../utils/icons";
 import { PUBLIC_NAV } from "../../config/navigation";
 import { InstitutionalPagesService, FooterConfigService } from "../../services/index";
 
@@ -63,7 +64,7 @@ export default function Header() {
                 background: COLORS.white, display: "flex", alignItems: "center",
                 justifyContent: "center", fontSize: 18, color: COLORS.primaryDark,
                 boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-              }}>🏃</div>
+              }}><Icon name="PersonStanding" size={18} /></div>
               <div>
                 <div style={{ fontFamily: FONTS.heading, fontWeight: 800, fontSize: 17, color: COLORS.white, lineHeight: 1.1, letterSpacing: 1 }}>
                   {siteConfig.siteName || "FMA"}
@@ -98,7 +99,7 @@ export default function Header() {
           onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.25)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.7)"; }}
           onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.15)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.35)"; }}
         >
-          <span style={{ fontSize: 13 }}>🏅</span>
+          <span style={{ fontSize: 13 }}><Icon name="Award" size={13} /></span>
           Permit / Chancela
         </Link>
 
@@ -131,7 +132,7 @@ export default function Header() {
               textTransform: "uppercase", letterSpacing: 0.5,
             }}
           >
-            <span style={{ fontSize: 16 }}>🏅</span>
+            <span style={{ fontSize: 16 }}><Icon name="Award" size={16} /></span>
             Solicite seu Permit/Chancela
           </Link>
           {resolvedNav.map((item, i) => (

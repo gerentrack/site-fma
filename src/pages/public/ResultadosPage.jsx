@@ -23,6 +23,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { ResultadosService, CalendarService } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
 import PdfModal, { usePdfModal } from "../../components/ui/PdfModal";
+import Icon from "../../utils/icons";
 
 // ─── Config por categoria ─────────────────────────────────────────────────────
 
@@ -30,7 +31,7 @@ const CATEGORIA_CONFIG = {
   corrida: {
     title:       "Corridas de Rua",
     subtitle:    "Resultados de provas de corrida de rua homologadas pela FMA",
-    icon:        "🏅",
+    icon:        "Medal",
     color:       "#cc0000",
     colorLight:  "#fff0f0",
     colorBorder: "#fecaca",
@@ -40,7 +41,7 @@ const CATEGORIA_CONFIG = {
   pista: {
     title:       "Pista e Campo",
     subtitle:    "Resultados de competições de atletismo em pista e campo",
-    icon:        "🏟️",
+    icon:        "Building",
     color:       "#0066cc",
     colorLight:  "#eff6ff",
     colorBorder: "#bfdbfe",
@@ -50,7 +51,7 @@ const CATEGORIA_CONFIG = {
   trail: {
     title:       "Trail Run",
     subtitle:    "Resultados de provas de trail run e montanha chanceladas pela FMA",
-    icon:        "🏔️",
+    icon:        "Mountain",
     color:       "#15803d",
     colorLight:  "#f0fdf4",
     colorBorder: "#86efac",
@@ -75,9 +76,9 @@ function fmtDateShort(d) {
 }
 
 const FILE_CONFIG = {
-  pdf:   { icon: "📄", label: "PDF",   color: "#dc2626", bg: "#fff5f5", border: "#fecaca" },
-  xlsx:  { icon: "📊", label: "Excel", color: "#15803d", bg: "#f0fdf4", border: "#86efac" },
-  link:  { icon: "🔗", label: "Link",  color: "#0066cc", bg: "#eff6ff", border: "#bfdbfe" },
+  pdf:   { icon: "FileText", label: "PDF",   color: "#dc2626", bg: "#fff5f5", border: "#fecaca" },
+  xlsx:  { icon: "BarChart3", label: "Excel", color: "#15803d", bg: "#f0fdf4", border: "#86efac" },
+  link:  { icon: "ExternalLink", label: "Link",  color: "#0066cc", bg: "#eff6ff", border: "#bfdbfe" },
 };
 
 // ─── Componente de acesso ao resultado (download / link externo) ──────────────
@@ -126,7 +127,7 @@ function AcessoBotao({ resultado, size = "normal", style: extraStyle = {}, onVie
           onMouseEnter={e => { e.currentTarget.style.opacity = "0.82"; e.currentTarget.style.transform = "translateY(-1px)"; }}
           onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; }}
         >
-          <span style={{ fontSize: size === "sm" ? 13 : 15 }}>{fc.icon}</span>
+          <Icon name={fc.icon} size={size === "sm" ? 13 : 15} />
           Visualizar {fc.label}
         </button>
       )}
@@ -144,7 +145,7 @@ function AcessoBotao({ resultado, size = "normal", style: extraStyle = {}, onVie
           onMouseEnter={e => { e.currentTarget.style.opacity = "0.82"; e.currentTarget.style.transform = "translateY(-1px)"; }}
           onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; }}
         >
-          <span style={{ fontSize: size === "sm" ? 13 : 15 }}>🔗</span>
+          <Icon name="ExternalLink" size={size === "sm" ? 13 : 15} />
           Ver online
         </a>
       )}
@@ -190,7 +191,7 @@ function ResultadoCard({ resultado, cfg, onViewPdf }) {
             textTransform: "uppercase", letterSpacing: 1,
             background: fc.bg, color: fc.color, border: `1px solid ${fc.border}`,
           }}>
-            {fc.icon} {fc.label}
+            <Icon name={fc.icon} size={12} /> {fc.label}
           </span>
           {modalidade && (
             <span style={{
@@ -225,8 +226,8 @@ function ResultadoCard({ resultado, cfg, onViewPdf }) {
           display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 10,
           fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray,
         }}>
-          <span>📅 {fmtDateShort(dataEvento)}</span>
-          <span>📍 {cidade}</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><Icon name="Calendar" size={12} /> {fmtDateShort(dataEvento)}</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><Icon name="MapPin" size={12} /> {cidade}</span>
         </div>
 
         {/* Descrição */}
@@ -292,7 +293,7 @@ function FiltrosBar({ anos, cidades, filtros, onChange, cfg }) {
         <span style={{
           position: "absolute", left: 12, top: "50%",
           transform: "translateY(-50%)", color: COLORS.gray, fontSize: 15,
-        }}>🔍</span>
+        }}><Icon name="Search" size={14} /></span>
         <input
           type="search"
           value={filtros.busca}
@@ -359,7 +360,7 @@ function PageHero({ cfg, totalVisible, totalAll }) {
         pointerEvents: "none",
         letterSpacing: -4,
       }}>
-        {cfg.icon}
+        <Icon name={cfg.icon} size={120} />
       </div>
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 32px" }}>
@@ -382,10 +383,9 @@ function PageHero({ cfg, totalVisible, totalAll }) {
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
               <span style={{
-                fontSize: 42,
                 filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.4))",
               }}>
-                {cfg.icon}
+                <Icon name={cfg.icon} size={42} />
               </span>
               <h1 style={{
                 fontFamily: FONTS.heading,
@@ -449,9 +449,9 @@ function PageHero({ cfg, totalVisible, totalAll }) {
 
 function CategoriaTabs({ atual }) {
   const tabs = [
-    { cat: "corrida", label: "🏅 Corridas de Rua", path: "/resultados/corridas" },
-    { cat: "pista",   label: "🏟️ Pista e Campo",   path: "/resultados/pista" },
-    { cat: "trail",   label: "🏔️ Trail Run",        path: "/resultados/trail" },
+    { cat: "corrida", label: "Corridas de Rua", icon: "Medal", path: "/resultados/corridas" },
+    { cat: "pista",   label: "Pista e Campo", icon: "Building",  path: "/resultados/pista" },
+    { cat: "trail",   label: "Trail Run",     icon: "Mountain",  path: "/resultados/trail" },
   ];
 
   return (
@@ -490,7 +490,7 @@ function CategoriaTabs({ atual }) {
                 whiteSpace: "nowrap",
               }}
             >
-              {t.label}
+              <Icon name={t.icon} size={14} /> {t.label}
             </Link>
           );
         })}
@@ -511,7 +511,7 @@ function ResultadosGrid({ resultados, cfg, onViewPdf }) {
         borderRadius: 16,
         border: `1.5px dashed ${COLORS.grayLight}`,
       }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>📭</div>
+        <div style={{ marginBottom: 16 }}></div>
         <p style={{
           fontFamily: FONTS.heading, fontSize: 16, fontWeight: 700,
           color: COLORS.gray, margin: 0,
@@ -553,7 +553,7 @@ function ResultadosGrid({ resultados, cfg, onViewPdf }) {
               borderRadius: 20,
               whiteSpace: "nowrap",
             }}>
-              {cfg.icon} {ano}
+              <Icon name={cfg.icon} size={13} /> {ano}
             </div>
             <div style={{
               flex: 1, height: 1,
@@ -707,7 +707,7 @@ export function ResultadoDetalhe() {
 
   if (erro || !resultado) return (
     <div style={{ maxWidth: 820, margin: "60px auto", padding: "0 32px", textAlign: "center" }}>
-      <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+      <div style={{ marginBottom: 16 }}></div>
       <h2 style={{ fontFamily: FONTS.heading, fontSize: 22, color: COLORS.dark, margin: "0 0 8px" }}>
         Resultado não encontrado
       </h2>
@@ -762,7 +762,7 @@ export function ResultadoDetalhe() {
               textTransform: "uppercase", letterSpacing: 1,
               background: cfg.color, color: "#fff",
             }}>
-              {cfg.icon} {cfg.breadcrumb}
+              <Icon name={cfg.icon} size={12} /> {cfg.breadcrumb}
             </span>
             {resultado.modalidade && (
               <span style={{
@@ -789,9 +789,9 @@ export function ResultadoDetalhe() {
             display: "flex", gap: 20, flexWrap: "wrap",
             fontFamily: FONTS.body, fontSize: 14, color: "rgba(255,255,255,0.65)",
           }}>
-            <span>📅 {fmtDate(resultado.dataEvento)}</span>
-            <span>📍 {resultado.cidade}</span>
-            <span>📆 Temporada {resultado.anoCompetitivo}</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="Calendar" size={14} /> {fmtDate(resultado.dataEvento)}</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="MapPin" size={14} /> {resultado.cidade}</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="CalendarDays" size={14} /> Temporada {resultado.anoCompetitivo}</span>
           </div>
         </div>
       </div>
@@ -816,7 +816,7 @@ export function ResultadoDetalhe() {
                   textTransform: "uppercase", letterSpacing: 2, color: "#0066cc",
                   margin: "0 0 12px",
                 }}>
-                  📅 Evento no Calendário FMA
+                  <Icon name="Calendar" size={14} /> Evento no Calendário FMA
                 </h3>
                 <div style={{ fontFamily: FONTS.heading, fontSize: 15, fontWeight: 800, color: COLORS.dark, marginBottom: 6 }}>
                   {evento.title}
@@ -867,7 +867,7 @@ export function ResultadoDetalhe() {
                 color: cfg.color, margin: "0 0 16px",
                 paddingBottom: 12, borderBottom: `1px solid ${cfg.colorBorder}`,
               }}>
-                📁 Acessar Resultado
+                <Icon name="Folder" size={14} /> Acessar Resultado
               </h3>
 
               <AcessoBotao resultado={resultado} size="normal" style={{ width: "100%", justifyContent: "center" }} onViewPdf={openPdf} />

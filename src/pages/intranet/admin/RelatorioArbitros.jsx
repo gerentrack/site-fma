@@ -66,7 +66,7 @@ export default function RelatorioArbitros() {
         {/* Filtros */}
         <div style={{ ...card, display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
           {[
-            { label: "Nivel", value: filtroNivel, set: setFiltroNivel, opts: ["A", "B", "C", "NI"] },
+            { label: "Nivel", value: filtroNivel, set: setFiltroNivel, opts: [{v:"A",l:"A"},{v:"B",l:"B"},{v:"C",l:"C"},{v:"NI",l:"NAR"}] },
             { label: "Status", value: filtroStatus, set: setFiltroStatus, opts: ["ativo", "inativo", "suspenso"] },
             { label: "Anuidade", value: filtroAnuidade, set: setFiltroAnuidade, opts: ["pendente", "pago", "vencido", "isento"] },
           ].map(f => (
@@ -75,7 +75,7 @@ export default function RelatorioArbitros() {
               <select value={f.value} onChange={e => f.set(e.target.value)}
                 style={{ padding: "7px 10px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, fontSize: 13 }}>
                 <option value="">Todos</option>
-                {f.opts.map(o => <option key={o} value={o}>{o}</option>)}
+                {f.opts.map(o => typeof o === "string" ? <option key={o} value={o}>{o}</option> : <option key={o.v} value={o.v}>{o.l}</option>)}
               </select>
             </div>
           ))}

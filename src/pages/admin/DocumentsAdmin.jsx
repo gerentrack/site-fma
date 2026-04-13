@@ -90,7 +90,7 @@ export function DocumentsList() {
           {items.length === 0 && <p style={{ padding: 32, textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray }}>Nenhum documento cadastrado.</p>}
           {items.map((item, i) => (
             <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 16, padding: "16px 24px", borderBottom: i < items.length - 1 ? `1px solid ${COLORS.grayLight}` : "none" }}>
-              <span style={{ fontSize: 24 }}>📄</span>
+              <span style={{ fontSize: 14, color: COLORS.gray }}>DOC</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: FONTS.heading, fontSize: 15, fontWeight: 700, color: COLORS.dark }}>{item.title}</div>
                 <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>{item.category} · {item.date}</div>

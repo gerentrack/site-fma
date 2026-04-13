@@ -160,7 +160,7 @@ export function CalendarList() {
       render: (v, row) => (
         <div>
           <div style={{ fontWeight: 700, fontSize: 14, color: COLORS.dark, display: "flex", alignItems: "center", gap: 6 }}>
-            {row.featured && <span title="Destaque" style={{ color: "#f59e0b" }}>⭐</span>}
+            {row.featured && <span title="Destaque" style={{ color: "#f59e0b" }}>★</span>}
             {v}
           </div>
           <div style={{ fontSize: 12, color: COLORS.gray, marginTop: 3 }}>
@@ -199,9 +199,9 @@ export function CalendarList() {
       label: "Docs",
       render: (_, row) => (
         <div style={{ fontSize: 16, display: "flex", gap: 4 }}>
-          {(row.permitFileUrl || row.permitUrl) && <span title="Permit">📋</span>}
-          {row.chancelaFileUrl && <span title="Chancela">🏅</span>}
-          {row.resultsFileUrl && <span title="Resultados">📊</span>}
+          {(row.permitFileUrl || row.permitUrl) && <span title="Permit">P</span>}
+          {row.chancelaFileUrl && <span title="Chancela">C</span>}
+          {row.resultsFileUrl && <span title="Resultados">R</span>}
         </div>
       ),
     },
@@ -232,7 +232,7 @@ export function CalendarList() {
         {/* Filtros admin */}
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 24, alignItems: "center" }}>
           <input
-            placeholder="🔍 Buscar por título ou cidade..."
+            placeholder="Buscar por título ou cidade..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{ padding: "9px 14px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 13, outline: "none", minWidth: 220 }}
@@ -439,7 +439,7 @@ export function CalendarEditor() {
             </div>
 
             <div style={{ display: "flex", gap: 24, paddingTop: 4, flexWrap: "wrap" }}>
-              <CheckboxInput checked={values.featured} onChange={v => set("featured", v)} label="⭐ Evento em Destaque (aparece no topo da listagem)" />
+              <CheckboxInput checked={values.featured} onChange={v => set("featured", v)} label="Evento em Destaque (aparece no topo da listagem)" />
               <CheckboxInput checked={values.published} onChange={v => set("published", v)} label="Publicado no site" />
             </div>
           </div>
@@ -503,7 +503,7 @@ export function CalendarEditor() {
               return (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
                   <FileUpload
-                    label="📋 Arquivo de Permit"
+                    label="Arquivo de Permit"
                     value={values.permitFileUrl}
                     onChange={v => set("permitFileUrl", v)}
                     folder={`eventos/permits/${ano}`}
@@ -513,7 +513,7 @@ export function CalendarEditor() {
                     maxMB={10}
                   />
                   <FileUpload
-                    label="🏅 Arquivo de Chancela"
+                    label="Arquivo de Chancela"
                     value={values.chancelaFileUrl}
                     onChange={v => set("chancelaFileUrl", v)}
                     folder={`eventos/chancelas/${ano}`}
@@ -523,7 +523,7 @@ export function CalendarEditor() {
                     maxMB={10}
                   />
                   <FileUpload
-                    label="📊 Arquivo de Resultados"
+                    label="Arquivo de Resultados"
                     value={values.resultsFileUrl}
                     onChange={v => set("resultsFileUrl", v)}
                     folder={`eventos/resultados/${ano}`}

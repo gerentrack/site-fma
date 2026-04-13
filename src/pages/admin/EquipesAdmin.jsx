@@ -13,6 +13,7 @@ import { EquipesService } from "../../services/index";
 import FileUpload from "../../components/ui/FileUpload";
 import { deleteFile } from "../../services/storageService";
 import { COLORS, FONTS } from "../../styles/colors";
+import Icon from "../../utils/icons";
 
 // ─── Helpers de estilo ────────────────────────────────────────────────────────
 
@@ -112,7 +113,7 @@ export function EquipesList() {
           <div>
             <h1 style={{ fontFamily: FONTS.heading, fontSize: 24, fontWeight: 900,
               textTransform: "uppercase", color: COLORS.dark, margin: 0 }}>
-              🏃 Clubes e Equipes
+              Clubes e Equipes
             </h1>
             <p style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, margin: "4px 0 0" }}>
               {items.length} equipe{items.length !== 1 ? "s" : ""} cadastrada{items.length !== 1 ? "s" : ""}
@@ -132,7 +133,7 @@ export function EquipesList() {
         <div style={{ position: "relative", marginBottom: 20 }}>
           <span style={{ position: "absolute", left: 12, top: "50%",
             transform: "translateY(-50%)", fontSize: 14,
-            color: COLORS.gray, pointerEvents: "none" }}>🔍</span>
+            color: COLORS.gray, pointerEvents: "none" }}></span>
           <input type="search" value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar por nome ou cidade…"
@@ -145,7 +146,7 @@ export function EquipesList() {
             fontFamily: FONTS.body, color: COLORS.gray }}>Carregando…</div>
         ) : filtered.length === 0 ? (
           <div style={{ ...card, textAlign: "center", padding: "40px 24px" }}>
-            <div style={{ fontSize: 40, marginBottom: 10 }}>🔍</div>
+            <div style={{ marginBottom: 10 }}></div>
             <p style={{ fontFamily: FONTS.heading, color: COLORS.gray, margin: 0 }}>
               {search ? "Nenhuma equipe encontrada." : "Nenhuma equipe cadastrada ainda."}
             </p>
@@ -180,7 +181,7 @@ export function EquipesList() {
                           <div style={{ width: 36, height: 36, borderRadius: 8,
                             background: "#f3f4f6", display: "flex",
                             alignItems: "center", justifyContent: "center", fontSize: 18 }}>
-                            🏃
+                            —
                           </div>
                         )}
                         <div>
@@ -204,7 +205,7 @@ export function EquipesList() {
                           fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700,
                           background: item.published ? "#f0fdf4" : "#fff3f3",
                           color: item.published ? "#15803d" : "#cc0000" }}>
-                        {item.published ? "✅ Publicada" : "⏸ Rascunho"}
+                        {item.published ? "Publicada" : "Rascunho"}
                       </button>
                     </td>
                     <td style={{ padding: "14px 16px" }}>
@@ -213,14 +214,14 @@ export function EquipesList() {
                           style={{ padding: "6px 14px", borderRadius: 7, border: `1px solid ${COLORS.grayLight}`,
                             background: "#fff", cursor: "pointer",
                             fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, color: COLORS.dark }}>
-                          ✏️ Editar
+                          Editar
                         </button>
                         <button onClick={() => handleDelete(item.id)}
                           style={{ padding: "6px 12px", borderRadius: 7,
                             border: "1px solid #fca5a5", background: "#fff",
                             cursor: "pointer", fontFamily: FONTS.heading,
                             fontSize: 11, fontWeight: 700, color: "#dc2626" }}>
-                          🗑️
+                          <Icon name="Trash2" size={14} />
                         </button>
                       </div>
                     </td>
@@ -326,7 +327,7 @@ export function EquipesEditor() {
             border: `1px solid ${msg.type === "error" ? "#fca5a5" : "#86efac"}`,
             fontFamily: FONTS.body, fontSize: 13,
             color: msg.type === "error" ? "#cc0000" : "#15803d" }}>
-            {msg.type === "error" ? "⚠️" : "✅"} {msg.text}
+            {msg.text}
           </div>
         )}
 

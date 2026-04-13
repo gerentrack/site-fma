@@ -129,7 +129,7 @@ export default function IndicadoresPanel() {
                   { label: "Nivel A", value: stats.porNivel.A, color: "#cc0000" },
                   { label: "Nivel B", value: stats.porNivel.B, color: "#0066cc" },
                   { label: "Nivel C", value: stats.porNivel.C, color: "#007733" },
-                  { label: "NI", value: stats.porNivel.NI, color: "#6b7280" },
+                  { label: "NAR", value: stats.porNivel.NI, color: "#6b7280" },
                 ]} />
               </div>
 

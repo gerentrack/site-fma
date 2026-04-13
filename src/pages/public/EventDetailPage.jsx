@@ -8,6 +8,7 @@ import { useParams, Link } from "react-router-dom";
 import { COLORS, FONTS } from "../../styles/colors";
 import { CalendarService } from "../../services/index";
 import { CALENDAR_CATEGORIES, EVENT_STATUS } from "../../config/navigation";
+import Icon from "../../utils/icons";
 import PdfModal, { usePdfModal } from "../../components/ui/PdfModal";
 
 const catMap    = Object.fromEntries(CALENDAR_CATEGORIES.filter(c => c.value).map(c => [c.value, c]));
@@ -53,7 +54,7 @@ function DownloadBtn({ href, label, icon, onView }) {
       onMouseEnter={e => e.currentTarget.style.background = "#990000"}
       onMouseLeave={e => e.currentTarget.style.background = COLORS.primary}
     >
-      <span style={{ fontSize: 16 }}>{icon}</span>{label}
+      {icon && <span style={{ fontSize: 16 }}>{icon}</span>}{label}
     </button>
   );
 }
@@ -62,7 +63,7 @@ function InfoRow({ icon, label, value, href }) {
   if (!value) return null;
   return (
     <div style={{ display: "flex", gap: 12, alignItems: "flex-start", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
-      <span style={{ fontSize: 18, flexShrink: 0 }}>{icon}</span>
+      <span style={{ flexShrink: 0 }}>{icon}</span>
       <div>
         <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, marginBottom: 2 }}>{label}</div>
         {href
@@ -89,12 +90,12 @@ export default function EventDetailPage() {
   }, [id]);
 
   if (status === "loading") {
-    return <div style={{ padding: "80px 24px", textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray }}>⏳ Carregando...</div>;
+    return <div style={{ padding: "80px 24px", textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray }}>Carregando...</div>;
   }
   if (status === "notfound") {
     return (
       <div style={{ padding: "80px 24px", textAlign: "center" }}>
-        <div style={{ fontSize: 48, marginBottom: 12 }}>🚧</div>
+        <div style={{ marginBottom: 12 }}></div>
         <h1 style={{ fontFamily: FONTS.heading, color: COLORS.primary, fontSize: 26, textTransform: "uppercase" }}>Evento não encontrado</h1>
         <Link to="/calendario" style={{ color: COLORS.primary, fontWeight: 700 }}>← Voltar ao Calendário</Link>
       </div>
@@ -131,15 +132,15 @@ export default function EventDetailPage() {
 
           {/* Badges */}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
-            <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: `${cat.color || COLORS.primary}cc`, color: "#fff" }}>
-              {cat.icon} {cat.label || event.category}
+            <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: `${cat.color || COLORS.primary}cc`, color: "#fff", display: "inline-flex", alignItems: "center", gap: 4 }}>
+              <Icon name={cat.icon} size={12} /> {cat.label || event.category}
             </span>
             <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: `${stat.color}cc`, color: "#fff" }}>
               {stat.label}
             </span>
             {event.featured && (
               <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: "#f59e0b", color: "#fff" }}>
-                ⭐ Destaque
+                Destaque
               </span>
             )}
           </div>
@@ -191,9 +192,9 @@ export default function EventDetailPage() {
                     return reg ? (
                       <div style={{ background: "#fff", borderRadius: 8, padding: "14px 16px", border: `1px solid ${COLORS.grayLight}` }}>
                         <div style={{ fontFamily: FONTS.heading, fontWeight: 800, fontSize: 13, color: COLORS.dark, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                          📄 Regulamento
+                          <Icon name="FileText" size={14} /> Regulamento
                         </div>
-                        <DownloadBtn href={reg} label="Regulamento Geral" icon="📄" onView={openPdf} />
+                        <DownloadBtn href={reg} label="Regulamento Geral" icon="" onView={openPdf} />
                       </div>
                     ) : null;
                   })()}
@@ -209,7 +210,7 @@ export default function EventDetailPage() {
                           if (!mod.permitFileUrl && !mod.resultsFileUrl) return null;
                           return (
                             <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                              <span style={{ fontFamily: FONTS.heading, fontWeight: 700, fontSize: 12, color: COLORS.dark, minWidth: 60 }}>🏃 {mod.nome}</span>
+                              <span style={{ fontFamily: FONTS.heading, fontWeight: 700, fontSize: 12, color: COLORS.dark, minWidth: 60, display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="PersonStanding" size={12} /> {mod.nome}</span>
                               {mod.permitFileUrl  && <DownloadBtn href={mod.permitFileUrl}  label={mod.permitNumero ? `Permit N\u00BA ${mod.permitNumero}` : "Permit"} icon="" onView={openPdf} />}
                               {mod.resultsFileUrl && <DownloadBtn href={mod.resultsFileUrl} label="Resultados" icon="" onView={openPdf} />}
                             </div>
@@ -224,7 +225,7 @@ export default function EventDetailPage() {
                     <div style={{ background: "#fff", borderRadius: 8, padding: "14px 16px", border: `1px solid ${COLORS.grayLight}` }}>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                         {(event.permitFileUrl || event.permitUrl) && <DownloadBtn href={event.permitFileUrl || event.permitUrl} label="Permit do Evento" icon="" onView={openPdf} />}
-                        {event.chancelaFileUrl && <DownloadBtn href={event.chancelaFileUrl} label="Chancela FMA" icon="🏅" onView={openPdf} />}
+                        {event.chancelaFileUrl && <DownloadBtn href={event.chancelaFileUrl} label="Chancela FMA" icon="" onView={openPdf} />}
                       </div>
                     </div>
                   )}
@@ -233,7 +234,7 @@ export default function EventDetailPage() {
                 /* Sem modalidades — exibe arquivos gerais */
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
                   {(event.permitFileUrl || event.permitUrl) && <DownloadBtn href={event.permitFileUrl || event.permitUrl} label="Permit do Evento" icon="" onView={openPdf} />}
-                  {event.chancelaFileUrl && <DownloadBtn href={event.chancelaFileUrl} label="Chancela FMA" icon="🏅" onView={openPdf} />}
+                  {event.chancelaFileUrl && <DownloadBtn href={event.chancelaFileUrl} label="Chancela FMA" icon="" onView={openPdf} />}
                   {event.resultsFileUrl  && <DownloadBtn href={event.resultsFileUrl}  label="Resultados"   icon="" onView={openPdf} />}
                 </div>
               )}
@@ -247,7 +248,7 @@ export default function EventDetailPage() {
               onMouseEnter={e => { e.currentTarget.style.background = COLORS.primary; e.currentTarget.style.color = "#fff"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = COLORS.primary; }}
             >
-              🔗 Acessar Site do Organizador
+              <Icon name="ExternalLink" size={14} /> Acessar Site do Organizador
             </a>
           )}
         </div>

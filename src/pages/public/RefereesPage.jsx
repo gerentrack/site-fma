@@ -7,22 +7,23 @@ import { Link, useSearchParams } from "react-router-dom";
 import { COLORS, FONTS } from "../../styles/colors";
 import { RefereeContentService } from "../../services/index";
 import { REFEREE_CONTENT_CATEGORIES } from "../../config/navigation";
+import Icon from "../../utils/icons";
 
 const catMap = Object.fromEntries(
   REFEREE_CONTENT_CATEGORIES.filter(c => c.value).map(c => [c.value, c])
 );
 
 const QUICK_ACTIONS = [
-  { icon: "📝", label: "Cadastro", category: "cadastro", color: "#cc0000" },
-  { icon: "📅", label: "Disponibilidade", category: "disponibilidade", color: "#0066cc" },
-  { icon: "📄", label: "Formulários", category: "formulario", color: "#007733" },
-  { icon: "🗂️", label: "Documentos", category: "documento", color: "#5a3e00" },
-  { icon: "📢", label: "Comunicados", category: "comunicado", color: "#7c3aed" },
-  { icon: "📊", label: "Materiais", category: "material", color: "#0891b2" },
+  { icon: "Pencil", label: "Cadastro", category: "cadastro", color: "#cc0000" },
+  { icon: "Calendar", label: "Disponibilidade", category: "disponibilidade", color: "#0066cc" },
+  { icon: "FileText", label: "Formulários", category: "formulario", color: "#007733" },
+  { icon: "FolderOpen", label: "Documentos", category: "documento", color: "#5a3e00" },
+  { icon: "Megaphone", label: "Comunicados", category: "comunicado", color: "#7c3aed" },
+  { icon: "BarChart3", label: "Materiais", category: "material", color: "#0891b2" },
 ];
 
 function ContentCard({ item }) {
-  const cat = catMap[item.category] || { color: COLORS.primary, icon: "📋", label: item.category };
+  const cat = catMap[item.category] || { color: COLORS.primary, icon: "ClipboardList", label: item.category };
   return (
     <Link to={`/arbitros/conteudo/${item.id}`} style={{ textDecoration: "none", display: "flex", flexDirection: "column" }}>
       <div
@@ -39,9 +40,9 @@ function ContentCard({ item }) {
         <div style={{ padding: "16px 18px 18px", flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, background: `${cat.color}15`, color: cat.color }}>
-              {cat.icon} {cat.label}
+              <Icon name={cat.icon} size={11} /> {cat.label}
             </span>
-            {item.featured && <span style={{ fontSize: 13, color: "#f59e0b" }}>⭐</span>}
+            {item.featured && <span style={{ color: "#f59e0b" }}><Icon name="Star" size={13} /></span>}
           </div>
           <div style={{ fontFamily: FONTS.heading, fontSize: 15, fontWeight: 700, color: COLORS.dark, lineHeight: 1.3 }}>{item.title}</div>
           {item.summary && (
@@ -51,9 +52,9 @@ function ContentCard({ item }) {
           )}
           <div style={{ marginTop: "auto", paddingTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", gap: 4, fontSize: 13 }}>
-              {item.content && <span title="Conteúdo detalhado">📝</span>}
-              {item.fileUrl && <span title="Arquivo para download">📎</span>}
-              {item.externalLink && <span title="Link externo">🔗</span>}
+              {item.content && <span title="Conteúdo detalhado"><Icon name="Pencil" size={13} /></span>}
+              {item.fileUrl && <span title="Arquivo para download"><Icon name="Download" size={13} /></span>}
+              {item.externalLink && <span title="Link externo"><Icon name="ExternalLink" size={13} /></span>}
             </div>
             {item.publishedAt && (
               <span style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>
@@ -110,7 +111,7 @@ export default function RefereesPage() {
             to="/intranet"
             style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 22px", borderRadius: 8, background: COLORS.primary, color: "#fff", textDecoration: "none", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, letterSpacing: 0.5 }}
           >
-            🔐 Acessar Intranet (Área Restrita)
+            <Icon name="Lock" size={14} /> Acessar Intranet (Área Restrita)
           </Link>
         </div>
       </div>
@@ -132,7 +133,7 @@ export default function RefereesPage() {
               onMouseEnter={e => { if (activeTab !== qa.category) e.currentTarget.style.background = "rgba(255,255,255,0.07)"; }}
               onMouseLeave={e => { if (activeTab !== qa.category) e.currentTarget.style.background = "transparent"; }}
             >
-              <div style={{ fontSize: 18, marginBottom: 3 }}>{qa.icon}</div>
+              <div style={{ marginBottom: 3 }}><Icon name={qa.icon} size={18} /></div>
               <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{qa.label}</div>
             </button>
           ))}
@@ -144,7 +145,7 @@ export default function RefereesPage() {
         {!activeTab && featured.length > 0 && (
           <div style={{ marginBottom: 40 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-              <span style={{ fontSize: 18 }}>⭐</span>
+              <Icon name="Star" size={18} />
               <h2 style={{ fontFamily: FONTS.heading, fontSize: 15, fontWeight: 800, textTransform: "uppercase", letterSpacing: 2, color: COLORS.dark, margin: 0 }}>Destaques</h2>
               <div style={{ flex: 1, height: 1, background: COLORS.grayLight }} />
             </div>
@@ -160,7 +161,7 @@ export default function RefereesPage() {
             onClick={() => setTab("")}
             style={{ padding: "7px 16px", borderRadius: 20, cursor: "pointer", border: `2px solid ${!activeTab ? COLORS.primary : COLORS.grayLight}`, background: !activeTab ? COLORS.primary : "#fff", color: !activeTab ? "#fff" : COLORS.gray, fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}
           >
-            📋 Todos ({items.length})
+            <Icon name="ClipboardList" size={12} /> Todos ({items.length})
           </button>
           {REFEREE_CONTENT_CATEGORIES.filter(c => c.value).map(c => {
             const count = items.filter(i => i.category === c.value).length;
@@ -168,7 +169,7 @@ export default function RefereesPage() {
             return (
               <button key={c.value} onClick={() => setTab(activeTab === c.value ? "" : c.value)}
                 style={{ padding: "7px 16px", borderRadius: 20, cursor: "pointer", border: `2px solid ${activeTab === c.value ? c.color : COLORS.grayLight}`, background: activeTab === c.value ? c.color : "#fff", color: activeTab === c.value ? "#fff" : COLORS.gray, fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
-                {c.icon} {c.label} ({count})
+                <Icon name={c.icon} size={12} /> {c.label} ({count})
               </button>
             );
           })}
@@ -176,10 +177,10 @@ export default function RefereesPage() {
 
         {/* Grid */}
         {loading ? (
-          <div style={{ padding: "60px 0", textAlign: "center", color: COLORS.gray, fontFamily: FONTS.body }}>⏳ Carregando...</div>
+          <div style={{ padding: "60px 0", textAlign: "center", color: COLORS.gray, fontFamily: FONTS.body }}>Carregando...</div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: "60px 0", textAlign: "center" }}>
-            <div style={{ fontSize: 44, marginBottom: 10 }}>🔍</div>
+            <div style={{ marginBottom: 10 }}></div>
             <p style={{ fontFamily: FONTS.body, color: COLORS.gray }}>Nenhum conteúdo encontrado para esta categoria.</p>
           </div>
         ) : (

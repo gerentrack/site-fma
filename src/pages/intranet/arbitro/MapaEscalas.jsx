@@ -110,10 +110,10 @@ export default function MapaEscalas() {
       const coords = evt.lat && evt.lng ? { lat: evt.lat, lng: evt.lng } : coordsFromCidade(evt.city);
       if (!coords) return;
 
-      const cat = catMap[evt.category] || { color: COLORS.gray, icon: "📅" };
+      const cat = catMap[evt.category] || { color: COLORS.gray };
       const icon = L.divIcon({
         className: "",
-        html: `<div style="background:${cat.color};color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);">${cat.icon}</div>`,
+        html: `<div style="background:${cat.color};color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
         iconSize: [28, 28],
         iconAnchor: [14, 14],
       });

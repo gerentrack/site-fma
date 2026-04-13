@@ -8,6 +8,7 @@ import { FormField, TextInput, SelectInput, CheckboxInput } from "../../componen
 import { useAuth } from "../../hooks/useAuth";
 import { adminUsersAPI } from "../../data/api";
 import { COLORS, FONTS } from "../../styles/colors";
+import Icon from "../../utils/icons";
 
 // ── Constantes ───────────────────────────────────────────────────────────────
 
@@ -142,12 +143,12 @@ export function UsuariosList() {
                           onClick={() => navigate(`/admin/usuarios/${u.uid}`)}
                           title="Editar"
                           style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: "4px" }}
-                        >✏️</button>
+                        ><Icon name="Pencil" size={14} /></button>
                         <button
                           onClick={() => handleToggle(u)}
                           title={u.active !== false ? "Desativar" : "Reativar"}
                           style={{ background: "none", border: "none", cursor: "pointer", fontSize: 16, padding: "4px" }}
-                        >{u.active !== false ? "🔒" : "🔓"}</button>
+                        >{u.active !== false ? <Icon name="Lock" size={14} /> : <Icon name="Unlock" size={14} />}</button>
                       </>
                     )}
                   </div>

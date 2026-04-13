@@ -1,4 +1,5 @@
 import { COLORS, FONTS } from "../../styles/colors";
+import Icon from "../../utils/icons";
 
 /**
  * Barra de filtros reutilizável.
@@ -39,7 +40,7 @@ export default function FilterBar({
       {/* Search */}
       {onSearch && (
         <div style={{ position: "relative", flex: "1 1 200px" }}>
-          <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: COLORS.gray }}>🔍</span>
+          <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: COLORS.gray }}><Icon name="Search" size={14} /></span>
           <input
             value={search}
             onChange={e => onSearch(e.target.value)}

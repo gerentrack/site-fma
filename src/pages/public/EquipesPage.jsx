@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { EquipesService } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
+import Icon from "../../utils/icons";
 
 // ─── Utilitários ──────────────────────────────────────────────────────────────
 
@@ -21,14 +22,14 @@ function fmtDate(d) {
 }
 
 const SOCIAL_ICONS = {
-  instagram: "📸",
-  facebook:  "👍",
-  youtube:   "▶️",
-  whatsapp:  "💬",
-  twitter:   "✖️",
-  tiktok:    "🎵",
-  linkedin:  "💼",
-  site:      "🌐",
+  instagram: "Camera",
+  facebook:  "Globe",
+  youtube:   "Play",
+  whatsapp:  "MessageSquare",
+  twitter:   "Globe",
+  tiktok:    "Globe",
+  linkedin:  "Globe",
+  site:      "Globe",
 };
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -77,8 +78,8 @@ function EquipeCard({ equipe }) {
           ) : (
             <div style={{ position: "absolute", inset: 0,
               background: "linear-gradient(135deg, #cc000044, #cc000022)",
-              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44 }}>
-              🏃
+              display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Icon name="PersonStanding" size={44} />
             </div>
           )}
           <div style={{ position: "absolute", inset: 0,
@@ -109,7 +110,7 @@ function EquipeCard({ equipe }) {
 
           {equipe.cidade && (
             <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginBottom: 8 }}>
-              📍 {equipe.cidade}{equipe.fundacao ? ` · Fundado em ${equipe.fundacao}` : ""}
+              <Icon name="MapPin" size={12} /> {equipe.cidade}{equipe.fundacao ? ` · Fundado em ${equipe.fundacao}` : ""}
             </div>
           )}
 
@@ -167,7 +168,7 @@ export function EquipesListagem() {
           fontFamily: FONTS.heading, fontWeight: 900,
           fontSize: "clamp(5rem,12vw,9rem)",
           color: "rgba(255,255,255,0.03)", userSelect: "none",
-        }}>🏃</div>
+        }}></div>
 
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 32px" }}>
           <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700,
@@ -179,7 +180,7 @@ export function EquipesListagem() {
           <div style={{ display: "flex", alignItems: "flex-end", gap: 32, flexWrap: "wrap" }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 10 }}>
-                <span style={{ fontSize: 40 }}>🏃</span>
+                <span><Icon name="PersonStanding" size={40} /></span>
                 <h1 style={{ fontFamily: FONTS.heading,
                   fontSize: "clamp(2rem,5vw,3rem)", fontWeight: 900,
                   color: "#fff", margin: 0, textTransform: "uppercase", letterSpacing: 2 }}>
@@ -215,7 +216,7 @@ export function EquipesListagem() {
             <div style={{ position: "relative", marginBottom: 28 }}>
               <span style={{ position: "absolute", left: 14, top: "50%",
                 transform: "translateY(-50%)", fontSize: 14,
-                color: COLORS.gray, pointerEvents: "none" }}>🔍</span>
+                color: COLORS.gray, pointerEvents: "none" }}><Icon name="Search" size={14} /></span>
               <input
                 type="search"
                 value={busca}
@@ -232,7 +233,7 @@ export function EquipesListagem() {
               <div style={{ textAlign: "center", padding: "64px 24px",
                 background: "#fff", borderRadius: 16,
                 border: `1.5px dashed ${COLORS.grayLight}` }}>
-                <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
+                <div style={{ marginBottom: 12 }}></div>
                 <p style={{ fontFamily: FONTS.heading, fontSize: 16,
                   fontWeight: 700, color: COLORS.gray, margin: 0 }}>
                   Nenhuma equipe encontrada.
@@ -287,7 +288,7 @@ export function EquipeDetalhe() {
 
   if (erro || !equipe) return (
     <div style={{ maxWidth: 700, margin: "60px auto", padding: "0 32px", textAlign: "center" }}>
-      <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+      <div style={{ marginBottom: 16 }}></div>
       <h2 style={{ fontFamily: FONTS.heading, fontSize: 22, color: COLORS.dark }}>Equipe não encontrada</h2>
       <button onClick={() => navigate("/equipes")} style={{
         marginTop: 16, padding: "10px 22px", borderRadius: 9,
@@ -346,8 +347,8 @@ export function EquipeDetalhe() {
               <div style={{ display: "flex", gap: 16, flexWrap: "wrap",
                 fontFamily: FONTS.body, fontSize: 14,
                 color: "rgba(255,255,255,0.65)" }}>
-                {equipe.cidade && <span>📍 {equipe.cidade}</span>}
-                {equipe.fundacao && <span>🗓️ Fundado em {equipe.fundacao}</span>}
+                {equipe.cidade && <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="MapPin" size={14} /> {equipe.cidade}</span>}
+                {equipe.fundacao && <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="Calendar" size={14} /> Fundado em {equipe.fundacao}</span>}
               </div>
             </div>
           </div>
@@ -393,15 +394,15 @@ export function EquipeDetalhe() {
               </div>
 
               {[
-                equipe.cidade    && { icon: "📍", label: "Cidade",       val: equipe.cidade },
-                equipe.fundacao  && { icon: "🗓️", label: "Fundação",     val: equipe.fundacao },
-                equipe.contato   && { icon: "✉️",  label: "Contato",     val: equipe.contato, href: equipe.contato.includes("@") ? `mailto:${equipe.contato}` : equipe.contato },
+                equipe.cidade    && { icon: "MapPin", label: "Cidade",       val: equipe.cidade },
+                equipe.fundacao  && { icon: "Calendar", label: "Fundação",     val: equipe.fundacao },
+                equipe.contato   && { icon: "Mail",  label: "Contato",     val: equipe.contato, href: equipe.contato.includes("@") ? `mailto:${equipe.contato}` : equipe.contato },
               ].filter(Boolean).map((item, i) => (
                 <div key={i} style={{ marginBottom: 14 }}>
                   <div style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 700,
                     textTransform: "uppercase", letterSpacing: 1,
                     color: COLORS.gray, marginBottom: 2 }}>
-                    {item.icon} {item.label}
+                    <Icon name={item.icon} size={12} /> {item.label}
                   </div>
                   {item.href ? (
                     <a href={item.href} style={{ fontFamily: FONTS.body, fontSize: 13,
@@ -434,7 +435,7 @@ export function EquipeDetalhe() {
                           fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700,
                           color: COLORS.dark, textDecoration: "none",
                           textTransform: "capitalize" }}>
-                        <span>{SOCIAL_ICONS[rs.rede] || "🔗"}</span>
+                        <Icon name={SOCIAL_ICONS[rs.rede] || "ExternalLink"} size={14} />
                         {rs.rede}
                       </a>
                     ))}

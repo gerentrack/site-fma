@@ -14,6 +14,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { COLORS, FONTS } from "../../styles/colors";
 import { AthleteContentService } from "../../services/index";
 import { ATHLETE_CONTENT_CATEGORIES } from "../../config/navigation";
+import Icon from "../../utils/icons";
 
 const catMap = Object.fromEntries(
   ATHLETE_CONTENT_CATEGORIES.filter(c => c.value).map(c => [c.value, c])
@@ -22,7 +23,7 @@ const catMap = Object.fromEntries(
 // ─── Card de conteúdo ─────────────────────────────────────────────────────────
 
 function ContentCard({ item }) {
-  const cat = catMap[item.category] || { color: COLORS.primary, icon: "📋", label: item.category };
+  const cat = catMap[item.category] || { color: COLORS.primary, icon: "ClipboardList", label: item.category };
 
   return (
     <Link
@@ -67,10 +68,10 @@ function ContentCard({ item }) {
               fontFamily: FONTS.heading, fontWeight: 700,
               background: `${cat.color}15`, color: cat.color,
             }}>
-              {cat.icon} {cat.label}
+              <Icon name={cat.icon} size={11} /> {cat.label}
             </span>
             {item.featured && (
-              <span style={{ fontSize: 14, color: "#f59e0b" }} title="Destaque">⭐</span>
+              <span style={{ color: "#f59e0b" }} title="Destaque"><Icon name="Star" size={14} /></span>
             )}
           </div>
 
@@ -93,9 +94,9 @@ function ContentCard({ item }) {
           {/* Rodapé do card: indicadores + data */}
           <div style={{ marginTop: "auto", paddingTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", gap: 4, fontSize: 14 }}>
-              {item.content && <span title="Conteúdo detalhado disponível">📝</span>}
-              {item.fileUrl && <span title="Arquivo para download">📎</span>}
-              {item.externalLink && <span title="Link externo">🔗</span>}
+              {item.content && <span title="Conteúdo detalhado disponível"><Icon name="Pencil" size={14} /></span>}
+              {item.fileUrl && <span title="Arquivo para download"><Icon name="Download" size={14} /></span>}
+              {item.externalLink && <span title="Link externo"><Icon name="ExternalLink" size={14} /></span>}
             </div>
             {item.publishedAt && (
               <span style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>
@@ -113,42 +114,42 @@ function ContentCard({ item }) {
 
 const QUICK_ACTIONS = [
   {
-    icon: "📝",
+    icon: "Pencil",
     label: "Cadastrar Atleta",
     desc: "Formulários e orientações para nova filiação",
     category: "cadastro",
     color: COLORS.primary,
   },
   {
-    icon: "❌",
+    icon: "X",
     label: "Cancelar Registro",
     desc: "Procedimento de cancelamento ou transferência",
     category: "cancelamento",
     color: "#884400",
   },
   {
-    icon: "👥",
+    icon: "Users",
     label: "Lista de Atletas",
     desc: "Consulte os atletas federados 2026",
     category: "lista",
     color: "#0066cc",
   },
   {
-    icon: "📄",
+    icon: "FileText",
     label: "Documentos",
     desc: "Regulamentos, formulários e normas",
     category: "documento",
     color: "#5a3e00",
   },
   {
-    icon: "📢",
+    icon: "Megaphone",
     label: "Comunicados",
     desc: "Informes e avisos oficiais da FMA",
     category: "comunicado",
     color: "#7c3aed",
   },
   {
-    icon: "🔗",
+    icon: "ExternalLink",
     label: "Links Úteis",
     desc: "Portais e recursos externos",
     category: "link",
@@ -235,7 +236,7 @@ export default function AthletesPage() {
                 onMouseEnter={e => { if (activeTab !== qa.category) e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
                 onMouseLeave={e => { if (activeTab !== qa.category) e.currentTarget.style.background = "transparent"; }}
               >
-                <div style={{ fontSize: 20, marginBottom: 4 }}>{qa.icon}</div>
+                <div style={{ marginBottom: 4 }}><Icon name={qa.icon} size={20} /></div>
                 <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, lineHeight: 1.2 }}>{qa.label}</div>
               </button>
             ))}
@@ -249,7 +250,7 @@ export default function AthletesPage() {
         {!activeTab && featured.length > 0 && (
           <div style={{ marginBottom: 40 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
-              <span style={{ fontSize: 20 }}>⭐</span>
+              <Icon name="Star" size={20} />
               <h2 style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 800, textTransform: "uppercase", letterSpacing: 2, color: COLORS.dark, margin: 0 }}>
                 Destaques
               </h2>
@@ -275,7 +276,7 @@ export default function AthletesPage() {
               fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, transition: "all 0.15s",
             }}
           >
-            📋 Todos ({items.length})
+            <Icon name="ClipboardList" size={12} /> Todos ({items.length})
           </button>
           {ATHLETE_CONTENT_CATEGORIES.filter(c => c.value).map(c => {
             const count = items.filter(i => i.category === c.value).length;
@@ -292,7 +293,7 @@ export default function AthletesPage() {
                   fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, transition: "all 0.15s",
                 }}
               >
-                {c.icon} {c.label} ({count})
+                <Icon name={c.icon} size={12} /> {c.label} ({count})
               </button>
             );
           })}
@@ -301,11 +302,11 @@ export default function AthletesPage() {
         {/* ── Grid de cards ── */}
         {loading ? (
           <div style={{ padding: "60px 0", textAlign: "center", color: COLORS.gray, fontFamily: FONTS.body }}>
-            ⏳ Carregando...
+            Carregando...
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: "60px 0", textAlign: "center" }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
+            <div style={{ marginBottom: 12 }}></div>
             <p style={{ fontFamily: FONTS.body, color: COLORS.gray, fontSize: 15 }}>
               Nenhum conteúdo encontrado para esta categoria.
             </p>

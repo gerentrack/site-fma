@@ -15,6 +15,7 @@ import {
 } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
 import { CALENDAR_CATEGORIES, ANUIDADE_STATUS } from "../../config/navigation";
+import Icon from "../../utils/icons";
 
 const catMap = Object.fromEntries((CALENDAR_CATEGORIES || []).filter(c => c.value).map(c => [c.value, c]));
 
@@ -24,7 +25,7 @@ function StatCard({ label, value, icon, color, to }) {
       onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.1)"; }}
       onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.06)"; }}
     >
-      <div style={{ fontSize: 28, marginBottom: 8 }}>{icon}</div>
+      <div style={{ fontSize: 28, marginBottom: 8 }}><Icon name={icon} size={28} /></div>
       <div style={{ fontFamily: FONTS.heading, fontSize: 32, fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
       <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, marginTop: 4 }}>{label}</div>
     </div>
@@ -33,7 +34,7 @@ function StatCard({ label, value, icon, color, to }) {
 }
 
 function EventRow({ event, myAvail }) {
-  const cat = catMap[event.category] || { color: COLORS.gray, icon: "📅" };
+  const cat = catMap[event.category] || { color: COLORS.gray, icon: "Calendar" };
   const avail = myAvail?.find(a => a.eventId === event.id);
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 0", borderBottom: `1px solid ${COLORS.grayLight}` }}>
@@ -218,7 +219,7 @@ export default function IntranetHome() {
               const c = cores[aviso.tipo] || cores.info;
               return (
                 <div key={aviso.id} style={{ padding: "12px 16px", borderRadius: 10, background: c.bg, border: `1px solid ${c.border}`, display: "flex", alignItems: "flex-start", gap: 10 }}>
-                  <span style={{ fontSize: 16, flexShrink: 0 }}>{aviso.tipo === "urgente" ? "🔴" : aviso.tipo === "alerta" ? "🟡" : "🔵"}</span>
+                  <span style={{ flexShrink: 0 }}><Icon name={aviso.tipo === "urgente" ? "CircleAlert" : aviso.tipo === "alerta" ? "CircleAlert" : "Info"} size={16} /></span>
                   <div>
                     <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: c.color }}>{aviso.titulo}</div>
                     {aviso.mensagem && <div style={{ fontFamily: FONTS.body, fontSize: 12, color: c.color, opacity: 0.8, marginTop: 2 }}>{aviso.mensagem}</div>}
@@ -232,22 +233,22 @@ export default function IntranetHome() {
         {/* Stats — admin/coordenador */}
         {canManage && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 16, marginBottom: 36 }}>
-            <StatCard label="Árbitros cadastrados" value={stats.total} icon="👥" color={COLORS.primary} to="/intranet/admin/arbitros" />
-            <StatCard label="Árbitros ativos" value={stats.active} icon="✅" color="#007733" to="/intranet/admin/arbitros" />
-            <StatCard label="Próximos eventos" value={events.length} icon="🗓️" color="#0066cc" to="/intranet/admin/eventos" />
-            <StatCard label="Escalações ativas" value={stats.assigned} icon="📋" color="#884400" to="/intranet/admin/escalacao" />
+            <StatCard label="Árbitros cadastrados" value={stats.total} icon="Users" color={COLORS.primary} to="/intranet/admin/arbitros" />
+            <StatCard label="Árbitros ativos" value={stats.active} icon="UserCheck" color="#007733" to="/intranet/admin/arbitros" />
+            <StatCard label="Próximos eventos" value={events.length} icon="CalendarDays" color="#0066cc" to="/intranet/admin/eventos" />
+            <StatCard label="Escalações ativas" value={stats.assigned} icon="ClipboardList" color="#884400" to="/intranet/admin/escalacao" />
           </div>
         )}
 
         {/* Stats — árbitro */}
         {!canManage && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 16, marginBottom: 36 }}>
-            <StatCard label="Disponibilidades registradas" value={myAvail.length} icon="📅" color="#0066cc" to="/intranet/disponibilidade" />
-            <StatCard label="Próximas escalas" value={myAssignments.length} icon="📋" color="#007733" to="/intranet/escalas" />
-            {docsNaoLidos > 0 && <StatCard label="Mensagens não lidas" value={docsNaoLidos} icon="📨" color="#d97706" to="/intranet/mensagens" />}
-            {meuResumo && meuResumo.reembPendentes > 0 && <StatCard label="Reembolsos pendentes" value={meuResumo.reembPendentes} icon="🧾" color="#dc2626" to="/intranet/reembolsos" />}
-            {meuResumo && <StatCard label="Total recebido no ano" value={meuResumo.totalRecebido.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} icon="💰" color="#15803d" />}
-            {meuResumo && <StatCard label="Total de eventos" value={meuResumo.totalEventos} icon="🏅" color="#7c3aed" />}
+            <StatCard label="Disponibilidades registradas" value={myAvail.length} icon="CalendarDays" color="#0066cc" to="/intranet/disponibilidade" />
+            <StatCard label="Próximas escalas" value={myAssignments.length} icon="ClipboardList" color="#007733" to="/intranet/escalas" />
+            {docsNaoLidos > 0 && <StatCard label="Mensagens não lidas" value={docsNaoLidos} icon="Mail" color="#d97706" to="/intranet/mensagens" />}
+            {meuResumo && meuResumo.reembPendentes > 0 && <StatCard label="Reembolsos pendentes" value={meuResumo.reembPendentes} icon="Receipt" color="#dc2626" to="/intranet/reembolsos" />}
+            {meuResumo && <StatCard label="Total recebido no ano" value={meuResumo.totalRecebido.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} icon="Banknote" color="#15803d" />}
+            {meuResumo && <StatCard label="Total de eventos" value={meuResumo.totalEventos} icon="Award" color="#7c3aed" />}
           </div>
         )}
 
@@ -314,7 +315,7 @@ export default function IntranetHome() {
           <div style={{ background: "#fff", borderRadius: 12, padding: "22px 24px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <h2 style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: 0 }}>
-                📅 Próximos Eventos
+                Próximos Eventos
               </h2>
               <Link to={canManage ? "/intranet/admin/eventos" : "/intranet/disponibilidade"} style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, color: COLORS.primary, textDecoration: "none" }}>Ver todos →</Link>
             </div>
@@ -328,27 +329,27 @@ export default function IntranetHome() {
           {/* Ações rápidas */}
           <div style={{ background: "#fff", borderRadius: 12, padding: "22px 24px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
             <h2 style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 16px" }}>
-              ⚡ Ações Rápidas
+              Ações Rápidas
             </h2>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {(canManage ? [
-                { to: "/intranet/admin/arbitros/novo", icon: "👤", label: "Cadastrar novo árbitro" },
-                { to: "/intranet/admin/eventos/novo", icon: "🗓️", label: "Criar evento manual" },
-                { to: "/intranet/admin/escalacao", icon: "📋", label: "Gerenciar escalações" },
-                { to: "/intranet/mensagens", icon: "📨", label: "Mensagens" },
-                { to: "/intranet/admin/eventos", icon: "📥", label: "Importar do calendário FMA" },
+                { to: "/intranet/admin/arbitros/novo", icon: "UserPlus", label: "Cadastrar novo árbitro" },
+                { to: "/intranet/admin/eventos/novo", icon: "CalendarDays", label: "Criar evento manual" },
+                { to: "/intranet/admin/escalacao", icon: "ClipboardList", label: "Gerenciar escalações" },
+                { to: "/intranet/mensagens", icon: "Mail", label: "Mensagens" },
+                { to: "/intranet/admin/eventos", icon: "Download", label: "Importar do calendário FMA" },
               ] : [
-                { to: "/intranet/disponibilidade", icon: "📅", label: "Registrar disponibilidade" },
-                { to: "/intranet/escalas", icon: "📋", label: "Ver minhas escalas" },
-                { to: "/intranet/mensagens", icon: "📨", label: docsNaoLidos > 0 ? `Mensagens (${docsNaoLidos} nova${docsNaoLidos > 1 ? "s" : ""})` : "Mensagens" },
-                { to: "/intranet/anuidade", icon: "💳", label: "Minha anuidade" },
-                { to: "/intranet/perfil", icon: "👤", label: "Atualizar meus dados" },
-                { to: "/intranet/documentos", icon: "📄", label: "Acessar documentos" },
+                { to: "/intranet/disponibilidade", icon: "CalendarDays", label: "Registrar disponibilidade" },
+                { to: "/intranet/escalas", icon: "ClipboardList", label: "Ver minhas escalas" },
+                { to: "/intranet/mensagens", icon: "Mail", label: docsNaoLidos > 0 ? `Mensagens (${docsNaoLidos} nova${docsNaoLidos > 1 ? "s" : ""})` : "Mensagens" },
+                { to: "/intranet/anuidade", icon: "CreditCard", label: "Minha anuidade" },
+                { to: "/intranet/perfil", icon: "UserCog", label: "Atualizar meus dados" },
+                { to: "/intranet/documentos", icon: "FileText", label: "Acessar documentos" },
               ]).map(a => (
                 <Link key={a.to} to={a.to} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, textDecoration: "none", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 600, color: COLORS.dark, transition: "background 0.15s" }}
                   onMouseEnter={e => e.currentTarget.style.background = "#f7f7f7"}
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                  <span style={{ fontSize: 16 }}>{a.icon}</span>{a.label}
+                  <span style={{ fontSize: 16 }}><Icon name={a.icon} size={16} /></span>{a.label}
                 </Link>
               ))}
             </div>

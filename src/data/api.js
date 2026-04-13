@@ -853,7 +853,27 @@ export const refereeEventsAPI = {
   get:    async (id)      => { const item=await readDoc("refereeEvents",id); return item?ok(item):err("Não encontrado."); },
   create: async (data)    => { const item=await createDoc("refereeEvents",data); return ok(item); },
   update: async (id,data) => { const item=await patchDoc("refereeEvents",id,data); return item?ok(item):err("Não encontrado."); },
-  delete: async (id)      => { await removeDoc("refereeEvents",id); return ok(true); },
+  delete: async (id) => {
+    // Excluir filhos em cascata (assignments, disponibilidades, reembolsos, relatórios, diárias, avaliações)
+    const [avails, assigns, reembs, rels, dias, avals] = await Promise.all([
+      readCol("refereeAvailability"),
+      readCol("refereeAssignments"),
+      readCol("reembolsos"),
+      readCol("relatoriosArbitragem"),
+      readCol("diarias"),
+      readCol("avaliacoes"),
+    ]);
+    await Promise.all([
+      ...avails.filter(a => a.eventId === id).map(a => removeDoc("refereeAvailability", a.id)),
+      ...assigns.filter(a => a.eventId === id).map(a => removeDoc("refereeAssignments", a.id)),
+      ...reembs.filter(r => r.eventId === id).map(r => removeDoc("reembolsos", r.id)),
+      ...rels.filter(r => r.eventId === id).map(r => removeDoc("relatoriosArbitragem", r.id)),
+      ...dias.filter(d => d.eventId === id).map(d => removeDoc("diarias", d.id)),
+      ...avals.filter(a => a.eventId === id).map(a => removeDoc("avaliacoes", a.id)),
+    ]);
+    await removeDoc("refereeEvents", id);
+    return ok(true);
+  },
   importFromCalendar: async (calendarEventId) => {
     // Importação em lote (sem argumento) ou individual
     if (!calendarEventId) {

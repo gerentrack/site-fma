@@ -13,7 +13,7 @@ export default function NewsCard({ item }) {
         <div style={{ position: "absolute", top: 12, left: 12, background: COLORS.primary, color: COLORS.white, fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 20, fontFamily: FONTS.heading, letterSpacing: 1, textTransform: "uppercase" }}>{CATEGORY_LABELS[item.category] || "Notícia"}</div>
       </div>
       <div style={{ padding: "16px 18px 20px" }}>
-        <p style={{ fontFamily: FONTS.body, fontSize: 11.5, color: COLORS.gray, margin: "0 0 8px", display: "flex", alignItems: "center", gap: 5 }}>📅 {formattedDate}</p>
+        <p style={{ fontFamily: FONTS.body, fontSize: 11.5, color: COLORS.gray, margin: "0 0 8px", display: "flex", alignItems: "center", gap: 5 }}>{formattedDate}</p>
         <h3 style={{ fontFamily: FONTS.heading, fontSize: 17, fontWeight: 700, color: COLORS.dark, margin: "0 0 14px", lineHeight: 1.35 }}>{item.title}</h3>
         <Link to={`/noticias/${item.slug || item.id}`} style={{ display: "inline-flex", alignItems: "center", gap: 6, color: COLORS.primary, fontWeight: 700, fontSize: 13, fontFamily: FONTS.heading, textDecoration: "none", textTransform: "uppercase", letterSpacing: 0.5, borderBottom: `2px solid ${COLORS.primaryLight}`, paddingBottom: 1 }}>Leia Mais →</Link>
       </div>

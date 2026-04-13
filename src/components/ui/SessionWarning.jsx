@@ -27,7 +27,7 @@ export default function SessionWarning({ secondsLeft, onDismiss }) {
       animation: urgent ? "pulse 1s infinite" : "none",
     }}>
       <span>
-        {urgent ? "⚠️" : "🕐"} Sua sessão expira em <strong style={{ fontFamily: FONTS.heading, fontSize: 14 }}>{timeStr}</strong>
+        Sua sessão expira em <strong style={{ fontFamily: FONTS.heading, fontSize: 14 }}>{timeStr}</strong>
       </span>
       <button
         onClick={onDismiss}

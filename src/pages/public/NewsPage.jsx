@@ -18,6 +18,7 @@ import { COLORS, FONTS } from "../../styles/colors";
 import { NewsService } from "../../services/index";
 import NewsCard from "../../components/ui/NewsCard";
 import { NEWS_CATEGORIES } from "../../config/navigation";
+import Icon from "../../utils/icons";
 
 const PER_PAGE = 12;
 
@@ -32,7 +33,7 @@ const catMap = Object.fromEntries(NEWS_CATEGORIES.filter(c => c.value).map(c => 
 
 // ── Featured hero card ────────────────────────────────────────────────────────
 function FeaturedHero({ item }) {
-  const cat = catMap[item.category] || { label: "Notícia", color: COLORS.primary, icon: "📰" };
+  const cat = catMap[item.category] || { label: "Notícia", color: COLORS.primary, icon: "Newspaper" };
   const href = `/noticias/${item.slug || item.id}`;
   return (
     <Link to={href} style={{ textDecoration: "none", display: "block" }}>
@@ -50,13 +51,13 @@ function FeaturedHero({ item }) {
       >
         <div style={{ padding: "40px 44px", color: "#fff", maxWidth: 760 }}>
           <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
-            <span style={{ padding: "3px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: cat.color, color: "#fff", textTransform: "uppercase" }}>{cat.icon} {cat.label}</span>
-            <span style={{ padding: "3px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: "#f59e0b", color: "#fff" }}>⭐ Destaque</span>
+            <span style={{ padding: "3px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: cat.color, color: "#fff", textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name={cat.icon} size={12} /> {cat.label}</span>
+            <span style={{ padding: "3px 12px", borderRadius: 20, fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, background: "#f59e0b", color: "#fff" }}>Destaque</span>
           </div>
           <h2 style={{ fontFamily: FONTS.heading, fontSize: "clamp(1.6rem,3vw,2.4rem)", fontWeight: 900, margin: "0 0 12px", lineHeight: 1.2, textTransform: "uppercase" }}>{item.title}</h2>
           {item.excerpt && <p style={{ fontFamily: FONTS.body, fontSize: 15, margin: "0 0 20px", opacity: 0.88, lineHeight: 1.6 }}>{item.excerpt}</p>}
           <div style={{ fontFamily: FONTS.body, fontSize: 13, opacity: 0.75 }}>
-            📅 {fmt(item.date)}{item.author ? ` · ✍️ ${item.author}` : ""}
+            {fmt(item.date)}{item.author ? ` · ${item.author}` : ""}
           </div>
         </div>
       </div>
@@ -180,10 +181,10 @@ export default function NewsPage() {
             {activeTag && <>{" / "}<span style={{ color: "#f59e0b" }}>#{activeTag}</span></>}
           </nav>
           <h1 style={{ fontFamily: FONTS.heading, fontSize: "clamp(2rem,4vw,3rem)", fontWeight: 900, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 20px" }}>
-            {activeCat ? `${catMap[activeCat]?.icon} ${catMap[activeCat]?.label}` :
+            {activeCat ? catMap[activeCat]?.label :
              activeTag  ? `#${activeTag}` :
              searchQ    ? `Busca: "${searchQ}"` :
-             "📰 Notícias"}
+             "Notícias"}
           </h1>
 
           {/* Barra de busca */}
@@ -217,7 +218,7 @@ export default function NewsPage() {
             <button key={c.value}
               onClick={() => setParam("categoria", activeCat === c.value ? "" : c.value)}
               style={{ padding: "14px 18px", background: activeCat === c.value ? `${c.color}30` : "transparent", border: "none", borderBottom: `3px solid ${activeCat === c.value ? c.color : "transparent"}`, color: activeCat === c.value ? "#fff" : "rgba(255,255,255,0.5)", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.2s" }}>
-              {c.icon} {c.label} ({catCounts[c.value]})
+              <Icon name={c.icon} size={12} /> {c.label} ({catCounts[c.value]})
             </button>
           ))}
         </div>
@@ -228,7 +229,7 @@ export default function NewsPage() {
         {/* ── Coluna principal ─────────────────────────────────────────────── */}
         <div>
           {loading ? (
-            <div style={{ padding: "80px 0", textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray }}>⏳ Carregando notícias...</div>
+            <div style={{ padding: "80px 0", textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray }}>Carregando notícias...</div>
           ) : (
             <>
               {/* Destaque */}
@@ -251,7 +252,7 @@ export default function NewsPage() {
 
               {pageItems.length === 0 ? (
                 <div style={{ padding: "80px 0", textAlign: "center" }}>
-                  <div style={{ fontSize: 48, marginBottom: 14 }}>🔍</div>
+                  <div style={{ fontSize: 48, marginBottom: 14 }}></div>
                   <h2 style={{ fontFamily: FONTS.heading, fontSize: 22, fontWeight: 800, color: COLORS.dark, textTransform: "uppercase" }}>Nenhuma notícia encontrada</h2>
                   <p style={{ fontFamily: FONTS.body, color: COLORS.gray, marginBottom: 20 }}>Tente outros filtros ou termos de busca.</p>
                   <button onClick={() => setSearchParams({})}
@@ -281,7 +282,7 @@ export default function NewsPage() {
           {topTags.length > 0 && (
             <div style={{ background: "#fff", borderRadius: 12, padding: "20px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
               <h3 style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 2, color: COLORS.dark, margin: "0 0 14px", paddingBottom: 10, borderBottom: `1px solid ${COLORS.grayLight}` }}>
-                🏷️ Tags populares
+                <Icon name="Tag" size={14} /> Tags populares
               </h3>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {topTags.map(tag => (
@@ -298,7 +299,7 @@ export default function NewsPage() {
           {/* Mais recentes */}
           <div style={{ background: "#fff", borderRadius: 12, padding: "20px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
             <h3 style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 2, color: COLORS.dark, margin: "0 0 14px", paddingBottom: 10, borderBottom: `1px solid ${COLORS.grayLight}` }}>
-              🕐 Mais recentes
+              <Icon name="Clock" size={14} /> Mais recentes
             </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {allItems.slice(0, 5).map(item => (
@@ -310,13 +311,13 @@ export default function NewsPage() {
           {/* Por categoria */}
           <div style={{ background: "#fff", borderRadius: 12, padding: "20px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
             <h3 style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 2, color: COLORS.dark, margin: "0 0 14px", paddingBottom: 10, borderBottom: `1px solid ${COLORS.grayLight}` }}>
-              📁 Por categoria
+              <Icon name="Folder" size={14} /> Por categoria
             </h3>
             {NEWS_CATEGORIES.filter(c => c.value && catCounts[c.value] > 0).map(c => (
               <button key={c.value} onClick={() => setParam("categoria", activeCat === c.value ? "" : c.value)}
                 style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "8px 0", background: "none", border: "none", cursor: "pointer", borderBottom: `1px solid ${COLORS.grayLight}`, fontFamily: FONTS.body }}>
                 <span style={{ fontSize: 13, color: activeCat === c.value ? c.color : COLORS.dark, fontWeight: activeCat === c.value ? 700 : 400 }}>
-                  {c.icon} {c.label}
+                  <Icon name={c.icon} size={12} /> {c.label}
                 </span>
                 <span style={{ fontSize: 11, fontFamily: FONTS.heading, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: activeCat === c.value ? `${c.color}20` : COLORS.grayLight, color: activeCat === c.value ? c.color : COLORS.gray }}>
                   {catCounts[c.value]}

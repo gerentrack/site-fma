@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import IntranetLayout from "../IntranetLayout";
 import { RefereeContentService } from "../../../services/index";
 import { COLORS, FONTS } from "../../../styles/colors";
+import Icon from "../../../utils/icons";
 import { REFEREE_CONTENT_CATEGORIES } from "../../../config/navigation";
 import PdfModal, { usePdfModal } from "../../../components/ui/PdfModal";
 
@@ -34,7 +35,7 @@ export default function IntranetDocuments() {
     <IntranetLayout>
       <div style={{ padding: 36 }}>
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontFamily: FONTS.heading, fontSize: 26, fontWeight: 900, textTransform: "uppercase", color: COLORS.dark, margin: "0 0 6px" }}>📄 Documentos e Comunicados</h1>
+          <h1 style={{ fontFamily: FONTS.heading, fontSize: 26, fontWeight: 900, textTransform: "uppercase", color: COLORS.dark, margin: "0 0 6px" }}>Documentos e Comunicados</h1>
           <p style={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.gray, margin: 0 }}>Formulários, regulamentos, comunicados e materiais de referência para árbitros.</p>
         </div>
 
@@ -42,7 +43,7 @@ export default function IntranetDocuments() {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24 }}>
           <button onClick={() => setActiveTab("")}
             style={{ padding: "7px 16px", borderRadius: 20, border: `2px solid ${!activeTab ? COLORS.primary : COLORS.grayLight}`, background: !activeTab ? COLORS.primary : "#fff", color: !activeTab ? "#fff" : COLORS.gray, cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
-            📋 Todos ({items.length})
+            Todos ({items.length})
           </button>
           {DOC_CATS.map(cat => {
             const c = catMap[cat];
@@ -51,26 +52,25 @@ export default function IntranetDocuments() {
             return (
               <button key={cat} onClick={() => setActiveTab(activeTab === cat ? "" : cat)}
                 style={{ padding: "7px 16px", borderRadius: 20, border: `2px solid ${activeTab === cat ? c.color : COLORS.grayLight}`, background: activeTab === cat ? c.color : "#fff", color: activeTab === cat ? "#fff" : COLORS.gray, cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
-                {c.icon} {c.label} ({count})
+                <Icon name={c.icon} size={12} /> {c.label} ({count})
               </button>
             );
           })}
         </div>
 
         {loading ? (
-          <div style={{ padding: "60px 0", textAlign: "center", color: COLORS.gray, fontFamily: FONTS.body }}>⏳ Carregando...</div>
+          <div style={{ padding: "60px 0", textAlign: "center", color: COLORS.gray, fontFamily: FONTS.body }}>Carregando...</div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: "60px 0", textAlign: "center" }}>
-            <div style={{ fontSize: 44, marginBottom: 10 }}>🗂️</div>
             <p style={{ fontFamily: FONTS.body, color: COLORS.gray }}>Nenhum documento disponível no momento.</p>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {filtered.map(item => {
-              const cat = catMap[item.category] || { color: COLORS.gray, icon: "📋" };
+              const cat = catMap[item.category] || { color: COLORS.gray, icon: "ClipboardList" };
               return (
                 <div key={item.id} style={{ background: "#fff", borderRadius: 10, padding: "16px 20px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", display: "flex", alignItems: "center", gap: 14, borderLeft: `3px solid ${cat.color}` }}>
-                  <div style={{ fontSize: 20, flexShrink: 0 }}>{cat.icon}</div>
+                  <div style={{ flexShrink: 0 }}><Icon name={cat.icon} size={20} /></div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 700, color: COLORS.dark }}>{item.title}</div>
                     {item.summary && <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 2 }}>{item.summary}</div>}
@@ -83,13 +83,13 @@ export default function IntranetDocuments() {
                     {item.fileUrl && (
                       <button onClick={() => openPdf(item.fileUrl, item.title)}
                         style={{ padding: "8px 14px", borderRadius: 7, background: COLORS.primary, color: "#fff", border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
-                        📄 Visualizar
+                        Visualizar
                       </button>
                     )}
                     {item.externalLink && (
                       <a href={item.externalLink} target="_blank" rel="noreferrer"
                         style={{ padding: "8px 14px", borderRadius: 7, border: `1px solid ${COLORS.grayLight}`, color: COLORS.dark, textDecoration: "none", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>
-                        🔗 Link
+                        Link
                       </a>
                     )}
                     <Link to={`/arbitros/conteudo/${item.id}`} target="_blank"

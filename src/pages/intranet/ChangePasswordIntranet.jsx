@@ -47,7 +47,6 @@ export default function ChangePasswordIntranet() {
     <div style={{ minHeight: "100vh", background: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div style={{ background: "#fff", borderRadius: 16, padding: "48px 40px", width: "100%", maxWidth: 420, boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🔐</div>
           <h1 style={{ fontFamily: FONTS.heading, fontWeight: 800, fontSize: 22, color: COLORS.dark, margin: 0 }}>Alterar Senha</h1>
           <p style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, marginTop: 8 }}>
             Por segurança, crie uma nova senha antes de acessar a intranet.

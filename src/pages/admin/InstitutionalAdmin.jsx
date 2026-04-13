@@ -179,7 +179,7 @@ export function InstitutionalList() {
           action={{ label: "+ Nova Página", onClick: () => navigate("/admin/institucional/nova") }}
         />
         <div style={{ background: "#fffbeb", border: "1px solid #f59e0b", borderRadius: 8, padding: "12px 18px", marginBottom: 24, fontSize: 13, color: "#92400e", fontFamily: FONTS.body }}>
-          💡 <strong>Dica:</strong> Cada página pode ter quantas seções de conteúdo quiser — texto, imagem, arquivo ou combinações. Para editar o conteúdo, clique no botão de edição da página.
+          <strong>Dica:</strong> Cada página pode ter quantas seções de conteúdo quiser — texto, imagem, arquivo ou combinações. Para editar o conteúdo, clique no botão de edição da página.
         </div>
         <Table columns={columns} rows={pages} loading={loading} emptyMessage="Nenhuma página institucional cadastrada." />
       </div>
@@ -283,8 +283,8 @@ export function PageEditor() {
           <div style={{ fontWeight: 600, fontSize: 13 }}>{v}</div>
           <div style={{ fontSize: 11, color: COLORS.gray, marginTop: 2 }}>
             {LAYOUT_OPTIONS.find(l => l.value === row.layout)?.label || row.layout}
-            {row.fileUrl && " • 📎 arquivo"}
-            {row.image && " • 🖼️ imagem"}
+            {row.fileUrl && " • arquivo"}
+            {row.image && " • imagem"}
           </div>
         </div>
       ),
@@ -363,7 +363,7 @@ export function PageEditor() {
                       onClick={() => setSlugLocked(l => !l)}
                       title={slugLocked ? "Desbloquear para editar" : "Bloquear slug"}
                       style={{ padding: "0 12px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, background: "#fff", cursor: "pointer", fontSize: 16, flexShrink: 0 }}
-                    >{slugLocked ? "🔒" : "🔓"}</button>
+                    >{slugLocked ? "Locked" : "Unlocked"}</button>
                   )}
                 </div>
               </FormField>
@@ -496,11 +496,6 @@ export function SectionEditor() {
                   textAlign: "left", transition: "all 0.15s",
                 }}
               >
-                {opt.value === "text"            && "📝 "}
-                {opt.value === "text-image"      && "🖼️ "}
-                {opt.value === "text-file"       && "📄 "}
-                {opt.value === "file"            && "📥 "}
-                {opt.value === "text-image-file" && "🗂️ "}
                 {opt.label}
               </button>
             ))}

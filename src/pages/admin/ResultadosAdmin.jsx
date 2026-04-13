@@ -11,19 +11,20 @@ import AdminLayout from "../../components/admin/AdminLayout";
 import { ResultadosService } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
 import { deleteFile } from "../../services/storageService";
+import Icon from "../../utils/icons";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const CATEGORIAS = [
-  { value: "corrida", label: "🏅 Corridas de Rua" },
-  { value: "pista",   label: "🏟️ Pista e Campo"   },
-  { value: "trail",   label: "🏔️ Trail Run"        },
-  { value: "marcha",  label: "🚶 Marcha Atlética"  },
-  { value: "cross",   label: "🌿 Cross Country"    },
+  { value: "corrida", label: "Corridas de Rua" },
+  { value: "pista",   label: "Pista e Campo"   },
+  { value: "trail",   label: "Trail Run"        },
+  { value: "marcha",  label: "Marcha Atlética"  },
+  { value: "cross",   label: "Cross Country"    },
 ];
 const TIPOS = [
-  { value: "pdf",  label: "📄 PDF"          },
-  { value: "xlsx", label: "📊 Excel (XLSX)" },
-  { value: "link", label: "🔗 Link Externo" },
+  { value: "pdf",  label: "PDF"          },
+  { value: "xlsx", label: "Excel (XLSX)" },
+  { value: "link", label: "Link Externo" },
 ];
 const catLabel = (v) => CATEGORIAS.find(c => c.value === v)?.label || v;
 
@@ -101,7 +102,7 @@ export function ResultadosList() {
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
           <div>
-            <h1 style={{ fontFamily: FONTS.heading, fontSize: 26, fontWeight: 900, color: COLORS.dark, textTransform: "uppercase", margin: 0 }}>🏆 Resultados</h1>
+            <h1 style={{ fontFamily: FONTS.heading, fontSize: 26, fontWeight: 900, color: COLORS.dark, textTransform: "uppercase", margin: 0 }}>Resultados</h1>
             <p style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, margin: "4px 0 0" }}>{items.length} resultado{items.length !== 1 ? "s" : ""} cadastrado{items.length !== 1 ? "s" : ""}</p>
           </div>
           <button onClick={() => navigate("/admin/resultados/novo")} style={{ padding: "11px 22px", borderRadius: 8, border: "none", background: COLORS.primary, color: "#fff", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer", textTransform: "uppercase" }}>
@@ -123,10 +124,9 @@ export function ResultadosList() {
         </div>
 
         {loading ? (
-          <div style={{ textAlign: "center", padding: 60, fontFamily: FONTS.body, color: COLORS.gray }}>⏳ Carregando...</div>
+          <div style={{ textAlign: "center", padding: 60, fontFamily: FONTS.body, color: COLORS.gray }}>Carregando...</div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: "56px 24px", background: "#fff", borderRadius: 12 }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
             <p style={{ fontFamily: FONTS.heading, fontSize: 16, color: COLORS.gray }}>Nenhum resultado encontrado.</p>
             <button onClick={() => navigate("/admin/resultados/novo")} style={{ marginTop: 14, padding: "10px 22px", borderRadius: 8, border: "none", background: COLORS.primary, color: "#fff", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Cadastrar resultado</button>
           </div>
@@ -141,7 +141,7 @@ export function ResultadosList() {
               <div key={res.id} style={{ display: "grid", gridTemplateColumns: "1fr 130px 80px 80px 90px 130px", gap: 0, padding: "13px 20px", borderBottom: i < filtered.length - 1 ? `1px solid ${COLORS.grayLight}` : "none", alignItems: "center" }}>
                 <div>
                   <div style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 700, color: COLORS.dark }}>{res.nomeEvento}</div>
-                  {res.cidade && <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 2 }}>📍 {res.cidade} · 📅 {fmtDate(res.dataEvento)}</div>}
+                  {res.cidade && <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 2 }}>{res.cidade} · {fmtDate(res.dataEvento)}</div>}
                   {res.modalidade && <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>{res.modalidade}</div>}
                 </div>
                 <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>{catLabel(res.categoria)}</div>
@@ -156,8 +156,8 @@ export function ResultadosList() {
                   <button onClick={() => handleToggle(res)} style={{ padding: "5px 10px", borderRadius: 7, border: `1px solid ${res.published ? "#fde68a" : "#86efac"}`, background: res.published ? "#fffbeb" : "#f0fdf4", color: res.published ? "#92400e" : "#15803d", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                     {res.published ? "Ocultar" : "Publicar"}
                   </button>
-                  <button onClick={() => navigate(`/admin/resultados/${res.id}`)} style={{ padding: "5px 10px", borderRadius: 7, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.dark, fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✏️</button>
-                  <button onClick={() => handleDelete(res.id)} style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid #fca5a5", background: "#fff", color: "#dc2626", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>🗑️</button>
+                  <button onClick={() => navigate(`/admin/resultados/${res.id}`)} style={{ padding: "5px 10px", borderRadius: 7, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.dark, fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer" }}><Icon name="Pencil" size={14} /></button>
+                  <button onClick={() => handleDelete(res.id)} style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid #fca5a5", background: "#fff", color: "#dc2626", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer" }}><Icon name="Trash2" size={14} /></button>
                 </div>
               </div>
             ))}
@@ -211,7 +211,7 @@ export function ResultadosEditor() {
     navigate("/admin/resultados");
   };
 
-  if (loading) return <AdminLayout><div style={{ padding: 60, textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray }}>⏳ Carregando...</div></AdminLayout>;
+  if (loading) return <AdminLayout><div style={{ padding: 60, textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray }}>Carregando...</div></AdminLayout>;
 
   return (
     <AdminLayout>
@@ -220,15 +220,15 @@ export function ResultadosEditor() {
         <div style={{ marginBottom: 28 }}>
           <button onClick={() => navigate("/admin/resultados")} style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: 8 }}>← Resultados</button>
           <h1 style={{ fontFamily: FONTS.heading, fontSize: 24, fontWeight: 900, color: COLORS.dark, textTransform: "uppercase", margin: 0 }}>
-            {isNew ? "🏆 Novo Resultado" : "✏️ Editar Resultado"}
+            {isNew ? "Novo Resultado" : "Editar Resultado"}
           </h1>
         </div>
 
-        {error && <div style={{ background: "#fff5f5", border: "1px solid #fca5a5", borderRadius: 8, padding: "10px 14px", marginBottom: 18, fontFamily: FONTS.body, fontSize: 13, color: "#dc2626" }}>⚠️ {error}</div>}
+        {error && <div style={{ background: "#fff5f5", border: "1px solid #fca5a5", borderRadius: 8, padding: "10px 14px", marginBottom: 18, fontFamily: FONTS.body, fontSize: 13, color: "#dc2626" }}>{error}</div>}
 
         {/* Identificação do evento */}
         <div style={cardSty}>
-          <SectionTitle>🗓️ Identificação do evento</SectionTitle>
+          <SectionTitle>Identificação do evento</SectionTitle>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
               <label style={lbl}>Nome do evento *</label>
@@ -269,7 +269,7 @@ export function ResultadosEditor() {
 
         {/* Arquivo de resultado */}
         <div style={cardSty}>
-          <SectionTitle>📄 Arquivo de resultado</SectionTitle>
+          <SectionTitle>Arquivo de resultado</SectionTitle>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
               <label style={lbl}>Tipo de arquivo</label>
@@ -301,14 +301,14 @@ export function ResultadosEditor() {
 
         {/* Publicação */}
         <div style={cardSty}>
-          <SectionTitle>📡 Publicação</SectionTitle>
+          <SectionTitle>Publicação</SectionTitle>
           <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", fontFamily: FONTS.body, fontSize: 14, color: COLORS.dark }}>
             <input type="checkbox" checked={form.published} onChange={e => set("published", e.target.checked)} style={{ width: 16, height: 16 }} />
             Publicado — visível na página de resultados do site
           </label>
           {!isNew && (
             <div style={{ marginTop: 14 }}>
-              <a href={`/resultados/${id}`} target="_blank" rel="noreferrer" style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, color: "#0066cc", textDecoration: "none" }}>👁️ Ver no site →</a>
+              <a href={`/resultados/${id}`} target="_blank" rel="noreferrer" style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, color: "#0066cc", textDecoration: "none" }}>Ver no site →</a>
             </div>
           )}
         </div>
@@ -317,7 +317,7 @@ export function ResultadosEditor() {
         <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
           <button onClick={() => navigate("/admin/resultados")} style={{ padding: "11px 20px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Cancelar</button>
           <button onClick={handleSave} disabled={saving} style={{ padding: "11px 24px", borderRadius: 8, border: "none", background: saving ? COLORS.gray : COLORS.primary, color: "#fff", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: saving ? "not-allowed" : "pointer" }}>
-            {saving ? "Salvando..." : isNew ? "💾 Criar resultado" : "💾 Salvar alterações"}
+            {saving ? "Salvando..." : isNew ? "Criar resultado" : "Salvar alterações"}
           </button>
         </div>
       </div>

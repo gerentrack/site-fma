@@ -10,6 +10,7 @@ import IntranetLayout from "../IntranetLayout";
 import { useIntranet } from "../../../context/IntranetContext";
 import { RefereeAssignmentsService, ReembolsosService } from "../../../services/index";
 import { COLORS, FONTS } from "../../../styles/colors";
+import Icon from "../../../utils/icons";
 import { CALENDAR_CATEGORIES, REFEREE_FUNCTIONS } from "../../../config/navigation";
 
 const catMap = Object.fromEntries((CALENDAR_CATEGORIES || []).filter(c => c.value).map(c => [c.value, c]));
@@ -134,7 +135,6 @@ export default function HistoricoEscalacoes() {
           <div style={{ padding: 60, textAlign: "center", color: COLORS.gray, fontFamily: FONTS.body }}>Carregando...</div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: 60, textAlign: "center" }}>
-            <div style={{ fontSize: 44, marginBottom: 10 }}>📋</div>
             <p style={{ fontFamily: FONTS.body, color: COLORS.gray }}>Nenhuma escalacao encontrada.</p>
           </div>
         ) : (
@@ -149,7 +149,7 @@ export default function HistoricoEscalacoes() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {items.map(asgn => {
                     const evt = asgn.event;
-                    const cat = catMap[evt.category] || { color: COLORS.gray, icon: "📅", label: evt.category || "" };
+                    const cat = catMap[evt.category] || { color: COLORS.gray, icon: "Calendar", label: evt.category || "" };
                     const total = (asgn.valorDiaria || 0) + (asgn.transporte || 0) + (asgn.hospedagem || 0) + (asgn.alimentacao || 0);
                     return (
                       <div key={asgn.id} style={{ ...card, display: "flex", alignItems: "center", gap: 16, borderLeft: `4px solid ${asgn.diariaPaga ? "#15803d" : COLORS.grayLight}` }}>

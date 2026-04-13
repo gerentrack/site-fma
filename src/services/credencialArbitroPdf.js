@@ -106,7 +106,7 @@ export async function gerarCredencialPdf(dados) {
 
   let dy = fy + 23 + nomeLines.length * 3.5 + 1;
 
-  const nivelLabel = { A: "Nivel A", B: "Nivel B", C: "Nivel C", NI: "NI" }[dados.nivel] || dados.nivel;
+  const nivelLabel = { A: "Nivel A", B: "Nivel B", C: "Nivel C", NI: "NAR" }[dados.nivel] || dados.nivel;
   const nivelColor = { A: [204, 0, 0], B: [0, 102, 204], C: [0, 119, 51], NI: [107, 114, 128] }[dados.nivel] || [0, 0, 0];
 
   pdf.setFillColor(...nivelColor);

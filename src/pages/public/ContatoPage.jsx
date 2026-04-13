@@ -10,19 +10,20 @@ import { useState, useEffect } from "react";
 import { FooterConfigService } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
 import { enviarContato } from "../../services/emailService";
+import Icon from "../../utils/icons";
 
 // ─── Config de seções de contato ─────────────────────────────────────────────
 function buildContatos(cfg) {
   return [
     cfg.phone && {
-      icon: "📞",
+      icon: "Phone",
       title: "Telefone",
       value: cfg.phone,
       href: cfg.phoneLink || `tel:${cfg.phone.replace(/\D/g, "")}`,
       cta: "Ligar agora",
     },
     cfg.whatsapp && {
-      icon: "💬",
+      icon: "MessageSquare",
       title: "WhatsApp",
       value: cfg.whatsapp,
       href: cfg.whatsappLink || `https://wa.me/55${cfg.whatsapp.replace(/\D/g, "")}`,
@@ -32,7 +33,7 @@ function buildContatos(cfg) {
       border: "#86efac",
     },
     cfg.email && {
-      icon: "📧",
+      icon: "Mail",
       title: "E-mail",
       value: cfg.email,
       href: cfg.emailLink || `mailto:${cfg.email}`,
@@ -78,7 +79,7 @@ function ContatoCard({ icon, title, value, href, cta, color = COLORS.primary, bg
         transition: "all 0.2s",
       }}
     >
-      <div style={{ fontSize: 36, marginBottom: 12 }}>{icon}</div>
+      <div style={{ marginBottom: 12 }}><Icon name={icon} size={36} /></div>
       <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, marginBottom: 5 }}>
         {title}
       </div>
@@ -118,7 +119,7 @@ function ContatoForm() {
   if (enviado) {
     return (
       <div style={{ padding: "36px 24px", borderRadius: 14, background: "#f0fdf4", border: "1.5px solid #86efac", textAlign: "center", marginBottom: 28 }}>
-        <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+        <div style={{ marginBottom: 12 }}><Icon name="CircleCheck" size={48} color="#15803d" /></div>
         <h3 style={{ fontFamily: FONTS.heading, fontSize: 18, fontWeight: 800, color: "#15803d", textTransform: "uppercase", margin: "0 0 8px" }}>Mensagem enviada!</h3>
         <p style={{ fontFamily: FONTS.body, fontSize: 14, color: "#166534", margin: 0 }}>Recebemos sua mensagem e responderemos o mais breve possível.</p>
         <button onClick={() => { setEnviado(false); setForm({ nome: "", email: "", assunto: "", mensagem: "" }); }}
@@ -189,14 +190,14 @@ export default function ContatoPage() {
           fontSize: "clamp(6rem, 14vw, 11rem)",
           color: "rgba(255,255,255,0.03)", lineHeight: 1,
           userSelect: "none", pointerEvents: "none",
-        }}>📬</div>
+        }}></div>
 
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 32px" }}>
           <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, color: "rgba(255,255,255,0.4)", marginBottom: 20 }}>
             FMA › <span style={{ color: COLORS.primaryLight }}>Contato</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12 }}>
-            <span style={{ fontSize: 40 }}>📬</span>
+            <span><Icon name="Mail" size={40} /></span>
             <h1 style={{ fontFamily: FONTS.heading, fontSize: "clamp(2rem, 5vw, 3rem)", fontWeight: 900, color: "#fff", margin: 0, textTransform: "uppercase", letterSpacing: 2, lineHeight: 1 }}>
               Entre em Contato
             </h1>
@@ -218,7 +219,7 @@ export default function ContatoPage() {
             </div>
           ) : (
             <div style={{ textAlign: "center", padding: "40px 24px", background: "#fff", borderRadius: 14, marginBottom: 48 }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>📭</div>
+              <div style={{ marginBottom: 12 }}></div>
               <p style={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.gray }}>Informações de contato não configuradas.</p>
             </div>
           )
@@ -229,7 +230,7 @@ export default function ContatoPage() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 48 }}>
             {cfg.address && (
               <div style={{ background: "#fff", borderRadius: 14, padding: "24px 28px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", border: `1px solid ${COLORS.grayLight}` }}>
-                <div style={{ fontSize: 32, marginBottom: 14 }}>📍</div>
+                <div style={{ marginBottom: 14 }}><Icon name="MapPin" size={32} /></div>
                 <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, marginBottom: 8 }}>Endereço</div>
                 <div style={{ fontFamily: FONTS.body, fontSize: 15, color: COLORS.dark, lineHeight: 1.6 }}>
                   {cfg.address}
@@ -248,7 +249,7 @@ export default function ContatoPage() {
             )}
             {cfg.hours && (
               <div style={{ background: "#fff", borderRadius: 14, padding: "24px 28px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", border: `1px solid ${COLORS.grayLight}` }}>
-                <div style={{ fontSize: 32, marginBottom: 14 }}>🕐</div>
+                <div style={{ marginBottom: 14 }}><Icon name="Clock" size={32} /></div>
                 <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, marginBottom: 8 }}>Horário de atendimento</div>
                 <div style={{ fontFamily: FONTS.body, fontSize: 15, color: COLORS.dark, lineHeight: 1.6 }}>{cfg.hours}</div>
                 <div style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 12px", borderRadius: 20, background: "#f0fdf4", border: "1px solid #86efac" }}>
@@ -299,7 +300,7 @@ export default function ContatoPage() {
 
         {/* Aviso filiação */}
         <div style={{ marginTop: 20, padding: "18px 24px", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 12, display: "flex", gap: 12, alignItems: "flex-start" }}>
-          <span style={{ fontSize: 22, flexShrink: 0 }}>ℹ️</span>
+          <span style={{ flexShrink: 0 }}><Icon name="Info" size={22} /></span>
           <div>
             <div style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: "#92400e", marginBottom: 4 }}>Filiação de Atletas e Clubes</div>
             <div style={{ fontFamily: FONTS.body, fontSize: 13, color: "#78350f", lineHeight: 1.6 }}>

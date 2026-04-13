@@ -162,9 +162,9 @@ export default function TaxasConfigAdmin() {
 
           {config.anuidade?.diferenciadoPorNivel && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12 }}>
-              {["A", "B", "C", "NI"].map(nivel => (
+              {[{v:"A",l:"A"},{v:"B",l:"B"},{v:"C",l:"C"},{v:"NI",l:"NAR"}].map(({v: nivel, l: nivelLabel}) => (
                 <div key={nivel}>
-                  <span style={label}>Nivel {nivel} (R$)</span>
+                  <span style={label}>Nivel {nivelLabel} (R$)</span>
                   <input type="number" min="0" step="0.01" style={input}
                     value={config.anuidade?.valoresPorNivel?.[nivel] ?? ""}
                     onChange={e => setConfig(c => ({

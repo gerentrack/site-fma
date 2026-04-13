@@ -137,7 +137,7 @@ export default function RelatorioFinanceiro() {
             <h3 style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.primary, margin: 0 }}>Filtros</h3>
             <button onClick={() => exportRelatorioCSV(filtered, organizerMap, { dataInicio: filtroDataInicio, dataFim: filtroDataFim }, pagamentosPorSol)}
               style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#15803d", color: "#fff", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
-              📥 Exportar CSV
+              Exportar CSV
             </button>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10 }}>
@@ -204,10 +204,10 @@ export default function RelatorioFinanceiro() {
         {aba === "resumo" && (
           <>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 20 }}>
-              <MetricaCard label="Total arrecadado" valor={formatarMoeda(metricas.totalArrecadado)} color="#15803d" icon="✅" count={metricas.countConfirmadas} />
-              <MetricaCard label="Total pendente" valor={formatarMoeda(metricas.totalPendente)} color="#d97706" icon="⏳" count={metricas.countPendentes} />
-              <MetricaCard label="Total isento" valor={formatarMoeda(metricas.totalIsento)} color="#6b7280" icon="🔓" count={metricas.countIsentas} />
-              <MetricaCard label="Taxas de urgencia" valor={formatarMoeda(metricas.totalUrgencia)} color="#b45309" icon="⚡" />
+              <MetricaCard label="Total arrecadado" valor={formatarMoeda(metricas.totalArrecadado)} color="#15803d" icon="" count={metricas.countConfirmadas} />
+              <MetricaCard label="Total pendente" valor={formatarMoeda(metricas.totalPendente)} color="#d97706" icon="" count={metricas.countPendentes} />
+              <MetricaCard label="Total isento" valor={formatarMoeda(metricas.totalIsento)} color="#6b7280" icon="" count={metricas.countIsentas} />
+              <MetricaCard label="Taxas de urgencia" valor={formatarMoeda(metricas.totalUrgencia)} color="#b45309" icon="" />
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -358,7 +358,7 @@ export default function RelatorioFinanceiro() {
                                     if (res.data?.url) window.open(res.data.url, "_blank");
                                   }
                                 }} style={{ background: "none", border: "none", color: "#0066cc", cursor: "pointer", fontSize: 10, fontWeight: 700, textDecoration: "underline", padding: 0, textAlign: "left" }}>
-                                  📄 {r.reciboNumero}
+                                  {r.reciboNumero}
                                 </button>
                               ))}
                             </div>
@@ -385,7 +385,7 @@ export default function RelatorioFinanceiro() {
 function MetricaCard({ label, valor, color, icon, count }) {
   return (
     <div style={{ background: "#fff", borderRadius: 12, padding: "16px 20px", boxShadow: "0 1px 8px rgba(0,0,0,0.07)", borderLeft: `4px solid ${color}` }}>
-      <div style={{ fontSize: 10, fontFamily: FONTS.heading, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, marginBottom: 6 }}>{icon} {label}</div>
+      <div style={{ fontSize: 10, fontFamily: FONTS.heading, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, marginBottom: 6 }}>{label}</div>
       <div style={{ fontSize: 22, fontFamily: FONTS.heading, fontWeight: 900, color }}>{valor}</div>
       {count !== undefined && <div style={{ fontSize: 11, color: COLORS.gray, marginTop: 2 }}>{count} solicitacao(oes)</div>}
     </div>

@@ -15,6 +15,7 @@ import {
   AvaliacoesService,
 } from "../../../services/index";
 import { COLORS, FONTS } from "../../../styles/colors";
+import Icon from "../../../utils/icons";
 import { notificarEscalacaoArbitro, notificarRemocaoEscalacao } from "../../../services/emailService";
 import { CALENDAR_CATEGORIES, REFEREE_FUNCTIONS } from "../../../config/navigation";
 import { TABELA_ARBITRAGEM } from "../../../utils/taxaCalculator";
@@ -142,22 +143,21 @@ export function AssignmentList() {
     <IntranetLayout requireRole="canManage">
       <div style={{ padding: 36 }}>
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontFamily: FONTS.heading, fontSize: 26, fontWeight: 900, textTransform: "uppercase", color: COLORS.dark, margin: "0 0 6px" }}>📋 Escalação</h1>
+          <h1 style={{ fontFamily: FONTS.heading, fontSize: 26, fontWeight: 900, textTransform: "uppercase", color: COLORS.dark, margin: "0 0 6px" }}>Escalação</h1>
           <p style={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.gray, margin: 0 }}>Selecione um evento para visualizar disponibilidades e escalar árbitros.</p>
         </div>
 
         {loading ? (
-          <div style={{ padding: "60px 0", textAlign: "center", color: COLORS.gray, fontFamily: FONTS.body }}>⏳ Carregando...</div>
+          <div style={{ padding: "60px 0", textAlign: "center", color: COLORS.gray, fontFamily: FONTS.body }}>Carregando...</div>
         ) : events.length === 0 ? (
           <div style={{ padding: "60px 0", textAlign: "center" }}>
-            <div style={{ fontSize: 44, marginBottom: 10 }}>🗓️</div>
             <p style={{ fontFamily: FONTS.body, color: COLORS.gray }}>Nenhum evento futuro cadastrado.</p>
             <Link to="/intranet/admin/eventos" style={{ color: COLORS.primary, fontFamily: FONTS.heading, fontWeight: 700, textDecoration: "none" }}>Ir para Eventos →</Link>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {events.map(evt => {
-              const cat = catMap[evt.category] || { color: COLORS.gray, icon: "📅", label: evt.category };
+              const cat = catMap[evt.category] || { color: COLORS.gray, icon: "Calendar", label: evt.category };
               const assigned = countAssigned(evt.id);
               const needed = evt.refereesNeeded || 0;
               const pct = needed > 0 ? Math.min(100, Math.round(assigned / needed * 100)) : 0;
@@ -236,7 +236,7 @@ export function AssignmentEditor() {
 
   const assign = async (refereeId, refFn, diariaData = {}, funcaoExtra = "") => {
     setSaving(refereeId);
-    await RefereeAssignmentsService.assign({
+    const res = await RefereeAssignmentsService.assign({
       eventId, refereeId, refereeFunction: refFn, funcaoExtra: funcaoExtra || "",
       status: "confirmado",
       valorDiaria: diariaData.valorDiaria || 0,
@@ -244,7 +244,22 @@ export function AssignmentEditor() {
       hospedagem: diariaData.hospedagem || 0,
       alimentacao: diariaData.alimentacao || 0,
       diariaPaga: false,
+      notificadoEm: new Date().toISOString(),
     });
+    // Enviar e-mail automaticamente ao escalar
+    const ref = allRefs.find(r => r.id === refereeId);
+    if (ref?.email && event) {
+      const dataFormatada = event.date ? new Date(event.date + "T12:00:00").toLocaleDateString("pt-BR") : "A confirmar";
+      const fnLabel = fnOpts.find(f => f.value === refFn)?.label || refFn;
+      const fnExtraLabel = funcaoExtra ? fnOpts.find(f => f.value === funcaoExtra)?.label : "";
+      const funcaoTexto = fnExtraLabel ? `${fnLabel} / ${fnExtraLabel}` : fnLabel;
+      notificarEscalacaoArbitro({
+        arbitroEmail: ref.email, arbitroNome: ref.name,
+        evento: event.title, data: dataFormatada,
+        local: event.city || event.location || "A confirmar",
+        funcao: funcaoTexto, observacao: event.description || "",
+      }).catch(() => {});
+    }
     await load();
     setSaving(null);
   };
@@ -314,10 +329,10 @@ export function AssignmentEditor() {
     setSaving(null);
   };
 
-  if (loading) return <IntranetLayout><div style={{ padding: 40, fontFamily: FONTS.body, color: COLORS.gray }}>⏳ Carregando...</div></IntranetLayout>;
+  if (loading) return <IntranetLayout><div style={{ padding: 40, fontFamily: FONTS.body, color: COLORS.gray }}>Carregando...</div></IntranetLayout>;
   if (!event) return null;
 
-  const cat = catMap[event.category] || { color: COLORS.gray, icon: "📅", label: event.category };
+  const cat = catMap[event.category] || { color: COLORS.gray, icon: "Calendar", label: event.category };
   // Sugestão inteligente: pontuar disponibilidade + cidade + nível
   const sugestoes = (() => {
     if (tab !== "sugestoes") return [];
@@ -356,14 +371,14 @@ export function AssignmentEditor() {
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
             <div>
               <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, background: `${cat.color}15`, color: cat.color }}>{cat.icon} {cat.label}</span>
-                {event.source === "calendar" && <span style={{ fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, color: COLORS.gray, background: COLORS.grayLight, padding: "2px 8px", borderRadius: 20 }}>📅 Calendário FMA</span>}
+                <span style={{ padding: "2px 10px", borderRadius: 20, fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, background: `${cat.color}15`, color: cat.color }}><Icon name={cat.icon} size={10} /> {cat.label}</span>
+                {event.source === "calendar" && <span style={{ fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, color: COLORS.gray, background: COLORS.grayLight, padding: "2px 8px", borderRadius: 20 }}>Calendário FMA</span>}
               </div>
               <h2 style={{ fontFamily: FONTS.heading, fontSize: 20, fontWeight: 900, color: COLORS.dark, margin: "0 0 6px", textTransform: "uppercase" }}>{event.title}</h2>
               <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray }}>
-                📅 {new Date(event.date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
+                {new Date(event.date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
                 {event.time && ` • ${event.time}`}
-                {" — "}📍 {event.city}{event.location ? `, ${event.location}` : ""}
+                {" — "}{event.city}{event.location ? `, ${event.location}` : ""}
               </div>
               {event.notes && <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 6, fontStyle: "italic" }}>{event.notes}</div>}
             </div>
@@ -377,10 +392,10 @@ export function AssignmentEditor() {
         {/* Tabs */}
         <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
           {[
-            { key: "available", label: `✅ Disponíveis (${available.length})` },
-            { key: "sugestoes", label: `💡 Sugestões` },
-            { key: "all",       label: `👥 Todos os Ativos (${allRefs.length})` },
-            { key: "assigned",  label: `📋 Escalados (${assignments.length})` },
+            { key: "available", label: `Disponíveis (${available.length})` },
+            { key: "sugestoes", label: `Sugestões` },
+            { key: "all",       label: `Todos os Ativos (${allRefs.length})` },
+            { key: "assigned",  label: `Escalados (${assignments.length})` },
           ].map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
               style={{ padding: "9px 18px", borderRadius: 20, border: `2px solid ${tab === t.key ? COLORS.primary : COLORS.grayLight}`, background: tab === t.key ? COLORS.primary : "#fff", color: tab === t.key ? "#fff" : COLORS.gray, cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700 }}>

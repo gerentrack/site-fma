@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { COLORS, FONTS } from "../../styles/colors";
+import Icon from "../../utils/icons";
 
 // Coordenadas de cidades de MG
 const CIDADES_MG = {
@@ -113,9 +114,9 @@ function coordsFromCidade(cidade) {
 }
 
 const TABS = [
-  { id: "eventos",   label: "Eventos",           icon: "🏃" },
-  { id: "equipes",   label: "Equipes Filiadas",  icon: "🏟️" },
-  { id: "pistas",    label: "Pistas Homologadas", icon: "🔵" },
+  { id: "eventos",   label: "Eventos",           icon: "PersonStanding" },
+  { id: "equipes",   label: "Equipes Filiadas",  icon: "Building" },
+  { id: "pistas",    label: "Pistas Homologadas", icon: "MapPin" },
 ];
 
 const CATEGORY_COLORS = {
@@ -238,23 +239,23 @@ export default function MapaPage() {
         popupHtml = `
           <div style="font-family:sans-serif;min-width:180px;">
             <div style="font-weight:700;font-size:14px;color:#111;margin-bottom:4px;">${item.title}</div>
-            <div style="font-size:12px;color:#555;">📍 ${item.city}${item.location ? ` — ${item.location}` : ""}</div>
-            ${dataFmt ? `<div style="font-size:12px;color:#555;">📅 ${dataFmt}</div>` : ""}
+            <div style="font-size:12px;color:#555;">${item.city}${item.location ? ` — ${item.location}` : ""}</div>
+            ${dataFmt ? `<div style="font-size:12px;color:#555;">${dataFmt}</div>` : ""}
             ${item.category ? `<div style="font-size:11px;color:${color};font-weight:600;margin-top:4px;text-transform:uppercase">${item.category}</div>` : ""}
           </div>`;
       } else if (activeTab === "equipes") {
         popupHtml = `
           <div style="font-family:sans-serif;min-width:160px;">
             <div style="font-weight:700;font-size:14px;color:#111;margin-bottom:4px;">${item.title}</div>
-            <div style="font-size:12px;color:#555;">📍 ${item.cidade}</div>
-            ${item.fundacao ? `<div style="font-size:12px;color:#555;">📅 Desde ${item.fundacao}</div>` : ""}
+            <div style="font-size:12px;color:#555;">${item.cidade}</div>
+            ${item.fundacao ? `<div style="font-size:12px;color:#555;">Desde ${item.fundacao}</div>` : ""}
           </div>`;
       } else {
         popupHtml = `
           <div style="font-family:sans-serif;min-width:180px;">
             <div style="font-weight:700;font-size:14px;color:#111;margin-bottom:4px;">${item.nome}</div>
-            <div style="font-size:12px;color:#555;">📍 ${item.cidade}</div>
-            ${item.comprimento ? `<div style="font-size:12px;color:#555;">📏 ${item.comprimento}m</div>` : ""}
+            <div style="font-size:12px;color:#555;">${item.cidade}</div>
+            ${item.comprimento ? `<div style="font-size:12px;color:#555;">${item.comprimento}m</div>` : ""}
             ${item.tipo ? `<div style="font-size:11px;color:#cc0000;font-weight:600;margin-top:4px;text-transform:uppercase">${item.tipo}</div>` : ""}
           </div>`;
       }
@@ -297,7 +298,7 @@ export default function MapaPage() {
             <span style={{ color: "#fff", fontSize: 13 }}>Mapa FMA</span>
           </div>
           <h1 style={{ fontFamily: FONTS.heading, fontSize: 32, fontWeight: 800, margin: "0 0 4px", textTransform: "uppercase", letterSpacing: 1 }}>
-            🗺️ Mapa FMA
+            Mapa FMA
           </h1>
           <p style={{ margin: "0 0 0", opacity: 0.85, fontSize: 15 }}>
             Eventos, equipes filiadas e pistas de atletismo em Minas Gerais
@@ -316,7 +317,7 @@ export default function MapaPage() {
                   color: activeTab === tab.id ? COLORS.primary : "#fff",
                   transition: "all 0.2s",
                 }}>
-                {tab.icon} {tab.label}
+                <Icon name={tab.icon} size={14} /> {tab.label}
               </button>
             ))}
           </div>
@@ -329,12 +330,12 @@ export default function MapaPage() {
 
           {loading ? (
             <div style={{ padding: 60, textAlign: "center", color: COLORS.gray }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
+              <div style={{ marginBottom: 12 }}></div>
               <div style={{ fontFamily: FONTS.heading, fontSize: 16 }}>Carregando dados do mapa…</div>
             </div>
           ) : !leafletReady ? (
             <div style={{ padding: 60, textAlign: "center", color: COLORS.gray }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>🗺️</div>
+              <div style={{ marginBottom: 12 }}></div>
               <div style={{ fontFamily: FONTS.heading, fontSize: 16 }}>Mapa não disponível.</div>
               <div style={{ fontSize: 13, marginTop: 8 }}>Instale a dependência: <code>npm install leaflet</code></div>
             </div>
@@ -387,14 +388,14 @@ export default function MapaPage() {
                         transition: "all 0.15s",
                       }}>
                       <div style={{ fontFamily: FONTS.heading, fontWeight: 700, fontSize: 13, color: COLORS.dark, lineHeight: 1.3, marginBottom: 3 }}>{name}</div>
-                      <div style={{ fontSize: 11, color: COLORS.gray }}>📍 {sub}</div>
+                      <div style={{ fontSize: 11, color: COLORS.gray }}>{sub}</div>
                       {activeTab === "eventos" && item.date && (
                         <div style={{ fontSize: 11, color: COLORS.gray }}>
-                          📅 {new Date(item.date + "T12:00:00").toLocaleDateString("pt-BR")}
+                          {new Date(item.date + "T12:00:00").toLocaleDateString("pt-BR")}
                         </div>
                       )}
                       {activeTab === "pistas" && item.comprimento && (
-                        <div style={{ fontSize: 11, color: COLORS.gray }}>📏 {item.comprimento}m</div>
+                        <div style={{ fontSize: 11, color: COLORS.gray }}>{item.comprimento}m</div>
                       )}
                       {activeTab === "eventos" && item.category && (
                         <span style={{ display: "inline-block", marginTop: 4, padding: "1px 6px", borderRadius: 4, fontSize: 10, fontWeight: 700, textTransform: "uppercase", background: color, color: "#fff" }}>

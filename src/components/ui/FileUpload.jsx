@@ -14,6 +14,7 @@
  */
 import { useState, useRef } from "react";
 import { COLORS, FONTS } from "../../styles/colors";
+import Icon from "../../utils/icons";
 import { uploadFile, deleteFile } from "../../services/storageService";
 
 export default function FileUpload({
@@ -82,8 +83,8 @@ export default function FileUpload({
       {mode === "both" && (
         <div style={{ display: "flex", gap: 8 }}>
           {[
-            { id: "upload", label: "📁 Upload" },
-            { id: "url",    label: "🔗 Por URL" },
+            { id: "upload", label: "Upload" },
+            { id: "url",    label: "Por URL" },
           ].map(m => (
             <button key={m.id} type="button" onClick={() => setActiveMode(m.id)} style={{
               padding: "4px 14px", borderRadius: 6,
@@ -116,7 +117,7 @@ export default function FileUpload({
         >
           {uploading ? (
             <>
-              <div style={{ fontSize: 28, marginBottom: 8 }}>⬆️</div>
+              <div style={{ fontSize: 28, marginBottom: 8 }}><Icon name="Upload" size={28} /></div>
               <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark, marginBottom: 10 }}>
                 Enviando… {progress}%
               </div>
@@ -130,7 +131,7 @@ export default function FileUpload({
             </>
           ) : (
             <>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>📁</div>
+              <div style={{ fontSize: 32, marginBottom: 8 }}><Icon name="Folder" size={32} /></div>
               <div style={{ fontFamily: FONTS.heading, fontSize: 14, color: COLORS.dark, fontWeight: 700 }}>
                 Arraste ou clique para enviar
               </div>
@@ -162,7 +163,7 @@ export default function FileUpload({
       {error && (
         <div style={{ color: "#cc0000", fontSize: 12, padding: "6px 10px",
           background: "#fee2e2", borderRadius: 6 }}>
-          ⚠ {error}
+          {error}
         </div>
       )}
 
@@ -190,7 +191,7 @@ export default function FileUpload({
       {preview && value && isDoc && (
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
           background: "#f9fafb", borderRadius: 8, border: `1px solid ${COLORS.grayLight}` }}>
-          <span style={{ fontSize: 24 }}>📄</span>
+          <span style={{ fontSize: 24 }}><Icon name="File" size={24} /></span>
           <div style={{ flex: 1, overflow: "hidden" }}>
             <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.dark,
               whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>

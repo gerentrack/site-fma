@@ -7,12 +7,13 @@ import IntranetLayout from "../IntranetLayout";
 import { useIntranet } from "../../../context/IntranetContext";
 import { RefereeEventsService, RefereeAvailabilityService } from "../../../services/index";
 import { COLORS, FONTS } from "../../../styles/colors";
+import Icon from "../../../utils/icons";
 import { CALENDAR_CATEGORIES } from "../../../config/navigation";
 
 const catMap = Object.fromEntries((CALENDAR_CATEGORIES || []).filter(c => c.value).map(c => [c.value, c]));
 
 function AvailCard({ event, avail, onToggle, saving }) {
-  const cat = catMap[event.category] || { color: COLORS.gray, icon: "📅", label: event.category };
+  const cat = catMap[event.category] || { color: COLORS.gray, icon: "Calendar", label: event.category };
   const isAvail = avail?.available;
   const hasResponse = avail !== null && avail !== undefined;
   const [notes, setNotes] = useState(avail?.notes || "");
@@ -37,16 +38,16 @@ function AvailCard({ event, avail, onToggle, saving }) {
         {/* Info */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-            <span style={{ padding: "2px 8px", borderRadius: 20, fontSize: 9, fontFamily: FONTS.heading, fontWeight: 700, background: `${cat.color}15`, color: cat.color }}>{cat.icon} {cat.label}</span>
-            {event.source === "calendar" && <span style={{ fontSize: 9, fontFamily: FONTS.heading, fontWeight: 700, color: COLORS.gray, background: COLORS.grayLight, padding: "2px 6px", borderRadius: 20 }}>📅 Calendário FMA</span>}
+            <span style={{ padding: "2px 8px", borderRadius: 20, fontSize: 9, fontFamily: FONTS.heading, fontWeight: 700, background: `${cat.color}15`, color: cat.color }}><Icon name={cat.icon} size={9} /> {cat.label}</span>
+            {event.source === "calendar" && <span style={{ fontSize: 9, fontFamily: FONTS.heading, fontWeight: 700, color: COLORS.gray, background: COLORS.grayLight, padding: "2px 6px", borderRadius: 20 }}>Calendário FMA</span>}
           </div>
           <div style={{ fontFamily: FONTS.heading, fontSize: 15, fontWeight: 700, color: COLORS.dark, lineHeight: 1.3 }}>{event.title}</div>
           <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 4 }}>
-            📍 {event.city} {event.location && `— ${event.location}`} {event.time && `• ${event.time}`}
+            {event.city} {event.location && `— ${event.location}`} {event.time && `• ${event.time}`}
           </div>
           {event.refereesNeeded && (
             <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, marginTop: 2 }}>
-              👥 {event.refereesNeeded} árbitros necessários
+              {event.refereesNeeded} árbitros necessários
             </div>
           )}
         </div>
@@ -142,31 +143,30 @@ export default function MyAvailability() {
     <IntranetLayout>
       <div style={{ padding: 36 }}>
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontFamily: FONTS.heading, fontSize: 26, fontWeight: 900, textTransform: "uppercase", color: COLORS.dark, margin: "0 0 6px" }}>📅 Minha Disponibilidade</h1>
+          <h1 style={{ fontFamily: FONTS.heading, fontSize: 26, fontWeight: 900, textTransform: "uppercase", color: COLORS.dark, margin: "0 0 6px" }}>Minha Disponibilidade</h1>
           <p style={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.gray, margin: 0 }}>Marque sua disponibilidade para os próximos eventos. O prazo padrão é 10 dias antes da prova.</p>
         </div>
 
         {/* Resumo */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 24 }}>
           {[
-            { key: "total", label: "Total", color: COLORS.gray, icon: "📅" },
-            { key: "pendente", label: "Pendente", color: "#884400", icon: "⏳" },
-            { key: "disponivel", label: "Disponível", color: "#007733", icon: "✅" },
-            { key: "indisponivel", label: "Indisponível", color: COLORS.primary, icon: "❌" },
+            { key: "total", label: "Total", color: COLORS.gray, icon: "Calendar" },
+            { key: "pendente", label: "Pendente", color: "#884400", icon: "Hourglass" },
+            { key: "disponivel", label: "Disponível", color: "#007733", icon: "CircleCheck" },
+            { key: "indisponivel", label: "Indisponível", color: COLORS.primary, icon: "CircleX" },
           ].map(s => (
             <button key={s.key} onClick={() => setFilter(s.key)}
               style={{ padding: "14px 16px", borderRadius: 10, border: `2px solid ${filter === s.key ? s.color : COLORS.grayLight}`, background: filter === s.key ? `${s.color}10` : "#fff", cursor: "pointer", textAlign: "left" }}>
               <div style={{ fontFamily: FONTS.heading, fontSize: 22, fontWeight: 900, color: s.color }}>{counts[s.key]}</div>
-              <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>{s.icon} {s.label}</div>
+              <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, display: "flex", alignItems: "center", gap: 4 }}><Icon name={s.icon} size={12} /> {s.label}</div>
             </button>
           ))}
         </div>
 
         {loading ? (
-          <div style={{ padding: "60px 0", textAlign: "center", color: COLORS.gray, fontFamily: FONTS.body }}>⏳ Carregando eventos...</div>
+          <div style={{ padding: "60px 0", textAlign: "center", color: COLORS.gray, fontFamily: FONTS.body }}>Carregando eventos...</div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: "60px 0", textAlign: "center" }}>
-            <div style={{ fontSize: 44, marginBottom: 10 }}>🎉</div>
             <p style={{ fontFamily: FONTS.body, color: COLORS.gray }}>
               {filter === "pendente" ? "Nenhuma disponibilidade pendente. Tudo em dia!" : "Nenhum evento encontrado com este filtro."}
             </p>

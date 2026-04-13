@@ -160,7 +160,7 @@ async function migrateFile(driveUrl, folder) {
   return driveUrl;
 }
 
-const STATUS_ICON = { ok: "✅", erro: "❌", aviso: "⚠️", processando: "⏳", pendente: "○" };
+const STATUS_ICON = { ok: "OK", erro: "X", aviso: "!", processando: "...", pendente: "○" };
 const STATUS_COLOR = { ok: "#166534", erro: "#991b1b", aviso: "#92400e", processando: "#1e40af", pendente: "#6b7280" };
 const STATUS_BG    = { ok: "#f0fdf4", erro: "#fef2f2", aviso: "#fffbeb", processando: "#eff6ff", pendente: "#f9fafb" };
 
@@ -464,13 +464,13 @@ export default function ImportarAdmin() {
                   XLSX.writeFile(wb, "FMA_Migracao_Calendario.xlsx");
                 }}
                 style={{ padding: "8px 20px", background: "#1e40af", color: "#fff", borderRadius: 8, fontFamily: FONTS.heading, fontWeight: 700, fontSize: 13, border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>
-                ⬇ Baixar Modelo
+                Baixar Modelo
               </button>
             </div>
 
             {parseError && (
               <div style={{ background: "#fef2f2", border: "1.5px solid #fca5a5", borderRadius: 8, padding: "12px 16px", marginBottom: 16, color: "#991b1b", fontSize: 13 }}>
-                ⚠ {parseError}
+                {parseError}
               </div>
             )}
 
@@ -555,7 +555,7 @@ export default function ImportarAdmin() {
                           <td style={{ padding: "10px 14px", fontSize: 12 }}>
                             {temArquivos ? (
                               <span style={{ color: "#166534" }}>
-                                {[row._driveRegulamento && "📄 Reg", row._drivePermit && "🏅 Permit", row._driveResultado && "🏆 Result"].filter(Boolean).join(" · ")}
+                                {[row._driveRegulamento && "Reg", row._drivePermit && "Permit", row._driveResultado && "Result"].filter(Boolean).join(" · ")}
                               </span>
                             ) : (
                               <span style={{ color: COLORS.gray }}>—</span>
@@ -576,7 +576,7 @@ export default function ImportarAdmin() {
               </button>
               <button onClick={iniciarImportacao} disabled={!podeImportar}
                 style={{ padding: "10px 28px", background: podeImportar ? COLORS.primary : "#ccc", color: "#fff", border: "none", borderRadius: 8, fontFamily: FONTS.heading, fontWeight: 800, fontSize: 14, cursor: podeImportar ? "pointer" : "default", textTransform: "uppercase" }}>
-                ⬆ Importar {Object.keys(rows.reduce((g,r) => { const k=`${r.titulo}|||${r.data}`; g[k]=1; return g; }, {})).length} Eventos ({rows.filter((_,i) => rowStatus[i]?.status !== "erro").length} modalidades)
+                Importar {Object.keys(rows.reduce((g,r) => { const k=`${r.titulo}|||${r.data}`; g[k]=1; return g; }, {})).length} Eventos ({rows.filter((_,i) => rowStatus[i]?.status !== "erro").length} modalidades)
               </button>
             </div>
           </div>
@@ -585,7 +585,7 @@ export default function ImportarAdmin() {
         {/* ── FASE 3: IMPORTANDO ── */}
         {fase === "importando" && (
           <div style={{ textAlign: "center", padding: "48px 24px" }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>⬆️</div>
+            <div style={{ marginBottom: 16 }}></div>
             <div style={{ fontFamily: FONTS.heading, fontWeight: 800, fontSize: 22, color: COLORS.dark, marginBottom: 8 }}>
               Importando eventos…
             </div>
@@ -619,7 +619,7 @@ export default function ImportarAdmin() {
         {/* ── FASE 4: CONCLUÍDO ── */}
         {fase === "concluido" && resumo && (
           <div style={{ textAlign: "center", padding: "48px 24px" }}>
-            <div style={{ fontSize: 56, marginBottom: 16 }}>{resumo.erros === 0 ? "🎉" : "✅"}</div>
+            <div style={{ marginBottom: 16 }}></div>
             <div style={{ fontFamily: FONTS.heading, fontWeight: 800, fontSize: 26, color: COLORS.dark, marginBottom: 8 }}>
               Importação concluída!
             </div>
@@ -645,7 +645,7 @@ export default function ImportarAdmin() {
                   if (st?.status !== "erro") return null;
                   return (
                     <div key={i} style={{ padding: "8px 12px", marginBottom: 4, borderRadius: 6, background: "#fef2f2", fontSize: 12, color: "#991b1b" }}>
-                      ❌ <strong>{row.titulo}</strong> — {st.msg}
+                      <strong>{row.titulo}</strong> — {st.msg}
                     </div>
                   );
                 })}

@@ -11,10 +11,11 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { COLORS, FONTS } from "../../styles/colors";
 import { enviarOuvidoria } from "../../services/emailService";
+import Icon from "../../utils/icons";
 
 const ITENS = [
   {
-    icon: "📧",
+    icon: "Mail",
     titulo: "E-mail da Ouvidoria",
     descricao: "Para manifestações formais, sugestões ou denúncias.",
     acao: "mg@cbat.org.br",
@@ -22,19 +23,19 @@ const ITENS = [
     tipo: "email",
   },
   {
-    icon: "📋",
+    icon: "ClipboardList",
     titulo: "Como funciona a Ouvidoria",
     descricao: "A Ouvidoria da FMA recebe manifestações de atletas, clubes, árbitros, organizadores e demais partes interessadas. Todas as mensagens são tratadas com sigilo e respondidas em até 10 dias úteis.",
     tipo: "info",
   },
   {
-    icon: "🔒",
+    icon: "Lock",
     titulo: "Sigilo e Proteção",
     descricao: "O nome do solicitante é mantido em sigilo. As informações são utilizadas exclusivamente para tratamento da manifestação e não são compartilhadas com terceiros.",
     tipo: "info",
   },
   {
-    icon: "📌",
+    icon: "MapPinned",
     titulo: "O que pode ser encaminhado",
     descricao: "Reclamações sobre condutas, sugestões de melhoria, denúncias de irregularidades, elogios, solicitações de informação e pedidos de acesso a documentos públicos.",
     tipo: "info",
@@ -88,7 +89,7 @@ export default function OuvidoriaPage() {
             <span style={{ color: COLORS.primaryLight }}>Ouvidoria</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12 }}>
-            <span style={{ fontSize: 40 }}>📣</span>
+            <span><Icon name="Megaphone" size={40} /></span>
             <h1 style={{ fontFamily: FONTS.heading,
               fontSize: "clamp(2rem,5vw,3rem)", fontWeight: 900,
               color: "#fff", margin: 0, textTransform: "uppercase", letterSpacing: 2 }}>
@@ -121,7 +122,7 @@ export default function OuvidoriaPage() {
                   background: "#fff", border: `1.5px solid ${COLORS.grayLight}`,
                 }}>
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                    <span style={{ fontSize: 22, flexShrink: 0, marginTop: 2 }}>{item.icon}</span>
+                    <span style={{ flexShrink: 0, marginTop: 2 }}><Icon name={item.icon} size={22} /></span>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800,
                         textTransform: "uppercase", color: COLORS.dark,
@@ -159,7 +160,7 @@ export default function OuvidoriaPage() {
               <div style={{ padding: "32px 24px", borderRadius: 14,
                 background: "#f0fdf4", border: "1.5px solid #86efac",
                 textAlign: "center" }}>
-                <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+                <div style={{ marginBottom: 12 }}><Icon name="CircleCheck" size={48} color="#15803d" /></div>
                 <h3 style={{ fontFamily: FONTS.heading, fontSize: 18, fontWeight: 800,
                   color: "#15803d", textTransform: "uppercase", margin: "0 0 8px" }}>
                   Manifestação enviada!
@@ -245,7 +246,7 @@ export default function OuvidoriaPage() {
                     fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700,
                     textTransform: "uppercase", letterSpacing: 0.5,
                     cursor: enviando ? "not-allowed" : "pointer" }}>
-                  {enviando ? "Enviando..." : "📣 Enviar Manifestação"}
+                  {enviando ? "Enviando..." : "Enviar Manifestação"}
                 </button>
 
                 <p style={{ fontFamily: FONTS.body, fontSize: 11,

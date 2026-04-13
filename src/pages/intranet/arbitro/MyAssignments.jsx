@@ -8,6 +8,7 @@ import IntranetLayout from "../IntranetLayout";
 import { useIntranet } from "../../../context/IntranetContext";
 import { RefereeAssignmentsService, RefereesService, RelatoriosService } from "../../../services/index";
 import { COLORS, FONTS } from "../../../styles/colors";
+import Icon from "../../../utils/icons";
 import { CALENDAR_CATEGORIES, REFEREE_FUNCTIONS } from "../../../config/navigation";
 import SignaturePad, { gerarEvidenciaAssinatura } from "../../../components/ui/SignaturePad";
 
@@ -113,7 +114,7 @@ export default function MyAssignments() {
     <IntranetLayout>
       <div style={{ padding: 36 }}>
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontFamily: FONTS.heading, fontSize: 26, fontWeight: 900, textTransform: "uppercase", color: COLORS.dark, margin: "0 0 6px" }}>📋 Minhas Escalas</h1>
+          <h1 style={{ fontFamily: FONTS.heading, fontSize: 26, fontWeight: 900, textTransform: "uppercase", color: COLORS.dark, margin: "0 0 6px" }}>Minhas Escalas</h1>
           <p style={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.gray, margin: 0 }}>Provas em que você foi escalado pela coordenação da FMA.</p>
         </div>
 
@@ -145,10 +146,9 @@ export default function MyAssignments() {
         </div>
 
         {loading ? (
-          <div style={{ padding: "60px 0", textAlign: "center", color: COLORS.gray, fontFamily: FONTS.body }}>⏳ Carregando...</div>
+          <div style={{ padding: "60px 0", textAlign: "center", color: COLORS.gray, fontFamily: FONTS.body }}>Carregando...</div>
         ) : list.length === 0 ? (
           <div style={{ padding: "60px 0", textAlign: "center" }}>
-            <div style={{ fontSize: 44, marginBottom: 10 }}>📋</div>
             <p style={{ fontFamily: FONTS.body, color: COLORS.gray }}>
               {showPast ? "Sem histórico de escalas." : "Você não tem escalas futuras no momento."}
             </p>
@@ -158,7 +158,7 @@ export default function MyAssignments() {
             {list.map(asgn => {
               const evt = asgn.event;
               if (!evt) return null;
-              const cat = catMap[evt.category] || { color: COLORS.gray, icon: "📅", label: evt.category };
+              const cat = catMap[evt.category] || { color: COLORS.gray, icon: "Calendar", label: evt.category };
               const statusStyle = STATUS_STYLE[asgn.status] || STATUS_STYLE.pendente;
               return (
                 <div key={asgn.id} style={{ background: "#fff", borderRadius: 12, padding: "20px 22px", boxShadow: "0 2px 10px rgba(0,0,0,0.06)", borderLeft: `4px solid ${statusStyle.color}` }}>
@@ -169,7 +169,7 @@ export default function MyAssignments() {
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-                        <span style={{ padding: "2px 8px", borderRadius: 20, fontSize: 9, fontFamily: FONTS.heading, fontWeight: 700, background: `${cat.color}15`, color: cat.color }}>{cat.icon} {cat.label}</span>
+                        <span style={{ padding: "2px 8px", borderRadius: 20, fontSize: 9, fontFamily: FONTS.heading, fontWeight: 700, background: `${cat.color}15`, color: cat.color }}><Icon name={cat.icon} size={9} /> {cat.label}</span>
                         <span style={{ padding: "2px 8px", borderRadius: 20, fontSize: 9, fontFamily: FONTS.heading, fontWeight: 700, background: statusStyle.bg, color: statusStyle.color }}>{statusStyle.label}</span>
                       </div>
                       <div style={{ fontFamily: FONTS.heading, fontSize: 15, fontWeight: 700, color: COLORS.dark }}>{evt.title}</div>

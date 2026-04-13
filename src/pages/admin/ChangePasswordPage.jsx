@@ -65,7 +65,7 @@ export default function ChangePasswordPage() {
         width: "100%", maxWidth: 420, boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
       }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🔐</div>
+          <div style={{ marginBottom: 12 }}></div>
           <h1 style={{ fontFamily: FONTS.heading, fontWeight: 800, fontSize: 22, color: COLORS.dark, margin: 0 }}>
             Alterar Senha
           </h1>

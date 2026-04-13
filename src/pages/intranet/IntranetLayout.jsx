@@ -11,6 +11,7 @@ import { useIntranet } from "../../context/IntranetContext";
 import { useSessionTimeout } from "../../hooks/useSessionTimeout";
 import SessionWarning from "../../components/ui/SessionWarning";
 import { COLORS, FONTS } from "../../styles/colors";
+import Icon from "../../utils/icons";
 import {
   INTRANET_NAV_ARBITRO,
   INTRANET_NAV_ADMIN,
@@ -38,7 +39,7 @@ function NavLink({ item }) {
         transition: "all 0.15s",
       }}
     >
-      <span style={{ fontSize: 16 }}>{item.icon}</span>
+      <span style={{ fontSize: 16 }}><Icon name={item.icon} size={16} /></span>
       {item.label}
     </Link>
   );
@@ -174,7 +175,7 @@ export default function IntranetLayout({ children, requireRole = null }) {
                 return (
                   <button onClick={() => { setShowNotifs(s => !s); setNotifsVistaHash(currentHash); }}
                     style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: hasNew ? "#fbbf24" : "rgba(255,255,255,0.4)", padding: "2px 4px", position: "relative" }}>
-                    🔔
+                    <Icon name="Bell" size={18} />
                     {hasNew && (
                       <span style={{ position: "absolute", top: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "#dc2626", color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{notifs.length}</span>
                     )}

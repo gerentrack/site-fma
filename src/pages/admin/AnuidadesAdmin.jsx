@@ -148,7 +148,7 @@ export default function AnuidadesAdmin({ useIntranet = false }) {
             <select value={filtroNivel} onChange={e => setFiltroNivel(e.target.value)}
               style={{ padding: "8px 12px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, fontSize: 14, fontFamily: FONTS.body }}>
               <option value="">Todos</option>
-              {["A", "B", "C", "NI"].map(n => <option key={n} value={n}>{n}</option>)}
+              {[{v:"A",l:"A"},{v:"B",l:"B"},{v:"C",l:"C"},{v:"NI",l:"NAR"}].map(n => <option key={n.v} value={n.v}>{n.l}</option>)}
             </select>
           </div>
           <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "flex-end" }}>

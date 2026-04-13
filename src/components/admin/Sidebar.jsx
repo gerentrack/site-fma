@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { COLORS, FONTS } from "../../styles/colors";
 import { ADMIN_NAV } from "../../config/navigation";
+import Icon from "../../utils/icons";
 
 const LEVEL_WEIGHT = { master: 4, admin: 3, editor: 2, viewer: 1 };
 const LEVEL_LABEL  = { master: "Master", admin: "Administrador", editor: "Editor", viewer: "Visualizador" };
@@ -65,7 +66,7 @@ export default function Sidebar() {
                 onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "#fff"; } }}
                 onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(255,255,255,0.55)"; } }}
               >
-                <span style={{ fontSize: 14, flexShrink: 0 }}>{item.icon}</span>
+                <span style={{ fontSize: 14, flexShrink: 0 }}><Icon name={item.icon} size={14} /></span>
                 {item.label}
               </Link>
             </div>

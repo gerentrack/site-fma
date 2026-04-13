@@ -17,16 +17,17 @@ import { COLORS, FONTS } from "../../styles/colors";
 import { DocumentsService } from "../../services/index";
 import { DOCUMENT_CATEGORIES } from "../../config/navigation";
 import PdfModal, { usePdfModal } from "../../components/ui/PdfModal";
+import Icon from "../../utils/icons";
 
 // ─── Config de categorias com ícone e cor ────────────────────────────────────
 
 const CAT_META = {
-  "":          { icon: "📂", color: COLORS.dark,        bg: "#f1f5f9", border: "#e2e8f0" },
-  estatuto:    { icon: "📜", color: "#7c3aed",          bg: "#f5f3ff", border: "#ddd6fe" },
-  nota:        { icon: "📢", color: COLORS.primary,     bg: "#fff0f0", border: "#fecaca" },
-  regimento:   { icon: "⚖️", color: "#0066cc",          bg: "#eff6ff", border: "#bfdbfe" },
-  formulario:  { icon: "📝", color: "#15803d",          bg: "#f0fdf4", border: "#86efac" },
-  outro:       { icon: "📄", color: "#92400e",          bg: "#fffbeb", border: "#fde68a" },
+  "":          { icon: "FolderOpen", color: COLORS.dark,        bg: "#f1f5f9", border: "#e2e8f0" },
+  estatuto:    { icon: "ScrollText", color: "#7c3aed",          bg: "#f5f3ff", border: "#ddd6fe" },
+  nota:        { icon: "Megaphone", color: COLORS.primary,     bg: "#fff0f0", border: "#fecaca" },
+  regimento:   { icon: "Scale", color: "#0066cc",          bg: "#eff6ff", border: "#bfdbfe" },
+  formulario:  { icon: "Pencil", color: "#15803d",          bg: "#f0fdf4", border: "#86efac" },
+  outro:       { icon: "FileText", color: "#92400e",          bg: "#fffbeb", border: "#fde68a" },
 };
 
 const ORDENACAO_OPTS = [
@@ -111,7 +112,7 @@ function DocCard({ doc, onViewPdf }) {
         borderRight: `1px solid ${meta.border}`,
         fontSize: 26,
       }}>
-        {meta.icon}
+        <Icon name={meta.icon} size={26} />
       </div>
 
       {/* Conteúdo */}
@@ -130,7 +131,7 @@ function DocCard({ doc, onViewPdf }) {
           <span style={{
             fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray,
           }}>
-            📅 {fmtDateShort(doc.date)}
+            <Icon name="Calendar" size={11} /> {fmtDateShort(doc.date)}
           </span>
         </div>
 
@@ -184,7 +185,7 @@ function DocCard({ doc, onViewPdf }) {
               onMouseEnter={e => { e.currentTarget.style.opacity = "0.82"; }}
               onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
             >
-              <span style={{ fontSize: 13 }}>📄</span>
+              <Icon name="FileText" size={13} />
               Visualizar documento
             </button>
           ) : (
@@ -234,7 +235,7 @@ function CategoryTabs({ categoria, onChange, counts }) {
               whiteSpace: "nowrap",
             }}
           >
-            {cat.value ? meta.icon : "📂"} {cat.label}
+            <Icon name={cat.value ? meta.icon : "FolderOpen"} size={14} /> {cat.label}
             {showCount && (
               <span style={{
                 padding: "1px 7px", borderRadius: 20, fontSize: 10,
@@ -278,7 +279,7 @@ function ControlBar({ busca, ordenacao, onBusca, onOrdenacao, total, filtrado })
           position: "absolute", left: 12, top: "50%",
           transform: "translateY(-50%)", fontSize: 15, color: COLORS.gray,
           pointerEvents: "none",
-        }}>🔍</span>
+        }}><Icon name="Search" size={14} /></span>
         <input
           type="search"
           value={busca}
@@ -371,7 +372,7 @@ function PageHero({ total }) {
         <div style={{ display: "flex", alignItems: "flex-end", gap: 32, flexWrap: "wrap" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12 }}>
-              <span style={{ fontSize: 44 }}>📂</span>
+              <span><Icon name="FolderOpen" size={44} /></span>
               <h1 style={{
                 fontFamily: FONTS.heading,
                 fontSize: "clamp(2rem, 5vw, 3rem)",
@@ -426,7 +427,7 @@ function EmptyState({ busca, categoria, onReset }) {
       background: "#fff", borderRadius: 16,
       border: `1.5px dashed ${COLORS.grayLight}`,
     }}>
-      <div style={{ fontSize: 48, marginBottom: 16 }}>🗂️</div>
+      <div style={{ marginBottom: 16 }}></div>
       <p style={{
         fontFamily: FONTS.heading, fontSize: 16, fontWeight: 700,
         color: COLORS.gray, margin: "0 0 8px",

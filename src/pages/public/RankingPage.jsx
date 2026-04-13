@@ -12,6 +12,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { COLORS, FONTS } from "../../styles/colors";
+import Icon from "../../utils/icons";
 
 // ─── Dados estáticos de recordes ──────────────────────────────────────────────
 // Fonte: recordes estaduais mineiros homologados — atualize via PDF oficial.
@@ -86,7 +87,7 @@ function PageHero({ icon, title, subtitle, children }) {
         fontSize: "clamp(5rem, 12vw, 9rem)",
         color: "rgba(255,255,255,0.03)",
         userSelect: "none", pointerEvents: "none", lineHeight: 1,
-      }}>{icon}</div>
+      }}></div>
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 32px" }}>
         <div style={{
@@ -102,7 +103,7 @@ function PageHero({ icon, title, subtitle, children }) {
         <div style={{ display: "flex", alignItems: "flex-end", gap: 32, flexWrap: "wrap" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12 }}>
-              <span style={{ fontSize: 40 }}>{icon}</span>
+              <span><Icon name={icon} size={40} /></span>
               <h1 style={{
                 fontFamily: FONTS.heading,
                 fontSize: "clamp(1.8rem, 5vw, 2.8rem)",
@@ -133,8 +134,8 @@ function PageHero({ icon, title, subtitle, children }) {
 function NavAbas({ ativa }) {
   const navigate = useNavigate();
   const abas = [
-    { id: "ranking",   label: "🏆 Ranking", path: "/ranking" },
-    { id: "recordes",  label: "⭐ Recordes Estaduais", path: "/ranking/recordes" },
+    { id: "ranking",   label: "Ranking", path: "/ranking", icon: "Trophy" },
+    { id: "recordes",  label: "Recordes Estaduais", path: "/ranking/recordes", icon: "Star" },
   ];
   return (
     <div style={{
@@ -153,7 +154,7 @@ function NavAbas({ ativa }) {
             background: ativa === a.id ? COLORS.dark : "transparent",
             color: ativa === a.id ? "#fff" : COLORS.gray,
           }}>
-          {a.label}
+          <Icon name={a.icon} size={14} /> {a.label}
         </button>
       ))}
     </div>
@@ -214,7 +215,7 @@ function AvisoOficial({ docUrl }) {
       background: "#fffbeb", border: "1.5px solid #fde68a",
       borderRadius: 12, padding: "16px 20px", marginBottom: 28,
     }}>
-      <span style={{ fontSize: 22, flexShrink: 0 }}>⚠️</span>
+      <span style={{ flexShrink: 0 }}><Icon name="AlertTriangle" size={22} /></span>
       <div style={{ fontFamily: FONTS.body, fontSize: 13, color: "#92400e", lineHeight: 1.6 }}>
         <strong>Dados ilustrativos.</strong> Esta página exibe marcas e recordes estaduais representativos
         enquanto o sistema de resultados estruturados está em implantação.
@@ -241,9 +242,9 @@ export function RankingPage() {
   const [catAtiva, setCatAtiva] = useState("corrida");
 
   const CATS = [
-    { value: "corrida", label: "Corridas de Rua", icon: "🏅" },
-    { value: "pista",   label: "Pista e Campo",   icon: "🏟️" },
-    { value: "trail",   label: "Trail Run",        icon: "🏔️" },
+    { value: "corrida", label: "Corridas de Rua", icon: "Medal" },
+    { value: "pista",   label: "Pista e Campo",   icon: "Building" },
+    { value: "trail",   label: "Trail Run",        icon: "Mountain" },
   ];
 
   // Melhores marcas 2026 — dados representativos por categoria
@@ -308,7 +309,7 @@ export function RankingPage() {
   return (
     <>
       <PageHero
-        icon="🏆"
+        icon="Trophy"
         title="Rankings 2026"
         subtitle="Classificação dos melhores atletas mineiros por categoria e prova na temporada atual."
       />
@@ -329,7 +330,7 @@ export function RankingPage() {
                 color: catAtiva === c.value ? "#fff" : COLORS.gray,
                 boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
               }}>
-              {c.icon} {c.label}
+              <Icon name={c.icon} size={14} /> {c.label}
             </button>
           ))}
         </div>
@@ -355,7 +356,7 @@ export function RankingPage() {
         {/* Link para resultados completos */}
         <div style={{ background: "#f0f9ff", border: "1.5px solid #bae6fd", borderRadius: 12, padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div>
-            <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", color: "#0369a1", marginBottom: 4 }}>📊 Resultados completos por prova</div>
+            <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", color: "#0369a1", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}><Icon name="BarChart3" size={14} /> Resultados completos por prova</div>
             <div style={{ fontFamily: FONTS.body, fontSize: 13, color: "#0c4a6e" }}>Acesse os PDFs e planilhas de resultado de cada competição da temporada.</div>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -385,8 +386,8 @@ export function RecordesPage() {
   const [busca, setBusca] = useState("");
 
   const ABAS = [
-    { id: "pista",   label: "🏟️ Pista e Campo" },
-    { id: "corrida", label: "🏅 Corridas de Rua" },
+    { id: "pista",   label: "Pista e Campo", icon: "Building" },
+    { id: "corrida", label: "Corridas de Rua", icon: "Medal" },
   ];
 
   const dados = aba === "pista" ? RECORDES_PISTA : RECORDES_CORRIDA;
@@ -413,7 +414,7 @@ export function RecordesPage() {
   return (
     <>
       <PageHero
-        icon="⭐"
+        icon="Star"
         title="Recordes Estaduais"
         subtitle="Melhores marcas homologadas em competições realizadas em Minas Gerais ou por atletas filiados a clubes mineiros."
       />
@@ -427,7 +428,7 @@ export function RecordesPage() {
           {ABAS.map(a => (
             <button key={a.id} onClick={() => { setAba(a.id); setFiltCat(""); setBusca(""); }}
               style={{ padding: "9px 22px", borderRadius: 8, border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, transition: "all 0.15s", background: aba === a.id ? COLORS.dark : "transparent", color: aba === a.id ? "#fff" : COLORS.gray }}>
-              {a.label}
+              <Icon name={a.icon} size={14} /> {a.label}
             </button>
           ))}
         </div>
@@ -436,7 +437,7 @@ export function RecordesPage() {
         <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
           <input
             value={busca} onChange={e => setBusca(e.target.value)}
-            placeholder="🔍 Buscar por prova, atleta ou clube..."
+            placeholder="Buscar por prova, atleta ou clube..."
             style={{ flex: 1, minWidth: 220, padding: "9px 13px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 13, outline: "none" }}
           />
           <select value={filtCat} onChange={e => setFiltCat(e.target.value)}
@@ -459,7 +460,7 @@ export function RecordesPage() {
 
         {filtrados.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 24px", background: "#fff", borderRadius: 16, border: `1.5px dashed ${COLORS.grayLight}` }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>⭐</div>
+            <div style={{ marginBottom: 12 }}></div>
             <div style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 700, color: COLORS.dark }}>Nenhum recorde encontrado</div>
           </div>
         ) : (
@@ -469,10 +470,10 @@ export function RecordesPage() {
         {/* Links relacionados */}
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 32 }}>
           <Link to="/documentos" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", borderRadius: 9, border: `1.5px solid ${COLORS.grayLight}`, color: COLORS.dark, fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, textDecoration: "none", background: "#fff" }}>
-            📄 Tabela oficial (PDF)
+            <Icon name="FileText" size={14} /> Tabela oficial (PDF)
           </Link>
           <Link to="/ranking" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", borderRadius: 9, border: `1.5px solid ${COLORS.grayLight}`, color: COLORS.dark, fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, textDecoration: "none", background: "#fff" }}>
-            🏆 Ranking 2026
+            <Icon name="Trophy" size={14} /> Ranking 2026
           </Link>
         </div>
       </div>

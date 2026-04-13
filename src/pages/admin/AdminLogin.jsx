@@ -58,7 +58,7 @@ export default function AdminLogin() {
         width: "100%", maxWidth: 400, boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
       }}>
         <div style={{ textAlign: "center", marginBottom: 36 }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🏃</div>
+          <div style={{ marginBottom: 12 }}></div>
           <div style={{ fontFamily: FONTS.heading, fontWeight: 800, fontSize: 24, color: COLORS.primary, letterSpacing: 2 }}>FMA</div>
           <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, marginTop: 4 }}>Painel Administrativo</div>
         </div>

@@ -15,6 +15,7 @@ import {
   InstitutionalPagesService,
   InstitutionalSectionsService,
 } from "../../services/index";
+import Icon from "../../utils/icons";
 
 // ─── Renderizador de Seção ────────────────────────────────────────────────────
 
@@ -177,7 +178,7 @@ function DownloadButton({ url, label, centered }) {
         onMouseEnter={e => e.currentTarget.style.background = COLORS.primaryDark || "#990000"}
         onMouseLeave={e => e.currentTarget.style.background = COLORS.primary}
       >
-        <span style={{ fontSize: 18 }}>📥</span>
+        <Icon name="Download" size={18} />
         {label || "Baixar Documento"}
       </a>
     </div>
@@ -256,7 +257,7 @@ export default function InstitutionalPage() {
   if (status === "loading") {
     return (
       <div style={{ padding: "80px 24px", textAlign: "center", fontFamily: FONTS.body }}>
-        <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
+        <div style={{ marginBottom: 12 }}></div>
         <p style={{ color: COLORS.gray }}>Carregando...</p>
       </div>
     );
@@ -265,7 +266,7 @@ export default function InstitutionalPage() {
   if (status === "notfound") {
     return (
       <div style={{ padding: "80px 24px", textAlign: "center", fontFamily: FONTS.body }}>
-        <div style={{ fontSize: 48, marginBottom: 12 }}>🚧</div>
+        <div style={{ marginBottom: 12 }}></div>
         <h1 style={{ fontFamily: FONTS.heading, color: COLORS.primary, fontSize: 28, textTransform: "uppercase" }}>
           Página não encontrada
         </h1>
