@@ -23,6 +23,7 @@ import {
   InstitutionalSectionsService,
 } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
+import DOMPurify from "dompurify";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -542,7 +543,7 @@ export function SectionEditor() {
                 <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, marginBottom: 8 }}>Preview do texto:</div>
                 <div
                   style={{ border: `1px dashed ${COLORS.grayLight}`, borderRadius: 8, padding: "16px 20px", background: "#fafafa", fontSize: 14, lineHeight: 1.7, fontFamily: FONTS.body, color: COLORS.dark }}
-                  dangerouslySetInnerHTML={{ __html: values.content }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(values.content) }}
                 />
               </div>
             )}

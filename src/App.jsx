@@ -4,6 +4,7 @@ import { AdminProvider } from "./context/AdminContext";
 import { IntranetProvider } from "./context/IntranetContext";
 import { OrganizerProvider } from "./context/OrganizerContext";
 import AppRouter from "./router/index";
+import ErrorBoundary from "./components/ErrorBoundary";
 import CookieBanner, { getCookieConsent } from "./components/common/CookieBanner";
 
 export default function App() {
@@ -18,7 +19,9 @@ export default function App() {
               href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&display=swap"
               rel="stylesheet"
             />
-            <AppRouter />
+            <ErrorBoundary>
+              <AppRouter />
+            </ErrorBoundary>
             {analyticsAllowed && <Analytics />}
             <CookieBanner />
           </OrganizerProvider>

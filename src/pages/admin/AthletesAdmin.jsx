@@ -23,6 +23,7 @@ import { useForm, required } from "../../hooks/useForm";
 import { AthleteContentService } from "../../services/index";
 import { ATHLETE_CONTENT_CATEGORIES } from "../../config/navigation";
 import { COLORS, FONTS } from "../../styles/colors";
+import DOMPurify from "dompurify";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -379,7 +380,7 @@ export function AthleteContentEditor() {
               </div>
               <div
                 style={{ border: `1px dashed ${COLORS.grayLight}`, borderRadius: 8, padding: "16px 20px", background: "#fafafa", fontSize: 14, lineHeight: 1.8, fontFamily: FONTS.body, color: COLORS.dark }}
-                dangerouslySetInnerHTML={{ __html: values.content }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(values.content) }}
               />
             </div>
           )}

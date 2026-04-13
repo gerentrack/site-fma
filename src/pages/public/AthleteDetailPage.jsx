@@ -19,6 +19,7 @@ import { AthleteContentService } from "../../services/index";
 import { ATHLETE_CONTENT_CATEGORIES } from "../../config/navigation";
 import PdfModal, { usePdfModal } from "../../components/ui/PdfModal";
 import Icon from "../../utils/icons";
+import DOMPurify from "dompurify";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -317,7 +318,7 @@ export default function AthleteDetailPage() {
                   lineHeight: 1.85,
                   color: COLORS.dark,
                 }}
-                dangerouslySetInnerHTML={{ __html: item.content }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.content) }}
               />
             </div>
           )}

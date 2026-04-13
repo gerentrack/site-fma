@@ -11,6 +11,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { COLORS, FONTS } from "../../styles/colors";
+import DOMPurify from "dompurify";
 import {
   InstitutionalPagesService,
   InstitutionalSectionsService,
@@ -99,7 +100,7 @@ function SectionRenderer({ section }) {
                     lineHeight: 1.8,
                     color: COLORS.dark,
                   }}
-                  dangerouslySetInnerHTML={{ __html: content }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
                 />
               )}
               {showFile && fileUrl && (
@@ -127,7 +128,7 @@ function SectionRenderer({ section }) {
                     color: COLORS.dark,
                     maxWidth: 820,
                   }}
-                  dangerouslySetInnerHTML={{ __html: content }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
                 />
               )}
               {showFile && fileUrl && (

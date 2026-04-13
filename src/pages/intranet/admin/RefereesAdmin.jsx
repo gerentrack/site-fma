@@ -67,7 +67,7 @@ export function IntranetRefereeList() {
         arbitroEmail: ref.email,
         arbitroNome: ref.name,
         novoStatus: status,
-      }).catch(e => console.warn("Email status árbitro:", e));
+      }).catch(() => {});
     }
     load();
   };
@@ -537,7 +537,7 @@ export function IntranetRefereeEditor() {
         arbitroEmail: form.email,
         arbitroNome: form.name,
         senhaTemporaria: form.password,
-      }).catch(e => console.warn("Email cadastro árbitro:", e));
+      }).catch(() => {});
     }
     navigate("/intranet/admin/arbitros");
   };

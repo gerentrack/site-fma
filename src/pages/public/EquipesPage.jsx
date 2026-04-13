@@ -11,6 +11,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { EquipesService } from "../../services/index";
 import { COLORS, FONTS } from "../../styles/colors";
 import Icon from "../../utils/icons";
+import DOMPurify from "dompurify";
 
 // ─── Utilitários ──────────────────────────────────────────────────────────────
 
@@ -373,7 +374,7 @@ export function EquipeDetalhe() {
             {equipe.content ? (
               <div
                 style={{ fontFamily: FONTS.body, fontSize: 15, lineHeight: 1.8, color: COLORS.dark }}
-                dangerouslySetInnerHTML={{ __html: equipe.content }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(equipe.content) }}
               />
             ) : (
               <p style={{ fontFamily: FONTS.body, color: COLORS.gray }}>

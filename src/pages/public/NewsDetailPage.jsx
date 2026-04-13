@@ -21,6 +21,7 @@ import { NewsService } from "../../services/index";
 import NewsCard from "../../components/ui/NewsCard";
 import { NEWS_CATEGORIES } from "../../config/navigation";
 import Icon from "../../utils/icons";
+import DOMPurify from "dompurify";
 
 const catMap = Object.fromEntries(NEWS_CATEGORIES.filter(c => c.value).map(c => [c.value, c]));
 
@@ -303,7 +304,7 @@ export default function NewsDetailPage() {
           {news.content ? (
             <div
               className="fma-prose"
-              dangerouslySetInnerHTML={{ __html: news.content }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(news.content) }}
             />
           ) : (
             <p style={{ fontFamily: FONTS.body, color: COLORS.gray, fontStyle: "italic" }}>Esta notícia não tem conteúdo completo.</p>

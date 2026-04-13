@@ -116,7 +116,7 @@ export default function IntranetLayout({ children, requireRole = null }) {
         const reembRejeitados = (reembRes.data || []).filter(r => r.refereeId === refereeId && r.status === "rejeitado").length;
         if (reembAprovados) items.push({ text: `${reembAprovados} reembolso(s) aprovado(s)`, to: "/intranet/reembolsos", color: "#15803d" });
         if (reembRejeitados) items.push({ text: `${reembRejeitados} reembolso(s) rejeitado(s)`, to: "/intranet/reembolsos", color: "#dc2626" });
-      } catch (e) { console.warn("Notifs:", e); }
+      } catch (e) { }
       setNotifs(items);
     };
 
@@ -132,7 +132,7 @@ export default function IntranetLayout({ children, requireRole = null }) {
       unsubs.push(onSnapshot(collection(db, "anuidades"), debouncedRecalcular, () => {}));
       unsubs.push(onSnapshot(collection(db, "refereeAssignments"), debouncedRecalcular, () => {}));
       unsubs.push(onSnapshot(collection(db, "reembolsos"), debouncedRecalcular, () => {}));
-    } catch (e) { console.warn("onSnapshot setup:", e); }
+    } catch (e) { }
 
     // Fallback: polling a cada 30s caso onSnapshot falhe
     const interval = setInterval(recalcular, 30000);

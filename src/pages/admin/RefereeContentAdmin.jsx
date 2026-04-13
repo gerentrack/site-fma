@@ -17,6 +17,7 @@ import { useForm, required } from "../../hooks/useForm";
 import { RefereeContentService } from "../../services/index";
 import { REFEREE_CONTENT_CATEGORIES } from "../../config/navigation";
 import { COLORS, FONTS } from "../../styles/colors";
+import DOMPurify from "dompurify";
 
 const catMap = Object.fromEntries(REFEREE_CONTENT_CATEGORIES.filter(c => c.value).map(c => [c.value, c]));
 const catOptions = REFEREE_CONTENT_CATEGORIES.filter(c => c.value).map(c => ({ value: c.value, label: `${c.icon} ${c.label}` }));
@@ -221,7 +222,7 @@ export function RefereeContentEditor() {
             <div style={{ marginTop: 12 }}>
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, marginBottom: 8 }}>Preview:</div>
               <div style={{ border: `1px dashed ${COLORS.grayLight}`, borderRadius: 8, padding: "14px 18px", background: "#fafafa", fontSize: 14, lineHeight: 1.8, fontFamily: FONTS.body }}
-                dangerouslySetInnerHTML={{ __html: values.content }} />
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(values.content) }} />
             </div>
           )}
         </div>

@@ -171,7 +171,7 @@ export default function PortalRegister() {
       email: form.email,
       nome: form.name,
       organizacao: form.organization || form.name,
-    }).catch(e => console.warn("Email boas-vindas:", e));
+    }).catch(() => {});
     navigate("/portal", { replace: true });
   };
 

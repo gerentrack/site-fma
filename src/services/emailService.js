@@ -36,7 +36,6 @@ async function enviarEmail({ to, subject, html }) {
     });
     return { ok: true };
   } catch (e) {
-    console.error("EmailService:", e);
     return { ok: false, error: e.message };
   }
 }

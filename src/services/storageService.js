@@ -101,7 +101,6 @@ export async function uploadFile(file, folder = "uploads", onProgress = null) {
     const url = await getDownloadURL(fileRef);
     return { url, path, error: null };
   } catch (e) {
-    console.error("storageService.uploadFile:", e);
     return { url: null, path: null, error: e.message || "Erro no upload." };
   }
 }
@@ -122,7 +121,6 @@ export async function deleteFile(urlOrPath) {
     await deleteObject(fileRef);
     return { error: null };
   } catch (e) {
-    console.error("storageService.deleteFile:", e);
     return { error: e.message };
   }
 }
@@ -148,7 +146,6 @@ export async function moveFile(oldUrl, newFolder, fileName) {
     try { await deleteObject(ref(storage, oldUrl)); } catch (_) { /* ignora se não achar */ }
     return { url, path, error: null };
   } catch (e) {
-    console.error("storageService.moveFile:", e);
     return { url: null, path: null, error: e.message };
   }
 }

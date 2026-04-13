@@ -8,6 +8,7 @@ import { COLORS, FONTS } from "../../styles/colors";
 import { RefereeContentService } from "../../services/index";
 import { REFEREE_CONTENT_CATEGORIES } from "../../config/navigation";
 import Icon from "../../utils/icons";
+import DOMPurify from "dompurify";
 
 const catMap = Object.fromEntries(
   REFEREE_CONTENT_CATEGORIES.filter(c => c.value).map(c => [c.value, c])
@@ -72,7 +73,7 @@ export default function RefereeDetailPage() {
         <div>
           {item.content && (
             <div style={{ fontFamily: FONTS.body, fontSize: 15.5, lineHeight: 1.85, color: COLORS.dark, marginBottom: 32 }}
-              dangerouslySetInnerHTML={{ __html: item.content }} />
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.content) }} />
           )}
           {(item.fileUrl || item.externalLink) && (
             <div style={{ background: "#f7f7f7", borderRadius: 12, padding: "22px 26px", marginBottom: 28, borderLeft: `4px solid ${cat.color}` }}>

@@ -186,7 +186,7 @@ export default function PagamentosArbitragem() {
         await RefereeAssignmentsService.update(cfg.assignmentId, { reciboData: new Date().toISOString().slice(0, 10) });
         fetchData();
       }
-    } catch (e) { console.error("Erro ao gerar recibo:", e); }
+    } catch (e) { }
     setGerandoRecibo(false);
   };
 

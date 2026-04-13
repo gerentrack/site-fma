@@ -245,7 +245,6 @@ export default function NovaSolicitacao() {
           };
         }
       } catch (e) {
-        console.error("Upload arquivo:", e);
         /* falha silenciosa — pode reenviar na tela de detalhe */
       }
     }
@@ -343,7 +342,6 @@ export default function NovaSolicitacao() {
           });
         }
       } catch (e) {
-        console.error("Upload comprovante:", e);
       }
     }
 

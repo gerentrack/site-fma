@@ -489,7 +489,7 @@ export function SolicitacaoEditor() {
           evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
           status:           novoStatus,
           observacao:       analise.parecerFMA || "",
-        }).catch(e => console.warn("Email solicitação:", e));
+        }).catch(() => {});
       }
     }
 
@@ -630,7 +630,7 @@ export function SolicitacaoEditor() {
             evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
             status:           "aprovada",
             observacao:       analise.parecerFMA || "",
-          }).catch(e => console.warn("Email solicitação:", e));
+          }).catch(() => {});
         }
       }
 
@@ -648,8 +648,7 @@ export function SolicitacaoEditor() {
       flash(`${permitNumbers.length} ${tipoDoc === "chancela" ? "chancela(s)" : "permit(s)"} gerado(s) e solicitação aprovada!`, "ok");
       load();
     } catch (err) {
-      console.error("Erro ao gerar permits:", err);
-      flash("Erro ao gerar permits. Verifique o console.", "err");
+      flash("Erro ao gerar permits.", "err");
     } finally {
       setGerandoPermits(false);
       setSaving(false);
@@ -1176,7 +1175,6 @@ export function SolicitacaoEditor() {
                         flash("Parecer gerado pela IA. Revise antes de salvar.", "ok");
                       }
                     } catch (err) {
-                      console.error("Erro IA:", err);
                       flash("Erro ao analisar com IA: " + (err.message || "Tente novamente."), "err");
                     }
                     setIaLoading(false);
@@ -1288,7 +1286,7 @@ export function SolicitacaoEditor() {
                       });
                       const url = URL.createObjectURL(blob);
                       window.open(url, "_blank");
-                    } catch (e) { console.error("Preview:", e); alert("Erro ao gerar preview."); }
+                    } catch (e) { alert("Erro ao gerar preview."); }
                   }}
                     style={{ padding: "6px 14px", borderRadius: 7, border: "1px solid #86efac", background: "#fff", color: "#15803d", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                     Preview PDF
@@ -2414,7 +2412,6 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
       const blobUrl = URL.createObjectURL(blob);
       window.open(blobUrl, "_blank");
     } catch (e) {
-      console.error("Erro ao gerar recibo:", e);
       flash("Erro ao gerar recibo.");
     }
     setSaving(false);
@@ -2451,7 +2448,6 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
       });
       flash(`Recibo ${pag.reciboNumero} excluído.`);
     } catch (e) {
-      console.error("Erro ao excluir recibo:", e);
       flash("Erro ao excluir recibo.");
     }
     setSaving(false);
@@ -2488,7 +2484,6 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
       });
       flash("Pagamento excluido.");
     } catch (e) {
-      console.error("Erro ao excluir pagamento:", e);
       flash("Erro ao excluir pagamento.");
     }
     setSaving(false);

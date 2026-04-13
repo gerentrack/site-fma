@@ -19,6 +19,7 @@ import CepField from "../../components/common/CepField";
 import { CalendarService } from "../../services/index";
 import { CALENDAR_CATEGORIES, EVENT_STATUS } from "../../config/navigation";
 import { COLORS, FONTS } from "../../styles/colors";
+import DOMPurify from "dompurify";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -74,7 +75,6 @@ export function CalendarList() {
       await CalendarService.deleteCascade(id, deleteFile);
       load();
     } catch (err) {
-      console.error("Erro ao excluir evento:", err);
       alert("Erro ao excluir evento: " + (err.message || err));
     }
   };
@@ -479,7 +479,7 @@ export function CalendarEditor() {
               <div>
                 <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, marginBottom: 6 }}>Preview:</div>
                 <div style={{ border: `1px dashed ${COLORS.grayLight}`, borderRadius: 8, padding: "14px 18px", background: "#fafafa", fontSize: 14, lineHeight: 1.7, fontFamily: FONTS.body }}
-                  dangerouslySetInnerHTML={{ __html: values.fullDescription }} />
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(values.fullDescription) }} />
               </div>
             )}
           </div>
