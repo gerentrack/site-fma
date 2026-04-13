@@ -418,10 +418,11 @@ export const calendarAPI = {
     const refEvents = (await readCol("refereeEvents")).filter(e => e.calendarRef === id);
     for (const refEvt of refEvents) {
       const eid = refEvt.id;
-      // Limpar availability, assignments, relatórios, diárias, avaliações do refereeEvent
-      const [avails, assigns, rels, dias, avals] = await Promise.all([
+      // Limpar availability, assignments, reembolsos, relatórios, diárias, avaliações do refereeEvent
+      const [avails, assigns, reembs, rels, dias, avals] = await Promise.all([
         readCol("refereeAvailability"),
         readCol("refereeAssignments"),
+        readCol("reembolsos"),
         readCol("relatoriosArbitragem"),
         readCol("diarias"),
         readCol("avaliacoes"),
@@ -429,6 +430,7 @@ export const calendarAPI = {
       await Promise.all([
         ...avails.filter(a => a.eventId === eid).map(a => removeDoc("refereeAvailability", a.id)),
         ...assigns.filter(a => a.eventId === eid).map(a => removeDoc("refereeAssignments", a.id)),
+        ...reembs.filter(r => r.eventId === eid).map(r => removeDoc("reembolsos", r.id)),
         ...rels.filter(r => r.eventId === eid).map(r => removeDoc("relatoriosArbitragem", r.id)),
         ...dias.filter(d => d.eventId === eid).map(d => removeDoc("diarias", d.id)),
         ...avals.filter(a => a.eventId === eid).map(a => removeDoc("avaliacoes", a.id)),
