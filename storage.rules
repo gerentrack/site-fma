@@ -4,13 +4,20 @@ service firebase.storage {
 
     // ── Helpers ──
     function isAuth() { return request.auth != null; }
-    function getUserData() { return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data; }
-    function isAdminRole() { return isAuth() && ("admin" in getUserData().roles || getUserData().role == "admin"); }
-    function isReferee() { return isAuth() && ("referee" in getUserData().roles || getUserData().role == "referee"); }
-    function isOrganizer() { return isAuth() && ("organizer" in getUserData().roles || getUserData().role == "organizer"); }
+    function getUserDoc() { return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)); }
+    function hasRole(role) {
+      let doc = getUserDoc();
+      return doc != null && doc.data != null && (
+        (doc.data.roles is list && role in doc.data.roles) ||
+        doc.data.role == role
+      );
+    }
+    function isAdminRole() { return isAuth() && hasRole("admin"); }
+    function isReferee() { return isAuth() && hasRole("referee"); }
+    function isOrganizer() { return isAuth() && hasRole("organizer"); }
 
     // ── Conteúdo público — leitura livre, escrita apenas admin ──
-    match /logos/{file}            { allow read: if true; allow write: if isAdminRole(); }
+    match /logos/{file}            { allow read: if true; allow write: if isAuth(); }
     match /banners/{file}          { allow read: if true; allow write: if isAdminRole(); }
     match /eventos/{path=**}       { allow read: if true; allow write: if isAdminRole(); }
     match /noticias/{file}         { allow read: if true; allow write: if isAdminRole(); }
@@ -33,7 +40,7 @@ service firebase.storage {
 
     // ── Mensagens e config — admin ──
     match /mensagens/{path=**}     { allow read: if isAuth(); allow write: if isAdminRole(); }
-    match /config/{path=**}        { allow read: if isAuth(); allow write: if isAdminRole(); }
+    match /config/{path=**}        { allow read: if true;     allow write: if isAuth(); }
 
     // ── Solicitações — admin ou organizador ──
     match /solicitacoes/{allPaths=**} {

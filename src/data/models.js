@@ -205,6 +205,7 @@ export const footerConfigModel = {
   copyrightText: "",
   developerCredit: "",
   developerLink: "",
+  developerLogo: "",
   phone: "",
   phoneLink: "",         // "tel:+5531..."
   whatsapp: "",

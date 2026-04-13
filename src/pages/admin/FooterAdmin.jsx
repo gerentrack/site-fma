@@ -127,7 +127,7 @@ export default function FooterAdmin() {
           <FormField label="Texto de Copyright" hint='Ex: "Federação Mineira de Atletismo". O ano é adicionado automaticamente.'>
             <TextInput value={values.copyrightText} onChange={v => set("copyrightText", v)} />
           </FormField>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
             <FormField label="Crédito do Desenvolvedor">
               <TextInput value={values.developerCredit} onChange={v => set("developerCredit", v)} placeholder="Desenvolvido por..." />
             </FormField>
@@ -135,6 +135,21 @@ export default function FooterAdmin() {
               <TextInput value={values.developerLink} onChange={v => set("developerLink", v)} placeholder="https://..." type="url" />
             </FormField>
           </div>
+          <FormField label="Logo do Desenvolvedor" hint="PNG ou SVG com fundo transparente. Exibida no rodape no lugar do texto.">
+            <FileUpload
+              value={values.developerLogo}
+              onChange={v => set("developerLogo", v)}
+              folder="config"
+              accept=".png,.svg,.webp"
+              hint="Recomendado: altura 40px, fundo transparente"
+            />
+          </FormField>
+          {values.developerLogo && (
+            <div style={{ marginTop: 8, padding: "12px 16px", background: "#1a1a1a", borderRadius: 8, display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Preview (fundo escuro):</span>
+              <img src={values.developerLogo} alt="Logo dev" style={{ height: 20, objectFit: "contain" }} />
+            </div>
+          )}
         </div>
 
         {/* Contato */}

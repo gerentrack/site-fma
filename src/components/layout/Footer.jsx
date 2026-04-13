@@ -140,12 +140,18 @@ export default function Footer() {
       <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", textAlign: "center", padding: "16px 24px", fontFamily: FONTS.body, fontSize: 12, color: "rgba(255,255,255,0.35)", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, maxWidth: 1100, margin: "0 auto" }}>
         <span>
           © {new Date().getFullYear()} {c.copyrightText || "Federação Mineira de Atletismo"}.
-          {c.developerCredit && (
+          {(c.developerCredit || c.developerLogo) && (
             <>
-              {" "}
+              {c.developerLogo ? " | Desenvolvido por " : " "}
               {c.developerLink && c.developerLink !== "#"
-                ? <a href={c.developerLink} target="_blank" rel="noreferrer" style={{ color: "rgba(255,255,255,0.25)", textDecoration: "none" }}>{c.developerCredit}</a>
-                : <span>{c.developerCredit}</span>
+                ? <a href={c.developerLink} target="_blank" rel="noreferrer" style={{ color: "rgba(255,255,255,0.5)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, verticalAlign: "middle" }}>
+                    {c.developerLogo && <img src={c.developerLogo} alt={c.developerCredit || "Desenvolvedor"} style={{ height: 56, objectFit: "contain" }} />}
+                    {!c.developerLogo && c.developerCredit}
+                  </a>
+                : <>
+                    {c.developerLogo && <img src={c.developerLogo} alt={c.developerCredit || "Desenvolvedor"} style={{ height: 56, objectFit: "contain", verticalAlign: "middle" }} />}
+                    {!c.developerLogo && <span>{c.developerCredit}</span>}
+                  </>
               }
             </>
           )}
