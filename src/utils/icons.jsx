@@ -57,7 +57,7 @@ const ICON_MAP = {
   Video, Play, Pause,
 
   // People
-  Users, UserCheck, UserX, UserPlus, UserCog,
+  User, Users, UserCheck, UserX, UserPlus, UserCog,
   PersonStanding, Shirt,
 
   // Communication
