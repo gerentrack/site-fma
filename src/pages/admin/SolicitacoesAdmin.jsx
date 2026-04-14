@@ -370,6 +370,7 @@ export function SolicitacaoEditor() {
   // Formulário de análise FMA — protocoloFMA REMOVIDO: gerado automaticamente
   const [analise, setAnalise] = useState({
     responsavelFMA: "", parecerFMA: "", observacaoFMA: "",
+    parecerPdfUrl: "", parecerPdfPath: "",
   });
   const [novoStatus, setNovoStatus] = useState("");
   const [iaLoading, setIaLoading] = useState(false);
@@ -402,6 +403,8 @@ export function SolicitacaoEditor() {
       responsavelFMA: r.data.responsavelFMA || "",
       parecerFMA: r.data.parecerFMA || "",
       observacaoFMA: r.data.observacaoFMA || "",
+      parecerPdfUrl: r.data.parecerPdfUrl || "",
+      parecerPdfPath: r.data.parecerPdfPath || "",
     });
     const [rOrg, rArq, rMov] = await Promise.all([
       OrganizersService.get(r.data.organizerId),
@@ -1203,6 +1206,39 @@ export function SolicitacaoEditor() {
               <textarea value={analise.parecerFMA} onChange={e => setAnalise(a => ({ ...a, parecerFMA: e.target.value }))}
                 rows={5} placeholder="Descreva o parecer técnico, documentos necessários, condicionantes da aprovação, motivo do indeferimento, etc."
                 style={{ ...inp(), resize: "vertical", lineHeight: 1.5 }} />
+
+              {/* Upload de PDF do parecer */}
+              <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray }}>
+                  Documento PDF (opcional)
+                </label>
+                {analise.parecerPdfUrl ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <a href={analise.parecerPdfUrl} target="_blank" rel="noreferrer"
+                      style={{ fontSize: 12, color: COLORS.primary, fontFamily: FONTS.body }}>
+                      Ver PDF anexado
+                    </a>
+                    <button type="button" onClick={async () => {
+                      if (analise.parecerPdfPath) await deleteFile(analise.parecerPdfPath).catch(() => {});
+                      setAnalise(a => ({ ...a, parecerPdfUrl: "", parecerPdfPath: "" }));
+                    }} style={{ padding: "3px 8px", borderRadius: 5, border: "1px solid #fca5a5", background: "#fff5f5", color: "#dc2626", cursor: "pointer", fontSize: 10, fontWeight: 600 }}>
+                      Remover
+                    </button>
+                  </div>
+                ) : (
+                  <input type="file" accept=".pdf" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const sanitize = (s) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\s-]/g, "").trim().replace(/\s+/g, "_").slice(0, 60);
+                    const folder = sol.storagePath || `solicitacoes/${new Date().getFullYear()}`;
+                    const nomeArq = `Parecer_FMA_${sanitize(sol.nomeEvento)}.pdf`;
+                    const renamedFile = new File([file], nomeArq, { type: "application/pdf" });
+                    const r = await uploadFile(renamedFile, folder);
+                    if (r.url) setAnalise(a => ({ ...a, parecerPdfUrl: r.url, parecerPdfPath: r.path }));
+                    e.target.value = "";
+                  }} style={{ fontSize: 12 }} />
+                )}
+              </div>
             </div>
 
             <div style={{ marginBottom: 24 }}>
