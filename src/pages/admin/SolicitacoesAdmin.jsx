@@ -2251,6 +2251,11 @@ function AbaTaxas({ sol, organizer, onSaved, flash, card, lbl, val, inp }) {
   const [ajusteObs, setAjusteObs] = useState(taxas.observacaoAjuste || "");
   const [saving, setSaving] = useState(false);
 
+  // Taxa de arbitragem
+  const [arbAberto, setArbAberto] = useState(false);
+  const [arbValor, setArbValor] = useState(taxas.taxaArbitragem?.valor || "");
+  const [arbDesc, setArbDesc] = useState(taxas.taxaArbitragem?.descricao || "");
+
   // Recalcular com base nos dados atuais
   const tabela = (isParceiro && organizer?.parceiroTipo === "tabela_customizada" && organizer?.tabelaTaxas)
     ? organizer.tabelaTaxas : TABELA_PADRAO;
@@ -2436,6 +2441,91 @@ function AbaTaxas({ sol, organizer, onSaved, flash, card, lbl, val, inp }) {
                 Salvar ajuste
               </button>
               <button onClick={() => setAjusteAberto(false)}
+                style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Bloco Taxa de Arbitragem */}
+      <div style={card}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <h3 style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, margin: 0 }}>
+            Taxa de Arbitragem
+          </h3>
+          {!arbAberto && (
+            <button onClick={() => { setArbAberto(true); setArbValor(taxas.taxaArbitragem?.valor || ""); setArbDesc(taxas.taxaArbitragem?.descricao || ""); }}
+              style={{ padding: "6px 14px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: "#0066cc", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+              {taxas.taxaArbitragem?.valor ? "Editar" : "Adicionar"}
+            </button>
+          )}
+        </div>
+
+        {taxas.taxaArbitragem?.valor > 0 && !arbAberto && (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: "#f0f9ff", borderRadius: 8, border: "1px solid #bae6fd" }}>
+            <div>
+              <div style={{ fontFamily: FONTS.heading, fontSize: 16, fontWeight: 800, color: "#0066cc" }}>{formatarMoeda(taxas.taxaArbitragem.valor)}</div>
+              {taxas.taxaArbitragem.descricao && <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, marginTop: 2 }}>{taxas.taxaArbitragem.descricao}</div>}
+            </div>
+            <button onClick={async () => {
+              setSaving(true);
+              const novasTaxas = { ...taxas };
+              delete novasTaxas.taxaArbitragem;
+              await SolicitacoesService.update(sol.id, { taxas: novasTaxas });
+              await MovimentacoesService.registrar({
+                solicitacaoId: sol.id, tipoEvento: "taxa_calculada",
+                statusAnterior: sol.status, statusNovo: sol.status,
+                descricao: "Taxa de arbitragem removida.",
+                autor: "fma", autorNome: "Equipe FMA", autorId: "admin", visivel: false,
+              });
+              flash("Taxa de arbitragem removida.");
+              setSaving(false); onSaved();
+            }} disabled={saving}
+              style={{ padding: "5px 10px", borderRadius: 5, border: "1px solid #fca5a5", background: "#fff5f5", color: "#dc2626", cursor: "pointer", fontSize: 10, fontWeight: 600 }}>
+              Remover
+            </button>
+          </div>
+        )}
+
+        {!taxas.taxaArbitragem?.valor && !arbAberto && (
+          <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray, fontStyle: "italic" }}>Nenhuma taxa de arbitragem adicionada.</div>
+        )}
+
+        {arbAberto && (
+          <div style={{ padding: 14, background: COLORS.offWhite, borderRadius: 8, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, display: "block", marginBottom: 4 }}>Valor (R$)</span>
+              <input type="number" min="0" step="0.01" value={arbValor} onChange={e => setArbValor(e.target.value)}
+                style={inp({ width: 200 })} placeholder="0,00" />
+            </div>
+            <div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: COLORS.grayDark, display: "block", marginBottom: 4 }}>Descricao / detalhamento</span>
+              <textarea value={arbDesc} onChange={e => setArbDesc(e.target.value)}
+                placeholder="Ex: 2 arbitros x R$ 250 (corrida de rua 6h) + 1 coordenador x R$ 450..."
+                rows={3} style={{ ...inp(), resize: "vertical", lineHeight: 1.5 }} />
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={async () => {
+                if (!arbValor || Number(arbValor) <= 0) { flash("Informe o valor.", "err"); return; }
+                setSaving(true);
+                await SolicitacoesService.update(sol.id, {
+                  taxas: { ...taxas, taxaArbitragem: { valor: Number(arbValor), descricao: arbDesc.trim(), atualizadoEm: new Date().toISOString() } },
+                });
+                await MovimentacoesService.registrar({
+                  solicitacaoId: sol.id, tipoEvento: "taxa_calculada",
+                  statusAnterior: sol.status, statusNovo: sol.status,
+                  descricao: `Taxa de arbitragem: ${formatarMoeda(Number(arbValor))}. ${arbDesc.trim() || ""}`.trim(),
+                  autor: "fma", autorNome: "Equipe FMA", autorId: "admin", visivel: false,
+                });
+                flash("Taxa de arbitragem salva!");
+                setSaving(false); setArbAberto(false); onSaved();
+              }} disabled={saving}
+                style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#0066cc", color: "#fff", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                Salvar
+              </button>
+              <button onClick={() => setArbAberto(false)}
                 style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                 Cancelar
               </button>
