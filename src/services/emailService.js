@@ -84,10 +84,11 @@ const STATUS_COLORS = {
 // ═════════════════════════════════════════════════════════════════════════════
 
 export async function notificarStatusSolicitacao({
-  organizadorEmail, organizadorNome, protocolo, evento, status, observacao = "",
+  organizadorEmail, organizadorNome, protocolo, evento, status, observacao = "", solicitacaoId = "",
 }) {
   const statusLabel = STATUS_LABELS[status] || status;
   const statusColor = STATUS_COLORS[status] || "#333";
+  const link = solicitacaoId ? `${PORTAL_LINK}/solicitacoes/${solicitacaoId}` : PORTAL_LINK;
 
   const html = templateBase(`
     <p>Olá, <strong>${organizadorNome}</strong>!</p>
@@ -100,7 +101,7 @@ export async function notificarStatusSolicitacao({
     </table>
     <p>Acompanhe o andamento da sua solicitação no Portal do Organizador:</p>
     <p style="text-align:center;margin:24px 0;">
-      <a href="${PORTAL_LINK}" style="display:inline-block;padding:12px 28px;background:#0066cc;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar o Portal</a>
+      <a href="${link}" style="display:inline-block;padding:12px 28px;background:#0066cc;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver solicitacao</a>
     </p>
   `);
 
@@ -186,7 +187,7 @@ export async function notificarEscalacaoArbitro({
     </table>
     <p>Acesse a Intranet para mais detalhes.</p>
     <p style="text-align:center;margin:24px 0;">
-      <a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar a Intranet</a>
+      <a href="${INTRANET_LINK}/escalas" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver minhas escalas</a>
     </p>
   `);
 
@@ -207,7 +208,7 @@ export async function notificarRemocaoEscalacao({ arbitroEmail, arbitroNome, eve
     </table>
     <p>Em caso de duvidas, entre em contato com a coordenacao.</p>
     <p style="text-align:center;margin:24px 0;">
-      <a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar a Intranet</a>
+      <a href="${INTRANET_LINK}/escalas" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver minhas escalas</a>
     </p>
   `);
   return enviarEmail({ to: arbitroEmail, subject: `[FMA] Escalação removida: ${evento} — ${data}`, html });
@@ -421,7 +422,7 @@ export async function notificarAnuidade({ arbitroEmail, arbitroNome, ano, valor,
     </table>
     <p>Acesse a Intranet para mais detalhes:</p>
     <p style="text-align:center;margin:24px 0;">
-      <a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar a Intranet</a>
+      <a href="${INTRANET_LINK}/anuidade" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver minha anuidade</a>
     </p>
   `);
   return enviarEmail({ to: arbitroEmail, subject: `[FMA] Anuidade ${ano} — ${statusLabels[status] || status}`, html });
@@ -436,7 +437,7 @@ export async function notificarMensagemRecebida({ arbitroEmail, arbitroNome, rem
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Assunto</td><td style="padding:10px 14px;border:1px solid #eee;">${titulo}</td></tr>
     </table>
     <p style="text-align:center;margin:24px 0;">
-      <a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver Mensagem</a>
+      <a href="${INTRANET_LINK}/mensagens" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver Mensagem</a>
     </p>
   `);
   return enviarEmail({ to: arbitroEmail, subject: `[FMA] Nova mensagem: ${titulo}`, html });
@@ -455,7 +456,7 @@ export async function notificarReembolso({ arbitroEmail, arbitroNome, status, ca
       ${motivo ? `<tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Motivo</td><td style="padding:10px 14px;border:1px solid #eee;">${motivo}</td></tr>` : ""}
     </table>
     <p style="text-align:center;margin:24px 0;">
-      <a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver Detalhes</a>
+      <a href="${INTRANET_LINK}/reembolsos" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver Detalhes</a>
     </p>
   `);
   return enviarEmail({ to: arbitroEmail, subject: `[FMA] Reembolso ${statusLabels[status] || status}: ${categoria}`, html });
@@ -500,7 +501,7 @@ export async function notificarPendenciaRelatorio({ arbitroEmail, arbitroNome, e
     </div>
     <p>Acesse a Intranet, va em <strong>Minhas Escalas</strong> e clique no relatorio para corrigir e reenviar.</p>
     <p style="text-align:center;margin:24px 0;">
-      <a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar a Intranet</a>
+      <a href="${INTRANET_LINK}/escalas" style="display:inline-block;padding:12px 28px;background:#cc0000;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver minhas escalas</a>
     </p>
   `);
   return enviarEmail({ to: arbitroEmail, subject: `[FMA] Pendencia no relatorio: ${evento}`, html });
@@ -510,7 +511,8 @@ export async function notificarPendenciaRelatorio({ arbitroEmail, arbitroNome, e
 // 10. Notificações do Portal do Organizador
 // ═════════════════════════════════════════════════════════════════════════════
 
-export async function notificarPagamentoConfirmado({ organizadorEmail, organizadorNome, protocolo, evento, valor }) {
+export async function notificarPagamentoConfirmado({ organizadorEmail, organizadorNome, protocolo, evento, valor, solicitacaoId = "" }) {
+  const link = solicitacaoId ? `${PORTAL_LINK}/solicitacoes/${solicitacaoId}` : PORTAL_LINK;
   const html = templateBase(`
     <p>Ola, <strong>${organizadorNome}</strong>!</p>
     <p>O pagamento da sua solicitacao foi <strong style="color:#15803d;">confirmado</strong>.</p>
@@ -519,12 +521,13 @@ export async function notificarPagamentoConfirmado({ organizadorEmail, organizad
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Evento</td><td style="padding:10px 14px;border:1px solid #eee;">${evento}</td></tr>
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Valor</td><td style="padding:10px 14px;border:1px solid #eee;">R$ ${(valor || 0).toFixed(2)}</td></tr>
     </table>
-    <p style="text-align:center;margin:24px 0;"><a href="${PORTAL_LINK}" style="display:inline-block;padding:12px 28px;background:#0066cc;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar o Portal</a></p>
+    <p style="text-align:center;margin:24px 0;"><a href="${link}" style="display:inline-block;padding:12px 28px;background:#0066cc;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver solicitacao</a></p>
   `);
   return enviarEmail({ to: organizadorEmail, subject: `[FMA] Pagamento confirmado — ${evento}`, html });
 }
 
-export async function notificarCobrancaPagamento({ organizadorEmail, organizadorNome, protocolo, evento, valor }) {
+export async function notificarCobrancaPagamento({ organizadorEmail, organizadorNome, protocolo, evento, valor, solicitacaoId = "" }) {
+  const link = solicitacaoId ? `${PORTAL_LINK}/solicitacoes/${solicitacaoId}` : PORTAL_LINK;
   const html = templateBase(`
     <p>Ola, <strong>${organizadorNome}</strong>!</p>
     <p>Sua solicitacao possui um <strong style="color:#d97706;">pagamento pendente</strong>.</p>
@@ -534,12 +537,13 @@ export async function notificarCobrancaPagamento({ organizadorEmail, organizador
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Valor</td><td style="padding:10px 14px;border:1px solid #eee;">R$ ${(valor || 0).toFixed(2)}</td></tr>
     </table>
     <p>Acesse o Portal para anexar o comprovante de pagamento.</p>
-    <p style="text-align:center;margin:24px 0;"><a href="${PORTAL_LINK}" style="display:inline-block;padding:12px 28px;background:#d97706;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar o Portal</a></p>
+    <p style="text-align:center;margin:24px 0;"><a href="${link}" style="display:inline-block;padding:12px 28px;background:#d97706;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver solicitacao</a></p>
   `);
   return enviarEmail({ to: organizadorEmail, subject: `[FMA] Pagamento pendente — ${evento}`, html });
 }
 
-export async function notificarArquivoFmaEnviado({ organizadorEmail, organizadorNome, protocolo, evento, nomeArquivo }) {
+export async function notificarArquivoFmaEnviado({ organizadorEmail, organizadorNome, protocolo, evento, nomeArquivo, solicitacaoId = "" }) {
+  const link = solicitacaoId ? `${PORTAL_LINK}/solicitacoes/${solicitacaoId}` : PORTAL_LINK;
   const html = templateBase(`
     <p>Ola, <strong>${organizadorNome}</strong>!</p>
     <p>A FMA enviou um novo documento referente a sua solicitacao:</p>
@@ -548,13 +552,14 @@ export async function notificarArquivoFmaEnviado({ organizadorEmail, organizador
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Evento</td><td style="padding:10px 14px;border:1px solid #eee;">${evento}</td></tr>
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Arquivo</td><td style="padding:10px 14px;border:1px solid #eee;">${nomeArquivo}</td></tr>
     </table>
-    <p style="text-align:center;margin:24px 0;"><a href="${PORTAL_LINK}" style="display:inline-block;padding:12px 28px;background:#0066cc;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver no Portal</a></p>
+    <p style="text-align:center;margin:24px 0;"><a href="${link}" style="display:inline-block;padding:12px 28px;background:#0066cc;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver solicitacao</a></p>
   `);
   return enviarEmail({ to: organizadorEmail, subject: `[FMA] Novo documento — ${evento}`, html });
 }
 
-export async function notificarPermitGerado({ organizadorEmail, organizadorNome, protocolo, evento, tipo }) {
+export async function notificarPermitGerado({ organizadorEmail, organizadorNome, protocolo, evento, tipo, solicitacaoId = "" }) {
   const tipoLabel = tipo === "chancela" ? "Chancela" : "Permit";
+  const link = solicitacaoId ? `${PORTAL_LINK}/solicitacoes/${solicitacaoId}` : PORTAL_LINK;
   const html = templateBase(`
     <p>Ola, <strong>${organizadorNome}</strong>!</p>
     <p>O <strong>${tipoLabel}</strong> do seu evento foi gerado e esta disponivel para download:</p>
@@ -562,7 +567,7 @@ export async function notificarPermitGerado({ organizadorEmail, organizadorNome,
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Protocolo</td><td style="padding:10px 14px;border:1px solid #eee;">${protocolo || "—"}</td></tr>
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Evento</td><td style="padding:10px 14px;border:1px solid #eee;">${evento}</td></tr>
     </table>
-    <p style="text-align:center;margin:24px 0;"><a href="${PORTAL_LINK}" style="display:inline-block;padding:12px 28px;background:#15803d;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Baixar ${tipoLabel}</a></p>
+    <p style="text-align:center;margin:24px 0;"><a href="${link}" style="display:inline-block;padding:12px 28px;background:#15803d;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Baixar ${tipoLabel}</a></p>
   `);
   return enviarEmail({ to: organizadorEmail, subject: `[FMA] ${tipoLabel} gerado — ${evento}`, html });
 }
@@ -605,7 +610,7 @@ export async function notificarAnuidadeVencendo({ arbitroEmail, arbitroNome, ano
       ${vencimento ? `<tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Vencimento</td><td style="padding:10px 14px;border:1px solid #eee;">${vencimento}</td></tr>` : ""}
     </table>
     <p>Regularize sua anuidade para manter o cadastro ativo.</p>
-    <p style="text-align:center;margin:24px 0;"><a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#d97706;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar a Intranet</a></p>
+    <p style="text-align:center;margin:24px 0;"><a href="${INTRANET_LINK}/anuidade" style="display:inline-block;padding:12px 28px;background:#d97706;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver minha anuidade</a></p>
   `);
   return enviarEmail({ to: arbitroEmail, subject: `[FMA] Anuidade ${ano} pendente`, html });
 }
@@ -618,7 +623,7 @@ export async function notificarAnuidadeConfirmada({ arbitroEmail, arbitroNome, a
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Ano</td><td style="padding:10px 14px;border:1px solid #eee;">${ano}</td></tr>
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Valor</td><td style="padding:10px 14px;border:1px solid #eee;">R$ ${(valor || 0).toFixed(2)}</td></tr>
     </table>
-    <p style="text-align:center;margin:24px 0;"><a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#15803d;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar a Intranet</a></p>
+    <p style="text-align:center;margin:24px 0;"><a href="${INTRANET_LINK}/anuidade" style="display:inline-block;padding:12px 28px;background:#15803d;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver minha anuidade</a></p>
   `);
   return enviarEmail({ to: arbitroEmail, subject: `[FMA] Anuidade ${ano} confirmada`, html });
 }
@@ -627,7 +632,7 @@ export async function notificarRelatorioAprovado({ arbitroEmail, arbitroNome, ev
   const html = templateBase(`
     <p>Ola, <strong>${arbitroNome}</strong>!</p>
     <p>Seu relatorio de arbitragem do evento <strong>${evento}</strong> foi <strong style="color:#15803d;">aprovado</strong>.</p>
-    <p style="text-align:center;margin:24px 0;"><a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#15803d;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar a Intranet</a></p>
+    <p style="text-align:center;margin:24px 0;"><a href="${INTRANET_LINK}/escalas" style="display:inline-block;padding:12px 28px;background:#15803d;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver minhas escalas</a></p>
   `);
   return enviarEmail({ to: arbitroEmail, subject: `[FMA] Relatorio aprovado — ${evento}`, html });
 }
@@ -651,7 +656,7 @@ export async function notificarAvaliacaoRecebida({ arbitroEmail, arbitroNome, ev
     <p>Voce recebeu uma nova <strong>avaliacao</strong> referente ao evento <strong>${evento}</strong>.</p>
     ${avaliador ? `<p>Avaliador: ${avaliador}</p>` : ""}
     <p>Acesse a Intranet para ver os detalhes.</p>
-    <p style="text-align:center;margin:24px 0;"><a href="${INTRANET_LINK}" style="display:inline-block;padding:12px 28px;background:#0066cc;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Acessar a Intranet</a></p>
+    <p style="text-align:center;margin:24px 0;"><a href="${INTRANET_LINK}/escalas" style="display:inline-block;padding:12px 28px;background:#0066cc;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver minhas escalas</a></p>
   `);
   return enviarEmail({ to: arbitroEmail, subject: `[FMA] Nova avaliacao — ${evento}`, html });
 }

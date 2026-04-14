@@ -503,6 +503,7 @@ export function SolicitacaoEditor() {
           evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
           status:           novoStatus,
           observacao:       analise.parecerFMA || "",
+          solicitacaoId:    id,
         }).catch(() => {});
       }
     }
@@ -644,6 +645,7 @@ export function SolicitacaoEditor() {
             evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
             status:           "aprovada",
             observacao:       analise.parecerFMA || "",
+            solicitacaoId:    id,
           }).catch(() => {});
         }
       }
