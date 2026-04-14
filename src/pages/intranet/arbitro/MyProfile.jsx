@@ -122,7 +122,7 @@ export default function MyProfile() {
     if (nisRaw && !validarNisPis(nisRaw)) {
       setSaving(false); setMsg("NIS/PIS/NIT inválido. Verifique os dígitos."); return;
     }
-    const { id, password, ...payload } = data;
+    const { id, password, email, ...payload } = data;
     const bancoInfo = BANCOS.find(b => b.value === payload.banco);
     if (bancoInfo) payload.bancoNome = bancoInfo.label.split(" - ")[1] || bancoInfo.label;
     payload.cpf = cpfRaw;
