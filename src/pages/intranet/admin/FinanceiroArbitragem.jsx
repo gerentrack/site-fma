@@ -7,7 +7,7 @@ import IntranetLayout from "../IntranetLayout";
 import { RefereeAssignmentsService, AnuidadesService, ReembolsosService, RefereesService, TaxasConfigService } from "../../../services/index";
 import { gerarReciboPagamentoArbitroPdf } from "../../../services/reciboPagamentoArbitroPdf";
 import { gerarAnuidadeReciboPdf } from "../../../services/anuidadeReciboPdf";
-import { reservarNumeroRecibo, formatarNumeroRecibo } from "../../../utils/reciboCounter";
+import { reservarNumeroRecibo, formatarNumeroRecibo, sincronizarContador } from "../../../utils/reciboCounter";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../../firebase";
 import { REFEREE_FUNCTIONS } from "../../../config/navigation";
@@ -52,13 +52,14 @@ export default function FinanceiroArbitragem() {
   const abrirModalRecibo = async (config) => {
     setModalRecibo(config);
     if (!config.existente) {
-      // Buscar próximo número sequencial (sem reservar)
       const anoAtual = new Date().getFullYear();
       const snap = await getDoc(doc(db, "counters", `recibo_${anoAtual}`));
       const atual = snap.exists() ? snap.data().sequencial : 0;
-      setReciboNumeroInput(formatarNumeroRecibo(atual + 1, anoAtual));
+      setReciboNumeroInput(String(atual + 1));
     } else {
-      setReciboNumeroInput(config.numero);
+      // Extrair só o número do recibo existente
+      const match = config.numero?.match(/(\d+)\//);
+      setReciboNumeroInput(match ? match[1] : config.numero);
     }
   };
 
@@ -572,7 +573,8 @@ export default function FinanceiroArbitragem() {
                   <button onClick={async () => {
                     setGerandoRecibo(true);
                     const blob = await gerarReciboPagamentoArbitroPdf({ ...modalRecibo.dados, reciboNumero: modalRecibo.numero });
-                    setReciboPreview({ url: URL.createObjectURL(blob), nome: `Recibo_${modalRecibo.numero.replace("/", "-")}.pdf` });
+                    const _s = (s) => (s || "").replace(/[^a-zA-Z0-9\u00C0-\u024F\s-]/g, "").trim().replace(/\s+/g, "_").slice(0, 40);
+                    setReciboPreview({ url: URL.createObjectURL(blob), nome: `Recibo_${modalRecibo.numero.replace("/", "-")}_${_s(modalRecibo.dados?.evento)}_${_s(modalRecibo.dados?.arbitroNome)}.pdf` });
                     setGerandoRecibo(false);
                   }} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: COLORS.primary, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                     Visualizar
@@ -580,41 +582,41 @@ export default function FinanceiroArbitragem() {
                 </div>
               </div>
             ) : (
-              <div>
-                <div style={{ marginBottom: 12 }}>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: COLORS.grayDark, display: "block", marginBottom: 4 }}>Numero do recibo</label>
-                  <input value={reciboNumeroInput} onChange={e => setReciboNumeroInput(e.target.value)}
-                    style={{ width: "100%", padding: "10px 12px", border: `1px solid ${COLORS.grayLight}`, borderRadius: 8, fontSize: 14, boxSizing: "border-box" }} />
-                  <div style={{ fontSize: 11, color: COLORS.gray, marginTop: 4 }}>Proximo numero sugerido. Altere se necessario (ex: recibo emitido fora do sistema).</div>
-                </div>
-                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                  <button onClick={() => { setModalRecibo(null); setConfirmarExclusao(false); }} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", fontSize: 13, cursor: "pointer" }}>Cancelar</button>
-                  <button disabled={gerandoRecibo} onClick={async () => {
-                    setGerandoRecibo(true);
-                    const anoR = new Date().getFullYear();
-                    let numero = reciboNumeroInput.trim();
-                    // Se o número é o sugerido (próximo sequencial), reservar para incrementar
-                    const snapCheck = await getDoc(doc(db, "counters", `recibo_${anoR}`));
-                    const atualCheck = snapCheck.exists() ? snapCheck.data().sequencial : 0;
-                    const sugerido = formatarNumeroRecibo(atualCheck + 1, anoR);
-                    if (!numero || numero === sugerido) {
-                      const seq = await reservarNumeroRecibo(anoR);
-                      numero = formatarNumeroRecibo(seq, anoR);
-                    }
-                    const dataHoje = new Date().toISOString().slice(0, 10);
-                    // Salvar no registro
-                    if (modalRecibo.type === "diaria") await RefereeAssignmentsService.update(modalRecibo.id, { reciboNumero: numero, reciboData: dataHoje });
-                    else if (modalRecibo.type === "anuidade") await AnuidadesService.update(modalRecibo.id, { reciboNumero: numero });
-                    // Gerar PDF
-                    const blob = await gerarReciboPagamentoArbitroPdf({ ...modalRecibo.dados, reciboNumero: numero });
-                    setReciboPreview({ url: URL.createObjectURL(blob), nome: `Recibo_${numero.replace("/", "-")}.pdf` });
-                    setGerandoRecibo(false);
-                    fetchData();
-                  }} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#15803d", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                    {gerandoRecibo ? "Gerando..." : "Gerar Recibo"}
-                  </button>
-                </div>
-              </div>
+              <div>{(() => {
+                const anoRecibo = new Date().getFullYear();
+                return (
+                  <div>
+                    <div style={{ marginBottom: 12 }}>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: COLORS.grayDark, display: "block", marginBottom: 6 }}>Numero do recibo</label>
+                      <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+                        <span style={{ padding: "10px 12px", background: "#f1f5f9", border: `1px solid ${COLORS.grayLight}`, borderRight: "none", borderRadius: "8px 0 0 8px", fontSize: 14, fontFamily: FONTS.heading, fontWeight: 700, color: COLORS.grayDark, whiteSpace: "nowrap" }}>RECIBO -</span>
+                        <input type="number" min="1" value={reciboNumeroInput} onChange={e => setReciboNumeroInput(e.target.value)}
+                          style={{ width: 80, padding: "10px 12px", border: `1px solid ${COLORS.grayLight}`, borderLeft: "none", borderRight: "none", fontSize: 14, fontFamily: FONTS.heading, fontWeight: 700, outline: "none", textAlign: "center" }} />
+                        <span style={{ padding: "10px 12px", background: "#f1f5f9", border: `1px solid ${COLORS.grayLight}`, borderLeft: "none", borderRadius: "0 8px 8px 0", fontSize: 14, fontFamily: FONTS.heading, fontWeight: 700, color: COLORS.grayDark }}>/{anoRecibo}</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: COLORS.gray, marginTop: 6 }}>Proximo numero sugerido. Altere se necessario.</div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                      <button onClick={() => { setModalRecibo(null); setConfirmarExclusao(false); }} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${COLORS.grayLight}`, background: "transparent", fontSize: 13, cursor: "pointer" }}>Cancelar</button>
+                      <button disabled={gerandoRecibo || !reciboNumeroInput} onClick={async () => {
+                        setGerandoRecibo(true);
+                        const numero = formatarNumeroRecibo(Number(reciboNumeroInput), anoRecibo);
+                        await sincronizarContador(anoRecibo, Number(reciboNumeroInput));
+                        const dataHoje = new Date().toISOString().slice(0, 10);
+                        if (modalRecibo.type === "diaria") await RefereeAssignmentsService.update(modalRecibo.id, { reciboNumero: numero, reciboData: dataHoje });
+                        else if (modalRecibo.type === "anuidade") await AnuidadesService.update(modalRecibo.id, { reciboNumero: numero });
+                        const blob = await gerarReciboPagamentoArbitroPdf({ ...modalRecibo.dados, reciboNumero: numero });
+                        const _sn = (s) => (s || "").replace(/[^a-zA-Z0-9\u00C0-\u024F\s-]/g, "").trim().replace(/\s+/g, "_").slice(0, 40);
+                        setReciboPreview({ url: URL.createObjectURL(blob), nome: `Recibo_${numero.replace("/", "-")}_${_sn(modalRecibo.dados?.evento)}_${_sn(modalRecibo.dados?.arbitroNome)}.pdf` });
+                        setGerandoRecibo(false);
+                        fetchData();
+                      }} style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#15803d", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                        {gerandoRecibo ? "Gerando..." : "Gerar Recibo"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}</div>
             )}
           </div>
         </div>

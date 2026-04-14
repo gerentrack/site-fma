@@ -180,7 +180,8 @@ export default function PagamentosArbitragem() {
     setGerandoRecibo(true);
     try {
       const blob = await gerarReciboPagamentoArbitroPdf({ ...cfg.dados, reciboNumero: "" });
-      setReciboPreview({ url: URL.createObjectURL(blob), nome: `Recibo_${(cfg.dados.arbitroNome || "arbitro").replace(/\s+/g, "_")}_${(cfg.dados.evento || "evento").replace(/\s+/g, "_")}.pdf` });
+      const _s = (s) => (s || "").replace(/[^a-zA-Z0-9\u00C0-\u024F\s-]/g, "").trim().replace(/\s+/g, "_").slice(0, 40);
+      setReciboPreview({ url: URL.createObjectURL(blob), nome: `Recibo_${(cfg.dados.reciboNumero || "").replace("/", "-")}_${_s(cfg.dados.evento)}_${_s(cfg.dados.arbitroNome)}.pdf` });
       // Salvar data de emissão do recibo
       if (cfg.assignmentId) {
         await RefereeAssignmentsService.update(cfg.assignmentId, { reciboData: new Date().toISOString().slice(0, 10) });
