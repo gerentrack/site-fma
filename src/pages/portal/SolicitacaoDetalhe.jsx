@@ -85,8 +85,21 @@ function TaxasPagamentoSection({ sol }) {
               <span>{taxas.descontoDescricao || "Desconto"}</span><span>-{formatarMoeda(taxas.descontoValor)}</span>
             </div>
           )}
+          {taxas.taxaArbitragem?.valor > 0 && (
+            <>
+              <div style={{ display:"flex", justifyContent:"space-between", fontWeight:600, fontSize:13, marginTop:6, paddingTop:6, borderTop:`1px solid ${COLORS.grayLight}` }}>
+                <span>Subtotal {sol.tipo === "chancela" ? "Chancela" : "Permit"}</span><span>{formatarMoeda(taxas.total)}</span>
+              </div>
+              <div style={{ display:"flex", justifyContent:"space-between", fontSize:13, marginTop:2 }}>
+                <span>Taxa de Arbitragem</span><span>{formatarMoeda(taxas.taxaArbitragem.valor)}</span>
+              </div>
+              {taxas.taxaArbitragem.descricao && (
+                <div style={{ fontSize:11, color:COLORS.gray, fontFamily:FONTS.body, marginTop:2, whiteSpace:"pre-line" }}>{taxas.taxaArbitragem.descricao}</div>
+              )}
+            </>
+          )}
           <div style={{ display:"flex", justifyContent:"space-between", fontWeight:800, fontSize:16, marginTop:6, paddingTop:6, borderTop:`1px solid ${COLORS.grayLight}` }}>
-            <span>Total</span><span style={{ color:COLORS.primary }}>{formatarMoeda(taxas.total)}</span>
+            <span>Total</span><span style={{ color:COLORS.primary }}>{formatarMoeda((taxas.total || 0) + (taxas.taxaArbitragem?.valor || 0))}</span>
           </div>
           {taxas.ajustadoPorFMA && (
             <div style={{ fontSize:11, color:"#7c3aed", marginTop:4, fontFamily:FONTS.body }}>
@@ -105,7 +118,7 @@ function TaxasPagamentoSection({ sol }) {
           {totalPago > 0 && (
             <div style={{ fontSize:12, fontFamily:FONTS.body, color:"#15803d", marginBottom:4 }}>
               Total pago: {formatarMoeda(totalPago)}
-              {totalPago < (taxas.total || 0) && <span style={{ color:"#d97706" }}> (saldo: {formatarMoeda((taxas.total || 0) - totalPago)})</span>}
+              {(() => { const totalGeral = (taxas.total || 0) + (taxas.taxaArbitragem?.valor || 0); return totalPago < totalGeral ? <span style={{ color:"#d97706" }}> (saldo: {formatarMoeda(totalGeral - totalPago)})</span> : null; })()}
             </div>
           )}
           {pagamento.status === "confirmado" && pagamento.confirmadoEm && (
