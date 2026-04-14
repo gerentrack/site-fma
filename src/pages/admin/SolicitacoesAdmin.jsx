@@ -366,11 +366,15 @@ export function SolicitacoesList() {
             };
             const emAnalise = filtered.filter(i => i.status === "em_analise");
             const pendencias = filtered.filter(i => i.status === "pendencia");
-            const demais = filtered.filter(i => i.status !== "pendencia" && i.status !== "em_analise");
+            const aprovados = filtered.filter(i => i.status === "aprovada" || i.status === "aprovado");
+            const concluidos = filtered.filter(i => i.status === "concluida" || i.status === "concluido");
+            const demais = filtered.filter(i => !["em_analise", "pendencia", "aprovada", "aprovado", "concluida", "concluido"].includes(i.status));
             return (
               <div>
                 {renderTable(emAnalise, "Em analise", "#0066cc")}
                 {renderTable(pendencias, "Pendencias", "#d97706")}
+                {renderTable(aprovados, "Aprovados", "#15803d")}
+                {renderTable(concluidos, "Concluidos", "#6b7280")}
                 {renderTable(demais, "Demais", COLORS.gray)}
                 <div style={{ padding: "12px 0 0", fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>
                   {filtered.length} solicitacao(oes) exibida(s) de {items.length} total
