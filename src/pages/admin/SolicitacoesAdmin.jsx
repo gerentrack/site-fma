@@ -33,7 +33,7 @@ import { normalizarCamposTecnicos, totalEstimativaInscritos, modalidadesLabel } 
 import { useConfirm } from "../../components/ui/ConfirmModal";
 import PdfModal, { usePdfModal } from "../../components/ui/PdfModal";
 import { calcularTaxaTotal, formatarMoeda, TABELA_PADRAO, TABELA_ARBITRAGEM, PRAZOS } from "../../utils/taxaCalculator";
-import { reservarNumeroRecibo, formatarNumeroRecibo } from "../../utils/reciboCounter";
+import { reservarNumeroRecibo, formatarNumeroRecibo, getProximoNumeroRecibo, sincronizarContador } from "../../utils/reciboCounter";
 import { gerarReciboPdf } from "../../services/reciboPdfService";
 import { notificarStatusSolicitacao, notificarPagamentoConfirmado, notificarCobrancaPagamento, notificarArquivoFmaEnviado, notificarPermitGerado, notificarResultadoStatus } from "../../services/emailService";
 import { getProximoNumero, reservarNumeros, setContador, formatarNumero } from "../../utils/permitCounter";
@@ -2658,13 +2658,12 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
 
   const abrirModalRecibo = async (pag) => {
     if (pag.reciboNumero) {
-      // Já tem recibo — abrir PDF direto
       handleGerarRecibo(pag, pag.reciboNumero);
       return;
     }
     const ano = new Date().getFullYear();
-    // Buscar próximo número sugerido
-    const num = await reservarNumeroRecibo(ano);
+    // Sugerir próximo número SEM consumir
+    const num = await getProximoNumeroRecibo(ano);
     const sugerido = formatarNumeroRecibo(num, ano);
     setReciboNumInput(sugerido);
     setReciboModalPag(pag);
@@ -2674,6 +2673,13 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
     setSaving(true);
     try {
       const reciboNumero = (numeroCustom || "").trim();
+
+      // Sincronizar contador do Firestore com o número usado
+      const matchNum = reciboNumero.match(/(\d+)\//);
+      const matchAno = reciboNumero.match(/\/(\d{4})/);
+      if (matchNum && matchAno) {
+        await sincronizarContador(Number(matchAno[1]), Number(matchNum[1]));
+      }
 
       // Buscar config para assinatura
       const cfgRes = await TaxasConfigService.get();
