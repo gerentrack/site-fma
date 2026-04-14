@@ -1246,10 +1246,10 @@ export function SolicitacaoEditor() {
                           {isOrg && mov.tipoEvento === "comentario" && docsResposta.length > 0 && (
                             <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
                               {docsResposta.map(arq => (
-                                <a key={arq.id} href={arq.url || arq.dataUrl} target="_blank" rel="noreferrer"
-                                  style={{ padding: "4px 10px", borderRadius: 6, background: "#fff", border: `1px solid ${COLORS.grayLight}`, textDecoration: "none", fontSize: 11, color: COLORS.primary, fontWeight: 600 }}>
+                                <button key={arq.id} onClick={() => openPdf(arq.url || arq.dataUrl, arq.nome || "Documento")}
+                                  style={{ padding: "4px 10px", borderRadius: 6, background: "#fff", border: `1px solid ${COLORS.grayLight}`, fontSize: 11, color: COLORS.primary, fontWeight: 600, cursor: "pointer", fontFamily: FONTS.body }}>
                                   {arq.nome}
-                                </a>
+                                </button>
                               ))}
                             </div>
                           )}
@@ -1607,7 +1607,21 @@ export function SolicitacaoEditor() {
                       </div>
                       <div style={{ flex: 1, paddingBottom: isLast ? 0 : 24 }}>
                         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
-                          <span style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark }}>{mov.descricao}</span>
+                          <span style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark }}>{
+                            (() => {
+                              // Detectar nomes de arquivo na descrição e tornar clicáveis
+                              const desc = mov.descricao || "";
+                              const match = desc.match(/Arquivos?:\s*(.+)/i);
+                              if (!match) return desc;
+                              const antes = desc.slice(0, match.index);
+                              const nomes = match[1].split(/,\s*/);
+                              return <>{antes}Arquivos: {nomes.map((nome, j) => {
+                                const arq = arquivos.find(a => a.nome === nome.trim() || a.nome?.includes(nome.trim().split(".")[0]));
+                                if (arq) return <span key={j}>{j > 0 && ", "}<button onClick={() => openPdf(arq.url || arq.dataUrl, arq.nome)} style={{ background: "none", border: "none", padding: 0, color: COLORS.primary, cursor: "pointer", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, textDecoration: "underline" }}>{nome.trim()}</button></span>;
+                                return <span key={j}>{j > 0 && ", "}{nome.trim()}</span>;
+                              })}</>;
+                            })()
+                          }</span>
                           {!mov.visivel && <span style={{ padding: "2px 7px", borderRadius: 10, fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, background: "#fef3c7", color: "#92400e" }}>Interno</span>}
                         </div>
                         {mov.statusAnterior && mov.statusNovo && mov.statusAnterior !== mov.statusNovo && (
