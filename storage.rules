@@ -32,7 +32,7 @@ service firebase.storage {
     match /redes-sociais/{file}    { allow read: if true; allow write: if isAdminRole(); }
 
     // ── Dados de arbitragem — admin ou referee ──
-    match /arbitros/{path=**}           { allow read: if isAuth(); allow write: if isAdminRole() || isReferee(); }
+    match /arbitros/{path=**}           { allow read: if isAuth(); allow write: if isAuth(); }
     match /anuidades/{path=**}          { allow read: if isAuth(); allow write: if isAdminRole() || isReferee(); }
     match /reembolsos/{path=**}         { allow read: if isAuth(); allow write: if isAdminRole() || isReferee(); }
     match /relatorios/{path=**}         { allow read: if isAuth(); allow write: if isAdminRole() || isReferee(); }
