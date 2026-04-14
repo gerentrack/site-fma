@@ -21,6 +21,7 @@ export const auth    = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const functions = getFunctions(app, "southamerica-east1");
 export const analisarSolicitacaoFn = httpsCallable(functions, "analisarSolicitacao");
+export const deleteAuthUserFn = httpsCallable(functions, "deleteAuthUser");
 
 /**
  * Cria um usuário no Firebase Auth SEM deslogar o admin atual.

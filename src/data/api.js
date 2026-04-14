@@ -784,7 +784,9 @@ export const refereesAPI = {
   },
   create: async (data) => {
     const all=await readCol("referees");
-    if (all.find(r=>r.email===data.email)) return err("E-mail já cadastrado.");
+    if (all.find(r=>r.email===data.email)) return err("E-mail já cadastrado como árbitro.");
+    const orgs=await readCol("organizers");
+    if (orgs.find(o=>o.email===data.email)) return err("E-mail já cadastrado como organizador.");
 
     // 1. Criar Firebase Auth user primeiro (sem deslogar admin)
     const { uid: newUid, error: authErr } = await createAuthUserSafe(data.email, data.password);
@@ -1108,7 +1110,9 @@ export const organizersAPI = {
   },
   create: async (data) => {
     const all=await readCol("organizers");
-    if (all.find(o=>o.email===data.email)) return err("E-mail já cadastrado.");
+    if (all.find(o=>o.email===data.email)) return err("E-mail já cadastrado como organizador.");
+    const refs=await readCol("referees");
+    if (refs.find(r=>r.email===data.email)) return err("E-mail já cadastrado como árbitro.");
     const { password: _pw, ...dataWithoutPassword } = data;
     const item=await createDoc("organizers",dataWithoutPassword);
     return ok(item);

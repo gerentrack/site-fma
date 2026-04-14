@@ -73,3 +73,32 @@ exports.analisarSolicitacao = onCall(
     }
   }
 );
+
+/**
+ * deleteAuthUser — Exclui um usuario do Firebase Auth pelo email.
+ * Somente admin pode chamar.
+ */
+exports.deleteAuthUser = onCall(
+  { timeoutSeconds: 30, region: "southamerica-east1" },
+  async (request) => {
+    if (!request.auth) throw new HttpsError("unauthenticated", "Login necessario.");
+    const uid = request.auth.uid;
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (!userDoc.exists || !((userDoc.data().roles || []).includes("admin") || userDoc.data().role === "admin")) {
+      throw new HttpsError("permission-denied", "Somente admin pode excluir usuarios.");
+    }
+    const { email } = request.data;
+    if (!email) throw new HttpsError("invalid-argument", "Email obrigatorio.");
+    try {
+      const authUser = await getAuth().getUserByEmail(email);
+      await getAuth().deleteUser(authUser.uid);
+      // Excluir doc users/{uid} se existir
+      const usersSnap = await db.collection("users").where("__name__", "==", authUser.uid).get();
+      if (!usersSnap.empty) await usersSnap.docs[0].ref.delete();
+      return { ok: true, deletedUid: authUser.uid };
+    } catch (err) {
+      if (err.code === "auth/user-not-found") return { ok: true, deletedUid: null };
+      throw new HttpsError("internal", err.message);
+    }
+  }
+);

@@ -12,10 +12,12 @@ import Button from "../../components/ui/Button";
 import { FormField, SelectInput } from "../../components/ui/FormField";
 import { refereesAPI } from "../../data/api";
 import { RefereesService, TaxasConfigService } from "../../services/index";
+import { collection, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { db } from "../../firebase";
 import { notificarArbitroCadastro } from "../../services/emailService";
 import { useConfirm } from "../../components/ui/ConfirmModal";
 import { deleteFile } from "../../services/storageService";
-import { createAuthUserSafe } from "../../firebase";
+import { createAuthUserSafe, deleteAuthUserFn } from "../../firebase";
 import { REFEREE_CATEGORIES, REFEREE_ROLES, REFEREE_STATUS } from "../../config/navigation";
 import { gerarDeclaracaoArbitroPdf } from "../../services/declaracaoArbitroPdf";
 import { gerarCredencialPdf } from "../../services/credencialArbitroPdf";
@@ -70,13 +72,36 @@ export default function ArbitroDetalheAdmin() {
     setMsg(r.error ? `Erro: ${r.error}` : "Dados atualizados.");
   };
 
+  const deleteByRefereeId = async (colName) => {
+    const snap = await getDocs(collection(db, colName));
+    const docs = snap.docs.filter(d => d.data().refereeId === id);
+    await Promise.all(docs.map(d => deleteDoc(d.ref)));
+    return docs.length;
+  };
+
   const handleDelete = async () => {
-    if (!await confirm(`Excluir o arbitro "${data.name}"?\n\nIsso removera permanentemente todos os dados, incluindo escalas, reembolsos e documentos.`, { danger: true, confirmLabel: "Excluir arbitro" })) return;
+    if (!await confirm(`Excluir o arbitro "${data.name}"?\n\nIsso removera permanentemente:\n- Conta de autenticacao\n- Dados pessoais\n- Escalas, disponibilidade, reembolsos\n- Anuidades, relatorios, avaliacoes\n- Foto e documentos`, { danger: true, confirmLabel: "Excluir arbitro" })) return;
     setDeleting(true);
-    // Excluir foto do Storage se existir
+
+    // 1. Excluir do Firebase Auth + doc users
+    await deleteAuthUserFn({ email: data.email }).catch(() => {});
+
+    // 2. Excluir foto do Storage
     if (data.fotoPath) await deleteFile(data.fotoPath).catch(() => {});
     else if (data.foto?.includes("firebasestorage.googleapis.com")) await deleteFile(data.foto).catch(() => {});
-    // Excluir doc do Firestore
+
+    // 3. Excluir dados relacionados no Firestore
+    await Promise.all([
+      deleteByRefereeId("refereeAssignments"),
+      deleteByRefereeId("refereeAvailability"),
+      deleteByRefereeId("reembolsos"),
+      deleteByRefereeId("anuidades"),
+      deleteByRefereeId("relatoriosArbitragem"),
+      deleteByRefereeId("avaliacoes"),
+      deleteByRefereeId("envioDocumentos"),
+    ]).catch(() => {});
+
+    // 4. Excluir doc do árbitro
     await RefereesService.delete(id);
     navigate("/admin/arbitros");
   };
