@@ -75,13 +75,14 @@ export const PUBLIC_NAV = [
     ],
   },
 
-  {
-    label: "Estatísticas",
-    sub: [
-      { label: "Rankings",          link: "/ranking",          external: false },
-      { label: "Recordes Estaduais",link: "/ranking/recordes", external: false },
-    ],
-  },
+  // Estatísticas (Rankings/Recordes) — desativado temporariamente
+  // {
+  //   label: "Estatísticas",
+  //   sub: [
+  //     { label: "Rankings",          link: "/ranking",          external: false },
+  //     { label: "Recordes Estaduais",link: "/ranking/recordes", external: false },
+  //   ],
+  // },
 
   { label: "Notícias", link: "/noticias" },
 
@@ -177,7 +178,7 @@ export const QUICK_ACCESS = [
   { label: "Calendário",       to: "/calendario" },
   { label: "Mapa FMA",          to: "/mapa" },
   { label: "Resultados",        to: "/resultados/corridas" },
-  { label: "Rankings",          to: "/ranking" },
+  // { label: "Rankings",          to: "/ranking" },  // desativado temporariamente
   { label: "Atletas Federados", to: "/atletas" },
   { label: "Árbitros",          to: "/arbitros" },
 ];
