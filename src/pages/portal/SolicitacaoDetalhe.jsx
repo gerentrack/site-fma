@@ -186,66 +186,109 @@ function TimelineItem({ mov, isLast }) {
   );
 }
 
-// ─── ArquivoUploader ─────────────────────────────────────────────────────────
+// ─── ArquivoUploader (múltiplos arquivos) ────────────────────────────────────
 function ArquivoUploader({ solicitacaoId, organizerId, organizerName, nomeEvento, dataEvento, onUploaded }) {
   const inputRef = useRef();
-  const [uploading,setUploading]=useState(false);
-  const [descricao,setDescricao]=useState("");
-  const [categoria,setCategoria]=useState("complementar");
-  const [file,setFile]=useState(null);
-  const [error,setError]=useState("");
-  const MAX=1.5*1024*1024;
+  const [uploading, setUploading] = useState(false);
+  const [categoria, setCategoria] = useState("complementar");
+  const [files, setFiles] = useState([]); // [{ file, descricao }]
+  const [error, setError] = useState("");
+  const MAX = 5 * 1024 * 1024;
+
+  const addFiles = (fileList) => {
+    const novos = [];
+    for (const f of fileList) {
+      if (f.size > MAX) { setError(`"${f.name}" excede ${fmtSize(MAX)}.`); continue; }
+      // Sugerir nome baseado no arquivo (sem extensão)
+      const sugestao = f.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+      novos.push({ file: f, descricao: sugestao });
+    }
+    if (novos.length) { setFiles(prev => [...prev, ...novos]); setError(""); }
+  };
+
+  const removeFile = (idx) => setFiles(prev => prev.filter((_, i) => i !== idx));
+  const updateDescricao = (idx, val) => setFiles(prev => prev.map((f, i) => i === idx ? { ...f, descricao: val } : f));
 
   const handleUpload = async () => {
-    if (!file) { setError("Selecione um arquivo."); return; }
-    setUploading(true);
+    if (!files.length) { setError("Selecione ao menos um arquivo."); return; }
+    const semNome = files.find(f => !f.descricao.trim());
+    if (semNome) { setError("Preencha o nome/descricao de todos os arquivos."); return; }
+    setUploading(true); setError("");
     const sanitize = (s) => (s || "sem-nome").replace(/[^a-zA-Z0-9\u00C0-\u024F\s-]/g, "").trim().replace(/\s+/g, "_");
     const ano = (dataEvento || "").slice(0, 4) || String(new Date().getFullYear());
     const folder = `solicitacoes/${ano}/${sanitize(organizerName)}/${sanitize(nomeEvento)}`;
-    const ext = file.name.includes(".") ? file.name.split(".").pop() : "pdf";
-    const descLabel = sanitize(descricao || file.name.replace(/\.[^.]+$/, ""));
-    const nomeRenomeado = `${descLabel}_${sanitize(nomeEvento)}.${ext}`;
-    const renamedFile = new File([file], nomeRenomeado, { type: file.type });
-    const { url, path, error: uploadError } = await uploadFile(renamedFile, folder);
-    if (uploadError) { setError(uploadError); setUploading(false); return; }
-    const r = await ArquivosService.create({ solicitacaoId, nome:nomeRenomeado, tamanho:file.size, tipo:file.type, descricao:descricao||file.name, categoria, enviadoPor:"organizador", enviadoById:organizerId, enviadoPorNome:organizerName, url, storagePath:path });
-    if (r.error) { setError(r.error); setUploading(false); return; }
-    await MovimentacoesService.registrar({ solicitacaoId, tipoEvento:"arquivo_enviado", statusAnterior:"", statusNovo:"", descricao:`Arquivo enviado: ${nomeRenomeado}`, autor:"organizador", autorNome:organizerName, autorId:organizerId, visivel:true });
-    // Notificar FMA: comprovante/arquivo anexado pelo organizador
-    notificarFmaComprovanteAnexado({
-      organizadorNome: organizerName,
-      evento: nomeEvento || "Evento",
-      protocolo: "",
-      solicitacaoId,
-    }).catch(() => {});
-    setFile(null); setDescricao(""); setCategoria("complementar");
-    if (inputRef.current) inputRef.current.value="";
+    const enviados = [];
+
+    for (const item of files) {
+      const ext = item.file.name.includes(".") ? item.file.name.split(".").pop() : "pdf";
+      const descLabel = sanitize(item.descricao);
+      const nomeRenomeado = `${descLabel}_${sanitize(nomeEvento)}.${ext}`;
+      const renamedFile = new File([item.file], nomeRenomeado, { type: item.file.type });
+      const { url, path, error: uploadError } = await uploadFile(renamedFile, folder);
+      if (uploadError) { setError(`Erro em "${item.descricao}": ${uploadError}`); continue; }
+      const r = await ArquivosService.create({ solicitacaoId, nome: nomeRenomeado, tamanho: item.file.size, tipo: item.file.type, descricao: item.descricao, categoria, enviadoPor: "organizador", enviadoById: organizerId, enviadoPorNome: organizerName, url, storagePath: path });
+      if (!r.error) enviados.push(nomeRenomeado);
+    }
+
+    if (enviados.length) {
+      await MovimentacoesService.registrar({ solicitacaoId, tipoEvento: "arquivo_enviado", statusAnterior: "", statusNovo: "", descricao: `${enviados.length} arquivo(s) enviado(s): ${enviados.join(", ")}`, autor: "organizador", autorNome: organizerName, autorId: organizerId, visivel: true });
+      notificarFmaComprovanteAnexado({ organizadorNome: organizerName, evento: nomeEvento || "Evento", protocolo: "", solicitacaoId }).catch(() => {});
+    }
+
+    setFiles([]); setCategoria("complementar");
+    if (inputRef.current) inputRef.current.value = "";
     setUploading(false); onUploaded();
   };
 
+  const lbl = { fontFamily: FONTS.heading, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, display: "block", marginBottom: 4 };
+  const inp = { width: "100%", padding: "8px 10px", borderRadius: 7, border: `1px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 13, outline: "none", boxSizing: "border-box" };
+
   return (
-    <div style={{ background:"#f8fafc", border:`2px dashed ${COLORS.grayLight}`, borderRadius:10, padding:20 }}>
-      <div style={{ fontFamily:FONTS.heading, fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:1.5, color:COLORS.dark, marginBottom:14 }}>Enviar arquivo</div>
-      {error && <div style={{ background:"#fff5f5", border:"1px solid #fca5a5", borderRadius:8, padding:"8px 12px", marginBottom:12, fontFamily:FONTS.body, fontSize:12, color:"#dc2626" }}>{error}</div>}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
-        <div>
-          <label style={{ fontFamily:FONTS.heading, fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:1, color:COLORS.gray, display:"block", marginBottom:4 }}>Arquivo</label>
-          <input ref={inputRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx" onChange={e=>{ const f=e.target.files[0]; if(!f)return; if(f.size>MAX){setError(`Máx. ${fmtSize(MAX)}`);return;} setError("");setFile(f); }} style={{ fontFamily:FONTS.body, fontSize:13, width:"100%" }} />
-          {file && <div style={{ fontFamily:FONTS.body, fontSize:11, color:COLORS.gray, marginTop:3 }}>{file.name} — {fmtSize(file.size)}</div>}
+    <div style={{ background: "#f8fafc", border: `2px dashed ${COLORS.grayLight}`, borderRadius: 10, padding: 20 }}>
+      <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, marginBottom: 14 }}>Enviar arquivos</div>
+      {error && <div style={{ background: "#fff5f5", border: "1px solid #fca5a5", borderRadius: 8, padding: "8px 12px", marginBottom: 12, fontFamily: FONTS.body, fontSize: 12, color: "#dc2626" }}>{error}</div>}
+
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-end", marginBottom: 14 }}>
+        <div style={{ flex: 1 }}>
+          <label style={lbl}>Selecionar arquivos</label>
+          <input ref={inputRef} type="file" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx"
+            onChange={e => { addFiles(e.target.files); e.target.value = ""; }}
+            style={{ fontFamily: FONTS.body, fontSize: 13, width: "100%" }} />
         </div>
         <div>
-          <label style={{ fontFamily:FONTS.heading, fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:1, color:COLORS.gray, display:"block", marginBottom:4 }}>Categoria</label>
-          <select value={categoria} onChange={e=>setCategoria(e.target.value)} style={{ width:"100%", padding:"8px 10px", borderRadius:7, border:`1px solid ${COLORS.grayLight}`, fontFamily:FONTS.body, fontSize:13, outline:"none" }}>
-            {ARQUIVO_CATEGORIAS.filter(c=>c.value!=="resposta_fma").map(c=><option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
+          <label style={lbl}>Categoria</label>
+          <select value={categoria} onChange={e => setCategoria(e.target.value)} style={{ ...inp, cursor: "pointer", width: "auto", minWidth: 150 }}>
+            {ARQUIVO_CATEGORIAS.filter(c => c.value !== "resposta_fma").map(c => <option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
           </select>
         </div>
-        <div style={{ gridColumn:"1/-1" }}>
-          <label style={{ fontFamily:FONTS.heading, fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:1, color:COLORS.gray, display:"block", marginBottom:4 }}>Descrição</label>
-          <input value={descricao} onChange={e=>setDescricao(e.target.value)} placeholder="Ex: Alvará de autorização" style={{ width:"100%", padding:"8px 10px", borderRadius:7, border:`1px solid ${COLORS.grayLight}`, fontFamily:FONTS.body, fontSize:13, outline:"none", boxSizing:"border-box" }} />
-        </div>
       </div>
-      <button onClick={handleUpload} disabled={uploading||!file} style={{ padding:"9px 20px", borderRadius:8, border:"none", background:!file?COLORS.gray:"#0066cc", color:"#fff", fontFamily:FONTS.heading, fontSize:13, fontWeight:700, cursor:(!file||uploading)?"not-allowed":"pointer" }}>{uploading?"Enviando...":"Enviar arquivo"}</button>
-      <div style={{ fontFamily:FONTS.body, fontSize:10, color:COLORS.gray, marginTop:8 }}>PDF, DOC, JPG, PNG, XLS. Máx. 1.5 MB (demo).</div>
+
+      {files.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+          {files.map((item, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "#fff", borderRadius: 8, border: `1px solid ${COLORS.grayLight}` }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, color: COLORS.gray, fontFamily: FONTS.body, marginBottom: 4 }}>
+                  {item.file.name} — {fmtSize(item.file.size)}
+                </div>
+                <input value={item.descricao} onChange={e => updateDescricao(i, e.target.value)}
+                  placeholder="Nome do documento (ex: Alvara, Seguro, Mapa...)"
+                  style={{ ...inp, background: !item.descricao.trim() ? "#fffbeb" : "#fff", borderColor: !item.descricao.trim() ? "#fcd34d" : COLORS.grayLight }} />
+              </div>
+              <button onClick={() => removeFile(i)} style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #fca5a5", background: "#fff5f5", color: "#dc2626", cursor: "pointer", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}>Remover</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <button onClick={handleUpload} disabled={uploading || !files.length}
+          style={{ padding: "9px 20px", borderRadius: 8, border: "none", background: !files.length ? COLORS.gray : "#0066cc", color: "#fff", fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, cursor: (!files.length || uploading) ? "not-allowed" : "pointer" }}>
+          {uploading ? "Enviando..." : `Enviar ${files.length || ""} arquivo${files.length !== 1 ? "s" : ""}`}
+        </button>
+        {files.length > 0 && <span style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>{files.length} arquivo(s) selecionado(s)</span>}
+      </div>
+      <div style={{ fontFamily: FONTS.body, fontSize: 10, color: COLORS.gray, marginTop: 8 }}>PDF, DOC, JPG, PNG, XLS. Max. 5 MB por arquivo. Voce pode selecionar varios de uma vez.</div>
     </div>
   );
 }
