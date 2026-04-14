@@ -798,7 +798,7 @@ export function ResultadoDetalhe() {
 
       {/* Conteúdo principal */}
       <div style={{ maxWidth: 820, margin: "0 auto", padding: "0 32px 64px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 24 }}>
+        <div className="grid-stack-mobile" style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 24 }}>
           {/* Coluna principal */}
           <div>
             {/* Descrição */}

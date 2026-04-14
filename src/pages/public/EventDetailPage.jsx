@@ -158,7 +158,7 @@ export default function EventDetailPage() {
       </div>
 
       {/* Conteúdo */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "48px 24px", display: "grid", gridTemplateColumns: "1fr 320px", gap: 40, alignItems: "start" }}>
+      <div className="grid-stack-mobile" style={{ maxWidth: 1100, margin: "0 auto", padding: "48px 24px", display: "grid", gridTemplateColumns: "1fr 320px", gap: 40, alignItems: "start" }}>
 
         {/* Coluna principal */}
         <div>

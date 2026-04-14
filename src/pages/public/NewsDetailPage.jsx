@@ -289,7 +289,7 @@ export default function NewsDetailPage() {
       </div>
 
       {/* ── Corpo ──────────────────────────────────────────────────────────── */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "48px 24px 80px", display: "grid", gridTemplateColumns: "1fr 300px", gap: 44, alignItems: "start" }}>
+      <div className="grid-stack-mobile" style={{ maxWidth: 1100, margin: "0 auto", padding: "48px 24px 80px", display: "grid", gridTemplateColumns: "1fr 300px", gap: 44, alignItems: "start" }}>
 
         {/* ── Artigo ────────────────────────────────────────────────────────── */}
         <article>

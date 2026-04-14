@@ -224,7 +224,7 @@ export default function NewsPage() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "44px 24px 80px", display: "grid", gridTemplateColumns: "1fr 280px", gap: 36, alignItems: "start" }}>
+      <div className="grid-stack-mobile" style={{ maxWidth: 1100, margin: "0 auto", padding: "44px 24px 80px", display: "grid", gridTemplateColumns: "1fr 280px", gap: 36, alignItems: "start" }}>
 
         {/* ── Coluna principal ─────────────────────────────────────────────── */}
         <div>

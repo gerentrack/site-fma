@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useOrganizer } from "../../context/OrganizerContext";
 import { useSessionTimeout } from "../../hooks/useSessionTimeout";
+import { useMobileDrawer } from "../../hooks/useMobileDrawer";
 import SessionWarning from "../../components/ui/SessionWarning";
 import { COLORS, FONTS } from "../../styles/colors";
 import { PORTAL_NAV } from "../../config/navigation";
@@ -60,11 +61,21 @@ export default function PortalLayout({ children }) {
     );
   }
 
+  const { open, setOpen, toggle } = useMobileDrawer();
+
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f1f5f9" }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "#f1f5f9" }}>
       <SessionWarning secondsLeft={warningSecondsLeft} onDismiss={dismiss} />
+      {/* Mobile topbar */}
+      <div className="show-mobile-flex" style={{ position: "sticky", top: 0, zIndex: 998, height: 48, alignItems: "center", justifyContent: "space-between", padding: "0 16px", background: "#0f172a" }}>
+        <button className="hamburger" onClick={toggle} style={{ background: "none", border: "none", color: "#fff", fontSize: 22, cursor: "pointer", padding: 4 }}>&#9776;</button>
+        <span style={{ color: "#60a5fa", fontFamily: FONTS.heading, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: 1 }}>Portal Organizador</span>
+        <div style={{ width: 30 }} />
+      </div>
+      <div style={{ display: "flex", flex: 1 }}>
+      {open && <div className="sidebar-overlay" onClick={() => setOpen(false)} />}
       {/* Sidebar */}
-      <aside style={{ width: 230, background: "#0f172a", display: "flex", flexDirection: "column",
+      <aside className={`sidebar ${open ? "open" : ""}`} style={{ width: 230, background: "#0f172a", display: "flex", flexDirection: "column",
         flexShrink: 0, position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
         {/* Brand */}
         <div style={{ padding: "22px 18px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
@@ -118,9 +129,10 @@ export default function PortalLayout({ children }) {
       </aside>
 
       {/* Main */}
-      <main style={{ flex: 1, minWidth: 0, overflowX: "hidden" }}>
+      <main className="layout-main" style={{ flex: 1, minWidth: 0, overflowX: "hidden" }}>
         {children}
       </main>
+      </div>
     </div>
   );
 }

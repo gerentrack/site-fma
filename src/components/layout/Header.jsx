@@ -78,13 +78,14 @@ export default function Header() {
         </Link>
 
         {/* Desktop Nav — sem wrap, ocupa o espaço disponível */}
-        <nav style={{ display: "flex", alignItems: "center", gap: 0, flexWrap: "nowrap", flex: 1, justifyContent: "center" }}>
+        <nav className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: 0, flexWrap: "nowrap", flex: 1, justifyContent: "center" }}>
           {resolvedNav.map((item, i) => <NavItem key={i} item={item} />)}
         </nav>
 
         {/* CTA Permit/Chancela — compacto */}
         <Link
           to="/portal"
+          className="desktop-cta"
           style={{
             display: "flex", alignItems: "center", gap: 5, flexShrink: 0,
             padding: "6px 10px", borderRadius: 7,
@@ -105,13 +106,14 @@ export default function Header() {
 
         {/* Mobile toggle */}
         <button
+          className="hamburger"
           onClick={() => setMobileOpen(o => !o)}
           aria-label="Menu"
           style={{
-            display: "none",
             background: "rgba(255,255,255,0.15)",
             border: "none", borderRadius: 6,
             color: COLORS.white, fontSize: 22, cursor: "pointer", padding: "4px 10px",
+            alignItems: "center", justifyContent: "center",
           }}
         >☰</button>
       </div>

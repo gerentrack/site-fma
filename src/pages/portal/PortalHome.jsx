@@ -167,7 +167,7 @@ export default function PortalHome() {
           ))}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 28, alignItems: "start" }}>
+        <div className="grid-stack-mobile" style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 28, alignItems: "start" }}>
           {/* Solicitações recentes */}
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>

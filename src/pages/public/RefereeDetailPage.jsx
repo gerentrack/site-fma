@@ -69,7 +69,7 @@ export default function RefereeDetailPage() {
       </div>
 
       {/* Content */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "48px 24px 60px", display: "grid", gridTemplateColumns: "1fr 290px", gap: 40, alignItems: "start" }}>
+      <div className="grid-stack-mobile" style={{ maxWidth: 1100, margin: "0 auto", padding: "48px 24px 60px", display: "grid", gridTemplateColumns: "1fr 290px", gap: 40, alignItems: "start" }}>
         <div>
           {item.content && (
             <div style={{ fontFamily: FONTS.body, fontSize: 15.5, lineHeight: 1.85, color: COLORS.dark, marginBottom: 32 }}

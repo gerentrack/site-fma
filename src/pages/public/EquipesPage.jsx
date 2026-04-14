@@ -358,7 +358,7 @@ export function EquipeDetalhe() {
 
       {/* Conteúdo */}
       <div style={{ maxWidth: 860, margin: "40px auto 72px", padding: "0 32px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 260px", gap: 32, alignItems: "start" }}>
+        <div className="grid-stack-mobile" style={{ display: "grid", gridTemplateColumns: "1fr 260px", gap: 32, alignItems: "start" }}>
 
           {/* Texto principal */}
           <div>

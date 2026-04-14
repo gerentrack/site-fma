@@ -25,7 +25,7 @@ export default function Table({ columns = [], rows = [], loading = false, emptyM
   }
 
   return (
-    <div style={{ background: COLORS.white, borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+    <div className="table-responsive" style={{ background: COLORS.white, borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
       {/* Header */}
       <div style={{
         display: "grid",

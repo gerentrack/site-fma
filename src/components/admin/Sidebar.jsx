@@ -7,7 +7,7 @@ import Icon from "../../utils/icons";
 const LEVEL_WEIGHT = { master: 4, admin: 3, editor: 2, viewer: 1 };
 const LEVEL_LABEL  = { master: "Master", admin: "Administrador", editor: "Editor", viewer: "Visualizador" };
 
-export default function Sidebar() {
+export default function Sidebar({ open, onClose }) {
   const { pathname } = useLocation();
   const { user, logout } = useAuth();
 
@@ -24,7 +24,7 @@ export default function Sidebar() {
   });
 
   return (
-    <aside style={{ width: 240, minHeight: "100vh", background: COLORS.dark, display: "flex", flexDirection: "column", flexShrink: 0 }}>
+    <aside className={`sidebar ${open ? "open" : ""}`} style={{ width: 240, minHeight: "100vh", background: COLORS.dark, display: "flex", flexDirection: "column", flexShrink: 0 }}>
       <div style={{ padding: "24px 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div style={{ fontFamily: FONTS.heading, fontSize: 20, fontWeight: 800, color: COLORS.primary, letterSpacing: 2 }}>FMA</div>
         <div style={{ fontFamily: FONTS.body, fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>PAINEL ADMINISTRATIVO</div>

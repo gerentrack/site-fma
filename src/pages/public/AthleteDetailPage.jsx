@@ -295,7 +295,7 @@ export default function AthleteDetailPage() {
       </div>
 
       {/* ── Conteúdo ── */}
-      <div style={{
+      <div className="grid-stack-mobile" style={{
         maxWidth: 1100,
         margin: "0 auto",
         padding: "48px 24px 60px",

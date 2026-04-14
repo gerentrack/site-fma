@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useIntranet } from "../../context/IntranetContext";
 import { useSessionTimeout } from "../../hooks/useSessionTimeout";
+import { useMobileDrawer } from "../../hooks/useMobileDrawer";
 import SessionWarning from "../../components/ui/SessionWarning";
 import { COLORS, FONTS } from "../../styles/colors";
 import Icon from "../../utils/icons";
@@ -151,11 +152,21 @@ export default function IntranetLayout({ children, requireRole = null }) {
   const nav = canManage ? INTRANET_NAV_ADMIN : INTRANET_NAV_ARBITRO;
   const roleInfo = roleMap[role] || { label: role, color: COLORS.gray };
 
+  const { open: drawerOpen, setOpen: setDrawerOpen, toggle: toggleDrawer } = useMobileDrawer();
+
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f4f4f4" }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "#f4f4f4" }}>
       <SessionWarning secondsLeft={warningSecondsLeft} onDismiss={dismiss} />
+      {/* Mobile topbar */}
+      <div className="show-mobile-flex" style={{ position: "sticky", top: 0, zIndex: 998, height: 48, alignItems: "center", justifyContent: "space-between", padding: "0 16px", background: "#1a1a1a" }}>
+        <button className="hamburger" onClick={toggleDrawer} style={{ background: "none", border: "none", color: "#fff", fontSize: 22, cursor: "pointer", padding: 4 }}>&#9776;</button>
+        <span style={{ color: COLORS.primary, fontFamily: FONTS.heading, fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: 1 }}>Intranet FMA</span>
+        <div style={{ width: 30 }} />
+      </div>
+      <div style={{ display: "flex", flex: 1 }}>
+      {drawerOpen && <div className="sidebar-overlay" onClick={() => setDrawerOpen(false)} />}
       {/* Sidebar */}
-      <aside style={{ width: 220, background: "#1a1a1a", display: "flex", flexDirection: "column", flexShrink: 0, position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
+      <aside className={`sidebar ${drawerOpen ? "open" : ""}`} style={{ width: 220, background: "#1a1a1a", display: "flex", flexDirection: "column", flexShrink: 0, position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
         {/* Brand */}
         <div style={{ padding: "22px 18px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           <Link to="/" style={{ textDecoration: "none" }}>
@@ -245,7 +256,8 @@ export default function IntranetLayout({ children, requireRole = null }) {
       </aside>
 
       {/* Main */}
-      <main style={{ flex: 1, minWidth: 0, overflowX: "hidden" }}>{children}</main>
+      <main className="layout-main" style={{ flex: 1, minWidth: 0, overflowX: "hidden" }}>{children}</main>
+      </div>
     </div>
   );
 }
