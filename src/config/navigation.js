@@ -268,54 +268,42 @@ export const REFEREE_FUNCTIONS = [
 ];
 
 export const INTRANET_NAV_ARBITRO = [
-  // ── Início ──
-  { label: "Inicio",                icon: "Home", path: "/intranet" },
-  // ── Minha Arbitragem ──
-  { label: "Disponibilidade",       icon: "CalendarDays", path: "/intranet/disponibilidade",  group: "Minha Arbitragem" },
-  { label: "Minhas Escalas",        icon: "ClipboardList", path: "/intranet/escalas" },
-  { label: "Historico",             icon: "BarChart3", path: "/intranet/historico" },
-  { label: "Mapa",                  icon: "Map", path: "/intranet/mapa" },
+  { label: "Inicio",                icon: "LayoutDashboard", path: "/intranet" },
+  { label: "Disponibilidade",       icon: "CalendarCheck", path: "/intranet/disponibilidade",  group: "Minha Arbitragem" },
+  { label: "Minhas Escalas",        icon: "ListChecks", path: "/intranet/escalas" },
+  { label: "Historico",             icon: "History", path: "/intranet/historico" },
+  { label: "Mapa",                  icon: "MapPin", path: "/intranet/mapa" },
   { label: "Calendario",            icon: "Calendar", path: "/intranet/calendario" },
   { label: "Meus Reembolsos",       icon: "Receipt", path: "/intranet/reembolsos" },
-  // ── Comunicacao ──
   { label: "Mensagens",             icon: "Mail", path: "/intranet/mensagens",        group: "Comunicacao" },
-  { label: "Documentos",            icon: "FileText", path: "/intranet/documentos" },
-  // ── Minha Conta ──
-  { label: "Meus Dados",            icon: "UserCog", path: "/intranet/perfil",           group: "Minha Conta" },
+  { label: "Documentos",            icon: "FolderOpen", path: "/intranet/documentos" },
+  { label: "Meus Dados",            icon: "User", path: "/intranet/perfil",           group: "Minha Conta" },
   { label: "Minha Anuidade",        icon: "CreditCard", path: "/intranet/anuidade" },
-  { label: "Privacidade (LGPD)",    icon: "Shield", path: "/intranet/lgpd" },
+  { label: "Privacidade (LGPD)",    icon: "ShieldCheck", path: "/intranet/lgpd" },
 ];
 
 export const INTRANET_NAV_ADMIN = [
-  // ── Início ──
-  { label: "Inicio",                icon: "Home", path: "/intranet" },
-  // ── Minha Arbitragem ──
-  { label: "Disponibilidade",       icon: "CalendarDays", path: "/intranet/disponibilidade",  group: "Minha Arbitragem" },
-  { label: "Minhas Escalas",        icon: "ClipboardList", path: "/intranet/escalas" },
+  { label: "Inicio",                icon: "LayoutDashboard", path: "/intranet" },
+  { label: "Disponibilidade",       icon: "CalendarCheck", path: "/intranet/disponibilidade",  group: "Minha Arbitragem" },
+  { label: "Minhas Escalas",        icon: "ListChecks", path: "/intranet/escalas" },
   { label: "Meus Reembolsos",       icon: "Receipt", path: "/intranet/reembolsos" },
-  // ── Gestao de Eventos ──
   { label: "Eventos",               icon: "Calendar", path: "/intranet/admin/eventos",    group: "Gestao" },
-  { label: "Escalacao",             icon: "ClipboardList", path: "/intranet/admin/escalacao" },
-  { label: "Historico",             icon: "BarChart3", path: "/intranet/admin/historico" },
-  // ── Gestao de Arbitros ──
+  { label: "Escalacao",             icon: "UserCheck", path: "/intranet/admin/escalacao" },
+  { label: "Historico",             icon: "History", path: "/intranet/admin/historico" },
   { label: "Arbitros",              icon: "Users", path: "/intranet/admin/arbitros",    group: "Arbitros" },
   { label: "Avaliacoes",            icon: "Star", path: "/intranet/admin/avaliacoes" },
-  // ── Financeiro ──
-  { label: "Financeiro",            icon: "CircleDollarSign", path: "/intranet/admin/financeiro",  group: "Financeiro" },
-  { label: "Pagamentos",            icon: "Banknote", path: "/intranet/admin/pagamentos" },
+  { label: "Financeiro",            icon: "DollarSign", path: "/intranet/admin/financeiro",  group: "Financeiro" },
+  { label: "Pagamentos",            icon: "Wallet", path: "/intranet/admin/pagamentos" },
   { label: "Anuidades",             icon: "CreditCard", path: "/intranet/admin/anuidades" },
-  // ── Relatorios ──
-  { label: "Relatorios Arbitragem", icon: "Pencil", path: "/intranet/admin/relatorios-arbitragem", group: "Relatorios" },
+  { label: "Relatorios Arbitragem", icon: "FileText", path: "/intranet/admin/relatorios-arbitragem", group: "Relatorios" },
   { label: "Relatorio Arbitros",    icon: "FileSpreadsheet", path: "/intranet/admin/relatorio" },
   { label: "Indicadores",           icon: "TrendingUp", path: "/intranet/admin/indicadores" },
-  // ── Comunicacao ──
   { label: "Mensagens",             icon: "Mail", path: "/intranet/mensagens",        group: "Comunicacao" },
-  { label: "Mural de Avisos",       icon: "Flag", path: "/intranet/admin/mural" },
-  { label: "Documentos",            icon: "FileText", path: "/intranet/documentos" },
-  // ── Minha Conta ──
-  { label: "Meus Dados",            icon: "UserCog", path: "/intranet/perfil",           group: "Minha Conta" },
+  { label: "Mural de Avisos",       icon: "Megaphone", path: "/intranet/admin/mural" },
+  { label: "Documentos",            icon: "FolderOpen", path: "/intranet/documentos" },
+  { label: "Meus Dados",            icon: "User", path: "/intranet/perfil",           group: "Minha Conta" },
   { label: "Minha Anuidade",        icon: "CreditCard", path: "/intranet/anuidade" },
-  { label: "Privacidade (LGPD)",    icon: "Shield", path: "/intranet/lgpd" },
+  { label: "Privacidade (LGPD)",    icon: "ShieldCheck", path: "/intranet/lgpd" },
 ];
 
 export const ATHLETE_CONTENT_CATEGORIES = [
