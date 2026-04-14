@@ -75,14 +75,13 @@ export const PUBLIC_NAV = [
     ],
   },
 
-  // Estatísticas (Rankings/Recordes) — desativado temporariamente
-  // {
-  //   label: "Estatísticas",
-  //   sub: [
-  //     { label: "Rankings",          link: "/ranking",          external: false },
-  //     { label: "Recordes Estaduais",link: "/ranking/recordes", external: false },
-  //   ],
-  // },
+  {
+    label: "Estatísticas",
+    sub: [
+      { label: "Rankings",          link: "#",  external: false },
+      { label: "Recordes Estaduais",link: "#",  external: false },
+    ],
+  },
 
   { label: "Notícias", link: "/noticias" },
 
