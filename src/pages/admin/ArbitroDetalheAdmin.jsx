@@ -12,8 +12,10 @@ import Button from "../../components/ui/Button";
 import { FormField, SelectInput } from "../../components/ui/FormField";
 import { refereesAPI } from "../../data/api";
 import { RefereesService, TaxasConfigService } from "../../services/index";
+import { notificarArbitroCadastro } from "../../services/emailService";
 import { useConfirm } from "../../components/ui/ConfirmModal";
 import { deleteFile } from "../../services/storageService";
+import { createAuthUserSafe } from "../../firebase";
 import { REFEREE_CATEGORIES, REFEREE_ROLES, REFEREE_STATUS } from "../../config/navigation";
 import { gerarDeclaracaoArbitroPdf } from "../../services/declaracaoArbitroPdf";
 import { gerarCredencialPdf } from "../../services/credencialArbitroPdf";
@@ -34,6 +36,23 @@ export default function ArbitroDetalheAdmin() {
   const [msg, setMsg] = useState("");
   const { confirm, ConfirmDialog } = useConfirm();
   const [deleting, setDeleting] = useState(false);
+  const [resending, setResending] = useState(false);
+
+  const handleReenviarCredenciais = async () => {
+    if (!await confirm(`Reenviar credenciais para ${data.email}?\n\nUma nova senha temporaria sera gerada e enviada por e-mail.`, { confirmLabel: "Reenviar" })) return;
+    setResending(true);
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+    let novaSenha = "";
+    for (let i = 0; i < 8; i++) novaSenha += chars[Math.floor(Math.random() * chars.length)];
+    // Tentar recriar no Auth (caso não exista) ou ignorar se já existe
+    await createAuthUserSafe(data.email, novaSenha).catch(() => {});
+    // Marcar para trocar senha no próximo login
+    await RefereesService.update(id, { mustChangePassword: true });
+    // Enviar email
+    await notificarArbitroCadastro({ arbitroEmail: data.email, arbitroNome: data.name, senhaTemporaria: novaSenha });
+    setResending(false);
+    setMsg("Credenciais reenviadas para " + data.email);
+  };
 
   useEffect(() => {
     refereesAPI.get(id).then(r => {
@@ -84,6 +103,10 @@ export default function ArbitroDetalheAdmin() {
           {nivelInfo && <Badge label={nivelInfo.label} bg={`${nivelInfo.color}15`} color={nivelInfo.color} />}
           <Badge label={data.profileComplete ? "Perfil completo" : "Perfil incompleto"} bg={data.profileComplete ? "#e6f9ee" : "#fef3c7"} color={data.profileComplete ? "#007733" : "#92400e"} />
           <Badge label={data.mustChangePassword ? "Senha pendente" : "Senha ok"} bg={data.mustChangePassword ? "#fef3c7" : "#e6f9ee"} color={data.mustChangePassword ? "#92400e" : "#007733"} />
+          <button onClick={handleReenviarCredenciais} disabled={resending}
+            style={{ padding: "4px 12px", borderRadius: 6, border: `1px solid ${COLORS.primary}`, background: "#fff", color: COLORS.primary, fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, cursor: resending ? "not-allowed" : "pointer" }}>
+            {resending ? "Enviando..." : "Reenviar credenciais"}
+          </button>
           <button
             onClick={async () => {
               const cRes = await TaxasConfigService.get();
