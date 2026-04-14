@@ -1123,10 +1123,16 @@ export function SolicitacaoEditor() {
                         </div>
                         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                           {(arq.dataUrl || arq.url) && (
-                            <a href={arq.dataUrl || arq.url} download={arq.nome} target="_blank" rel="noreferrer"
-                              style={{ padding: "6px 12px", borderRadius: 6, background: "#0f172a", color: "#fff", textDecoration: "none", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
-                              Baixar
-                            </a>
+                            <>
+                              <button onClick={() => openPdf(arq.url || arq.dataUrl, arq.descricao || arq.nome || "Documento")}
+                                style={{ padding: "6px 12px", borderRadius: 6, background: "#0066cc", color: "#fff", border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
+                                Ver
+                              </button>
+                              <a href={arq.dataUrl || arq.url} download={arq.nome} target="_blank" rel="noreferrer"
+                                style={{ padding: "6px 12px", borderRadius: 6, background: "#0f172a", color: "#fff", textDecoration: "none", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
+                                Baixar
+                              </a>
+                            </>
                           )}
                           <button onClick={() => handleDeleteArquivo(arq)}
                             style={{ padding: "6px 10px", borderRadius: 6, background: "#fff5f5", color: COLORS.primary, border: `1px solid #fca5a5`, cursor: "pointer", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
@@ -1217,7 +1223,7 @@ export function SolicitacaoEditor() {
                 (m.tipoEvento === "status_alterado" && m.descricao?.includes("Parecer:"))
               ).sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm));
               if (interacoes.length === 0) return null;
-              const docsResposta = arquivos.filter(a => a.enviadoPor === "organizador" && a.descricao?.startsWith("Resposta a pendencia"));
+              const docsOrganizador = arquivos.filter(a => a.enviadoPor === "organizador" && (a.url || a.dataUrl));
               return (
                 <div style={{ marginBottom: 20 }}>
                   <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, display: "block", marginBottom: 10 }}>
@@ -1243,12 +1249,12 @@ export function SolicitacaoEditor() {
                             {mov.descricao}
                           </div>
                           {/* Documentos anexados na resposta do organizador */}
-                          {isOrg && mov.tipoEvento === "comentario" && docsResposta.length > 0 && (
+                          {isOrg && mov.tipoEvento === "comentario" && docsOrganizador.length > 0 && (
                             <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
-                              {docsResposta.map(arq => (
-                                <button key={arq.id} onClick={() => openPdf(arq.url || arq.dataUrl, arq.nome || "Documento")}
+                              {docsOrganizador.map(arq => (
+                                <button key={arq.id} onClick={() => openPdf(arq.url || arq.dataUrl, arq.descricao || arq.nome || "Documento")}
                                   style={{ padding: "4px 10px", borderRadius: 6, background: "#fff", border: `1px solid ${COLORS.grayLight}`, fontSize: 11, color: COLORS.primary, fontWeight: 600, cursor: "pointer", fontFamily: FONTS.body }}>
-                                  {arq.nome}
+                                  {arq.descricao || arq.nome}
                                 </button>
                               ))}
                             </div>
