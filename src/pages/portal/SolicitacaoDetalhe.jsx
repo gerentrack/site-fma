@@ -10,7 +10,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useOrganizer } from "../../context/OrganizerContext";
 import { SolicitacoesService, ArquivosService, MovimentacoesService, TaxasConfigService, PagamentosService } from "../../services/index";
-import { uploadFile, deleteFile } from "../../services/storageService";
+import { uploadFile, deleteFile, deleteFolder } from "../../services/storageService";
 import { COLORS, FONTS } from "../../styles/colors";
 import { SOLICITACAO_STATUS, SOLICITACAO_TIPOS, MOVIMENTACAO_TIPOS, ARQUIVO_CATEGORIAS } from "../../config/navigation";
 import { getFieldsBySection, initFormConfig } from "../../utils/formSchema";
@@ -605,10 +605,21 @@ export default function SolicitacaoDetalhe() {
     setDeleting(true);
     // 1. Excluir arquivos anexos do Storage + Firestore
     const arqRes = await ArquivosService.listBySolicitacao(id);
+    const storageFolders = new Set();
     for (const arq of (arqRes.data || [])) {
-      if (arq.storagePath) await deleteFile(arq.storagePath).catch(() => {});
-      else if (arq.url?.includes("firebasestorage.googleapis.com")) await deleteFile(arq.url).catch(() => {});
+      if (arq.storagePath) {
+        await deleteFile(arq.storagePath).catch(() => {});
+        // Guardar pasta pai para limpeza total depois
+        const folder = arq.storagePath.replace(/\/[^/]+$/, "");
+        if (folder.startsWith("solicitacoes/")) storageFolders.add(folder);
+      } else if (arq.url?.includes("firebasestorage.googleapis.com")) {
+        await deleteFile(arq.url).catch(() => {});
+      }
       await ArquivosService.delete(arq.id).catch(() => {});
+    }
+    // 1b. Limpar pasta inteira no Storage (pega arquivos órfãos não registrados no Firestore)
+    for (const folder of storageFolders) {
+      await deleteFolder(folder).catch(() => {});
     }
     // 2. Excluir pagamentos do Firestore
     await PagamentosService.deleteBySolicitacao(id).catch(() => {});

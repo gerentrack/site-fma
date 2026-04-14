@@ -18,7 +18,6 @@ import {
 } from "firebase/auth";
 
 import { db, auth, createAuthUserSafe, googleProvider } from "../firebase";
-import { garantirProtocolo } from "../utils/protocolo";
 
 import {
   SEED_NEWS, SEED_GALLERY, SEED_CALENDAR, SEED_DOCUMENTS,
@@ -382,7 +381,7 @@ export const calendarAPI = {
     return ok(items);
   },
   get:    async (id)      => { const item=await readDoc("calendar",id); return item?ok(item):err("Não encontrado."); },
-  create: async (data)    => { const item=await createDoc("calendar",data); await garantirProtocolo(item); return ok(item); },
+  create: async (data)    => { const item=await createDoc("calendar",data); return ok(item); },
   /** Grava array de eventos em lotes de 500 (limite do Firestore batch). Retorna array de itens criados. */
   createBatch: async (dataArray) => {
     const items = [];
@@ -397,10 +396,6 @@ export const calendarAPI = {
         chunkItems.push(item);
       }
       await batch.commit();
-      // Gerar protocolo para cada item após commit
-      for (const item of chunkItems) {
-        await garantirProtocolo(item);
-      }
       items.push(...chunkItems);
     }
     return ok(items);

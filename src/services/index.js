@@ -362,7 +362,6 @@ import {
   gerarProtocolo,
   lerSequencial,
   totalProtocolosAno,
-  anosComProtocolo,
   isProtocoloValido,
 } from "../utils/protocolo";
 import { solicitacaoParaEvento } from "../utils/eventoConverter";
@@ -429,7 +428,7 @@ export const SolicitacoesService = {
     // Gerar protocolo no envio
     const solAntes = await solicitacoesAPI.get(id);
     if (solAntes.error) return solAntes;
-    const { protocolo, gerado } = garantirProtocolo(solAntes.data);
+    const { protocolo, gerado } = await garantirProtocolo(solAntes.data);
     const agora = new Date().toISOString();
     const updateData = { enviadoEm: agora, analisadoEm: agora };
     if (gerado) updateData.protocoloFMA = protocolo;
@@ -581,33 +580,10 @@ export const SolicitacoesService = {
  * Todas as funções delegam para src/utils/protocolo.js.
  */
 export const ProtocoloService = {
-  /**
-   * Garante protocolo para uma solicitação, gerando um novo se necessário.
-   * Idempotente: se a solicitação já tem protocolo, retorna o existente.
-   * @param {object} solicitacao
-   * @param {number} [ano]
-   * @returns {{ protocolo: string, gerado: boolean }}
-   */
   garantir: (solicitacao, ano) => garantirProtocolo(solicitacao, ano),
-
-  /**
-   * Gera um protocolo consumindo o próximo sequencial (tem efeito colateral).
-   * Prefira `garantir()` para uso em solicitações.
-   * @param {number} [ano]
-   * @returns {string}
-   */
   gerar: (ano) => gerarProtocolo(ano),
-
-  /** Retorna o sequencial atual do ano (sem incrementar). */
   sequencialAtual: (ano) => lerSequencial(ano ?? new Date().getFullYear()),
-
-  /** Total de protocolos emitidos no ano. */
   totalAno: (ano) => totalProtocolosAno(ano),
-
-  /** Lista todos os anos com protocolos emitidos. */
-  anosAtivos: () => anosComProtocolo(),
-
-  /** Valida formato "FMA-YYYY-NNNN". */
   isValido: (str) => isProtocoloValido(str),
 };
 

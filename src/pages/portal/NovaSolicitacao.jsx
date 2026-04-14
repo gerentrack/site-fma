@@ -240,12 +240,12 @@ export default function NovaSolicitacao() {
         });
         if (r.data) {
           ctAtualizado[fieldId] = {
-            temArquivo: true, nomeArquivo: file.name,
+            temArquivo: true, nomeArquivo,
             arquivoId: r.data.id, url,
           };
         }
       } catch (e) {
-        /* falha silenciosa — pode reenviar na tela de detalhe */
+        ctAtualizado[fieldId] = { temArquivo: false, nomeArquivo: file.name, arquivoId: "", erro: e.message };
       }
     }
     return ctAtualizado;

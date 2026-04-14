@@ -4,8 +4,8 @@
  * Formato: FMA-{ano}-{sequencial com 4 dígitos}
  * Exemplos: FMA-2026-0001, FMA-2026-0042, FMA-2027-0001
  *
- * O contador é persistido no localStorage por ano, de forma independente.
- * Chave: "fma_protocolo_seq_{ano}"  →  valor: número inteiro
+ * O contador é persistido no Firestore (collection: counters, doc: protocolo_{ano})
+ * via transação atômica — seguro para múltiplos usuários/abas simultâneos.
  *
  * Regras:
  *   1. Protocolo gerado UMA única vez por solicitação (quando entra em "em_analise")
@@ -14,51 +14,11 @@
  *   4. Permit e Chancela usam a mesma lógica e o mesmo contador
  */
 
-/** Prefixo da chave localStorage para o contador de protocolo por ano. */
-const SEQ_KEY_PREFIX = "fma_protocolo_seq_";
+import { doc, getDoc, setDoc, runTransaction } from "firebase/firestore";
+import { db } from "../firebase";
 
-/**
- * Retorna a chave localStorage do contador para o ano informado.
- * @param {number|string} ano
- * @returns {string} ex: "fma_protocolo_seq_2026"
- */
-export function seqKey(ano) {
-  return `${SEQ_KEY_PREFIX}${ano}`;
-}
-
-/**
- * Lê o sequencial atual do ano no localStorage.
- * Retorna 0 se ainda não existe nenhum protocolo para este ano.
- * @param {number|string} ano
- * @returns {number}
- */
-export function lerSequencial(ano) {
-  const raw = localStorage.getItem(seqKey(ano));
-  const val = parseInt(raw, 10);
-  return isNaN(val) ? 0 : val;
-}
-
-/**
- * Persiste o sequencial no localStorage para o ano informado.
- * @param {number|string} ano
- * @param {number} sequencial
- */
-export function salvarSequencial(ano, sequencial) {
-  localStorage.setItem(seqKey(ano), String(sequencial));
-}
-
-/**
- * Retorna o próximo sequencial disponível para o ano e já persiste o
- * incremento no localStorage (lê → incrementa → persiste → retorna).
- * @param {number|string} ano
- * @returns {number} — começa em 1
- */
-export function proximoSequencial(ano) {
-  const atual = lerSequencial(ano);
-  const proximo = atual + 1;
-  salvarSequencial(ano, proximo);
-  return proximo;
-}
+const COLLECTION = "counters";
+const docId = (ano) => `protocolo_${ano}`;
 
 /**
  * Formata o número sequencial com zeros à esquerda (mínimo 4 dígitos).
@@ -70,17 +30,46 @@ export function formatarSequencial(seq) {
 }
 
 /**
+ * Lê o sequencial atual do ano no Firestore (sem incrementar).
+ * Retorna 0 se ainda não existe nenhum protocolo para este ano.
+ * @param {number|string} ano
+ * @returns {Promise<number>}
+ */
+export async function lerSequencial(ano) {
+  const ref = doc(db, COLLECTION, docId(ano));
+  const snap = await getDoc(ref);
+  return snap.exists() ? snap.data().sequencial : 0;
+}
+
+/**
+ * Reserva o próximo número de protocolo via transação atômica no Firestore.
+ * @param {number|string} ano
+ * @returns {Promise<number>} — o número reservado (começa em 1)
+ */
+async function reservarProximoSequencial(ano) {
+  const ref = doc(db, COLLECTION, docId(ano));
+  const numero = await runTransaction(db, async (transaction) => {
+    const snap = await transaction.get(ref);
+    const atual = snap.exists() ? snap.data().sequencial : 0;
+    const proximo = atual + 1;
+    transaction.set(ref, { sequencial: proximo, ano: Number(ano) });
+    return proximo;
+  });
+  return numero;
+}
+
+/**
  * Gera um protocolo FMA completo consumindo o próximo sequencial do ano.
  *
- * ⚠️  Esta função tem efeito colateral: incrementa o contador no localStorage.
+ * ⚠️  Esta função tem efeito colateral: incrementa o contador no Firestore.
  *     Use `garantirProtocolo()` para garantir idempotência por solicitação.
  *
  * @param {number|string} [ano] — padrão: ano corrente
- * @returns {string} ex: "FMA-2026-0001"
+ * @returns {Promise<string>} ex: "FMA-2026-0001"
  */
-export function gerarProtocolo(ano) {
+export async function gerarProtocolo(ano) {
   const anoFinal = ano ?? new Date().getFullYear();
-  const seq = proximoSequencial(anoFinal);
+  const seq = await reservarProximoSequencial(anoFinal);
   return `FMA-${anoFinal}-${formatarSequencial(seq)}`;
 }
 
@@ -92,20 +81,14 @@ export function gerarProtocolo(ano) {
  *
  * @param {object} solicitacao — objeto Solicitacao
  * @param {number|string} [ano] — padrão: ano corrente
- * @returns {{ protocolo: string, gerado: boolean }}
- *   gerado = true  → protocolo foi criado agora
- *   gerado = false → solicitação já tinha protocolo; retornado sem modificação
- *
- * @example
- *   const { protocolo, gerado } = garantirProtocolo(solicitacao);
- *   if (gerado) console.log("Novo protocolo:", protocolo);
+ * @returns {Promise<{ protocolo: string, gerado: boolean }>}
  */
-export function garantirProtocolo(solicitacao, ano) {
+export async function garantirProtocolo(solicitacao, ano) {
   if (solicitacao.protocoloFMA && solicitacao.protocoloFMA.trim() !== "") {
     return { protocolo: solicitacao.protocoloFMA, gerado: false };
   }
   const anoFinal = ano ?? new Date().getFullYear();
-  const protocolo = gerarProtocolo(anoFinal);
+  const protocolo = await gerarProtocolo(anoFinal);
   return { protocolo, gerado: true };
 }
 
@@ -121,24 +104,18 @@ export function isProtocoloValido(str) {
 /**
  * Retorna o total de protocolos emitidos no ano informado.
  * @param {number|string} [ano] — padrão: ano corrente
- * @returns {number}
+ * @returns {Promise<number>}
  */
-export function totalProtocolosAno(ano) {
+export async function totalProtocolosAno(ano) {
   return lerSequencial(ano ?? new Date().getFullYear());
 }
 
 /**
- * Lista todos os anos que possuem contadores de protocolo no localStorage.
- * @returns {number[]} — array de anos, ordenados crescente
+ * Define o contador manualmente (override do admin).
+ * @param {number|string} ano
+ * @param {number} valor
  */
-export function anosComProtocolo() {
-  const anos = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.startsWith(SEQ_KEY_PREFIX)) {
-      const ano = parseInt(key.replace(SEQ_KEY_PREFIX, ""), 10);
-      if (!isNaN(ano)) anos.push(ano);
-    }
-  }
-  return anos.sort((a, b) => a - b);
+export async function setContador(ano, valor) {
+  const ref = doc(db, COLLECTION, docId(ano));
+  await setDoc(ref, { sequencial: Number(valor), ano: Number(ano) });
 }

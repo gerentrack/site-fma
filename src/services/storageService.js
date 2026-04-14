@@ -20,7 +20,7 @@
  *   const { url, error } = await uploadFile(file, "solicitacoes/sol123");
  */
 
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject, listAll } from "firebase/storage";
 import { storage } from "../firebase";
 
 /**
@@ -147,6 +147,27 @@ export async function moveFile(oldUrl, newFolder, fileName) {
     return { url, path, error: null };
   } catch (e) {
     return { url: null, path: null, error: e.message };
+  }
+}
+
+/**
+ * Exclui todos os arquivos de uma pasta no Firebase Storage (recursivo).
+ * Útil para limpar a pasta inteira de uma solicitação ao excluí-la.
+ *
+ * @param {string} folderPath — caminho da pasta (ex: "solicitacoes/2026/Org/Evento")
+ */
+export async function deleteFolder(folderPath) {
+  if (!folderPath) return { error: null, deleted: 0 };
+  try {
+    const folderRef = ref(storage, folderPath);
+    const result = await listAll(folderRef);
+    // Deletar arquivos nesta pasta
+    await Promise.all(result.items.map(item => deleteObject(item).catch(() => {})));
+    // Recursão para subpastas
+    await Promise.all(result.prefixes.map(prefix => deleteFolder(prefix.fullPath)));
+    return { error: null, deleted: result.items.length };
+  } catch (e) {
+    return { error: e.message, deleted: 0 };
   }
 }
 

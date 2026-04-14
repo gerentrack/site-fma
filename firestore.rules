@@ -104,7 +104,7 @@ service cloud.firestore {
     }
     match /counters/{docId} {
       allow read: if true;
-      allow write: if isAdminRole();
+      allow write: if isAuth() && (isAdminRole() || "organizer" in getUserData().roles || getUserData().role == "organizer");
     }
 
     // ── Anuidades (leitura/escrita: admin ou referee) ──
