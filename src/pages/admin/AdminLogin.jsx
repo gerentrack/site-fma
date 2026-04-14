@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAdmin } from "../../context/AdminContext";
 import { COLORS, FONTS } from "../../styles/colors";
 import { sendPasswordResetEmail } from "firebase/auth";
@@ -8,6 +8,8 @@ import { auth } from "../../firebase";
 export default function AdminLogin() {
   const { login, isAuthenticated } = useAdmin();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || "/admin";
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -15,8 +17,8 @@ export default function AdminLogin() {
   const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated) navigate("/admin");
-  }, [isAuthenticated, navigate]);
+    if (isAuthenticated) navigate(from, { replace: true });
+  }, [isAuthenticated, navigate, from]);
 
   const handleSubmit = async () => {
     setError("");
@@ -24,7 +26,7 @@ export default function AdminLogin() {
     const { error: err } = await login(form);
     setLoading(false);
     if (err) { setError(err); return; }
-    navigate("/admin");
+    navigate(from, { replace: true });
   };
 
   const handleResetPassword = async () => {

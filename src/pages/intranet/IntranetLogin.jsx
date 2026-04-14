@@ -3,7 +3,7 @@
  * Rota: /intranet/login
  */
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useIntranet } from "../../context/IntranetContext";
 import { COLORS, FONTS } from "../../styles/colors";
 import { sendPasswordResetEmail } from "firebase/auth";
@@ -12,6 +12,8 @@ import { auth } from "../../firebase";
 export default function IntranetLogin() {
   const { login, loginWithGoogle } = useIntranet();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || "/intranet";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,7 +29,7 @@ export default function IntranetLogin() {
     const r = await login({ email, password });
     setLoading(false);
     if (r.error) { setError(r.error); return; }
-    navigate("/intranet");
+    navigate(from, { replace: true });
   };
 
   const handleGoogleLogin = async () => {

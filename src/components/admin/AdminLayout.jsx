@@ -32,7 +32,7 @@ export default function AdminLayout({ children, minLevel = "viewer", section = n
   });
 
   if (loading) return <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", background: COLORS.dark }}><span style={{ color: COLORS.white, fontFamily: FONTS.body }}>Carregando...</span></div>;
-  if (!isAuthenticated) return <Navigate to="/admin/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/admin/login" replace state={{ from: window.location.pathname }} />;
 
   // Forçar troca de senha no primeiro login
   if (user?.mustChangePassword) return <Navigate to="/admin/alterar-senha" replace />;
