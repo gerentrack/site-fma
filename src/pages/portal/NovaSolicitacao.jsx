@@ -612,7 +612,7 @@ function TipoBadge({ tipo, onBack }) {
 function TaxaEstimativaCard({ taxaCalc, tipo, organizerData, taxasConfig, bloqueio, comprovantePagamento, onComprovanteChange, envioLiberado, pagadorTerceiro, onPagadorTerceiroChange, pagadorNome, onPagadorNomeChange, pagadorCpfCnpj, onPagadorCpfCnpjChange, pagadorContato, onPagadorContatoChange, pagadorEndereco, onPagadorEnderecoChange, pagadorCep, onPagadorCepChange, pagadorNumero, onPagadorNumeroChange, pagadorComplemento, onPagadorComplementoChange, pagadorCepLoading, pagadorCepError, pagadorCepEndereco, pagadorCepSetNumero, anuenciaAceita, onAnuenciaChange }) {
   const fileRef = useRef(null);
   const [expandido, setExpandido] = useState(null); // id da modalidade expandida
-  const isParceiro = organizerData?.parceiro;
+  const isParceiro = organizerData?.parceiro && organizerData?.parceiroTipo === "isencao";
   const prazos = PRAZOS[tipo] || PRAZOS.permit;
   const db = taxasConfig?.dadosBancarios || {};
 
