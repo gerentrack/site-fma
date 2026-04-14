@@ -266,7 +266,7 @@ export function SolicitacoesList() {
                 </button>
               </>
             )}
-            {!selected.size && (
+            {!selected.size && (filterStatus || filterTipo || search) && (
               <button onClick={() => handleBulkDelete(filtered.map(i => i.id))} disabled={bulkDeleting}
                 style={{ padding: "7px 16px", borderRadius: 7, border: "1px solid #fecaca", background: "#fff5f5", color: "#dc2626", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                 Excluir todas filtradas ({filtered.length})
