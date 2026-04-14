@@ -82,16 +82,32 @@ function Field({ label, required, error, children }) {
   );
 }
 
+const PREPS = new Set(["da", "de", "do", "dos", "das", "e"]);
+function capitalizeStr(v) {
+  if (!v) return "";
+  return v.toLowerCase().split(/\s+/).map((w, i) => {
+    if (!w) return w;
+    if (i > 0 && PREPS.has(w)) return w;
+    return w.charAt(0).toUpperCase() + w.slice(1);
+  }).join(" ");
+}
+
 function Input({ value, onChange, placeholder, type = "text", mask, maxLength, ...rest }) {
   const handleChange = (e) => {
     let v = e.target.value;
     if (mask === "cpf") v = v.replace(/\D/g, "").slice(0, 11).replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-    if (mask === "phone") v = v.replace(/\D/g, "").slice(0, 11).replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2");
+    if (mask === "phone") { const d = v.replace(/\D/g, "").replace(/^55/, "").slice(0, 11); v = d.length <= 10 ? d.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{4})(\d)/, "$1-$2") : d.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2"); }
     if (mask === "nis") v = v.replace(/\D/g, "").slice(0, 11).replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3}\.\d{5})(\d)/, "$1.$2").replace(/(\d{3}\.\d{5}\.\d{2})(\d)/, "$1-$2");
     if (mask === "cep") v = v.replace(/\D/g, "").slice(0, 8).replace(/(\d{5})(\d)/, "$1-$2");
+    if (mask === "upper") v = v.toUpperCase();
+    if (mask === "agencia") v = v.replace(/\D/g, "").slice(0, 5);
+    if (mask === "conta") v = v.replace(/[^\d-]/g, "").slice(0, 13);
     onChange(v);
   };
-  return <input type={type} value={value} onChange={handleChange} placeholder={placeholder} maxLength={maxLength} style={inp} {...rest} />;
+  const handleBlur = () => {
+    if (mask === "capitalize" && value) onChange(capitalizeStr(value));
+  };
+  return <input type={type} value={value} onChange={handleChange} onBlur={handleBlur} placeholder={placeholder} maxLength={maxLength} style={inp} {...rest} />;
 }
 
 function Select({ value, onChange, options, placeholder }) {
@@ -302,20 +318,20 @@ export default function CompleteProfileWizard() {
           {step === 0 && (
             <div style={{ display: "grid", gap: 16, gridTemplateColumns: "1fr 1fr" }}>
               <div style={{ gridColumn: "1 / -1" }}>
-                <Field label="Nome Completo" required error={errors.name}><Input value={data.name || ""} onChange={v => set("name", v)} /></Field>
+                <Field label="Nome Completo" required error={errors.name}><Input value={data.name || ""} onChange={v => set("name", v)} mask="capitalize" placeholder="Ex: Joao Carlos de Oliveira" /></Field>
               </div>
               <Field label="Data de Nascimento" required error={errors.dataNascimento}><Input type="date" value={data.dataNascimento || ""} onChange={v => set("dataNascimento", v)} /></Field>
               <Field label="Sexo" required error={errors.sexo}><Select value={data.sexo || ""} onChange={v => set("sexo", v)} options={SEXO_OPTIONS} /></Field>
               <Field label="Estado Civil" required error={errors.estadoCivil}><Select value={data.estadoCivil || ""} onChange={v => set("estadoCivil", v)} options={ESTADO_CIVIL} /></Field>
-              <Field label="Cor / Raça" required error={errors.cor}><Select value={data.cor || ""} onChange={v => set("cor", v)} options={COR_OPTIONS} /></Field>
+              <Field label="Cor / Raca" required error={errors.cor}><Select value={data.cor || ""} onChange={v => set("cor", v)} options={COR_OPTIONS} /></Field>
               <Field label="Escolaridade" required error={errors.escolaridade}><Select value={data.escolaridade || ""} onChange={v => set("escolaridade", v)} options={ESCOLARIDADE} /></Field>
-              <Field label="Município de Nascimento" required error={errors.municipioNascimento}><Input value={data.municipioNascimento || ""} onChange={v => set("municipioNascimento", v)} /></Field>
+              <Field label="Municipio de Nascimento" required error={errors.municipioNascimento}><Input value={data.municipioNascimento || ""} onChange={v => set("municipioNascimento", v)} mask="capitalize" placeholder="Ex: Governador Valadares" /></Field>
               <Field label="UF de Nascimento" required error={errors.ufNascimento}><Select value={data.ufNascimento || ""} onChange={v => set("ufNascimento", v)} options={UFS.map(u => ({ value: u, label: u }))} /></Field>
               <div style={{ gridColumn: "1 / -1" }}>
-                <Field label="Nome do Pai" error={errors.nomePai}><Input value={data.nomePai || ""} onChange={v => set("nomePai", v)} /></Field>
+                <Field label="Nome do Pai" error={errors.nomePai}><Input value={data.nomePai || ""} onChange={v => set("nomePai", v)} mask="capitalize" placeholder="Ex: Carlos Alberto de Oliveira" /></Field>
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
-                <Field label="Nome da Mãe" required error={errors.nomeMae}><Input value={data.nomeMae || ""} onChange={v => set("nomeMae", v)} /></Field>
+                <Field label="Nome da Mae" required error={errors.nomeMae}><Input value={data.nomeMae || ""} onChange={v => set("nomeMae", v)} mask="capitalize" placeholder="Ex: Maria Aparecida Santos" /></Field>
               </div>
             </div>
           )}
@@ -324,8 +340,8 @@ export default function CompleteProfileWizard() {
           {step === 1 && (
             <div style={{ display: "grid", gap: 16, gridTemplateColumns: "1fr 1fr" }}>
               <Field label="CPF" required error={errors.cpf}><Input value={data.cpf || ""} onChange={v => set("cpf", v)} mask="cpf" placeholder="000.000.000-00" /></Field>
-              <Field label="RG" required error={errors.rg}><Input value={data.rg || ""} onChange={v => set("rg", v)} /></Field>
-              <Field label="Órgão Expedidor" required error={errors.rgOrgao}><Input value={data.rgOrgao || ""} onChange={v => set("rgOrgao", v)} placeholder="Ex: SSP, PC, IFP" /></Field>
+              <Field label="RG" required error={errors.rg}><Input value={data.rg || ""} onChange={v => set("rg", v)} mask="upper" placeholder="Ex: MG-12.345.678" /></Field>
+              <Field label="Orgao Expedidor" required error={errors.rgOrgao}><Input value={data.rgOrgao || ""} onChange={v => set("rgOrgao", v)} mask="upper" placeholder="Ex: SSP/MG" /></Field>
               <Field label="UF do RG" required error={errors.rgUf}><Select value={data.rgUf || ""} onChange={v => set("rgUf", v)} options={UFS.map(u => ({ value: u, label: u }))} /></Field>
               <Field label="Data de Expedição" required error={errors.rgDataExpedicao}><Input type="date" value={data.rgDataExpedicao || ""} onChange={v => set("rgDataExpedicao", v)} /></Field>
               <Field label="NIS / PIS / NIT" required error={errors.nisPis}><Input value={data.nisPis || ""} onChange={v => set("nisPis", v)} mask="nis" placeholder="000.00000.00-0" /></Field>
@@ -340,14 +356,22 @@ export default function CompleteProfileWizard() {
                 {cepLoading && <div style={{ fontSize: 11, color: COLORS.gray, marginTop: 2 }}>Buscando...</div>}
               </Field>
               <div /> {/* spacer */}
-              <div style={{ gridColumn: "1 / -1" }}>
-                <Field label="Logradouro" required error={errors.logradouro}><Input value={data.logradouro || ""} onChange={v => set("logradouro", v)} /></Field>
-              </div>
-              <Field label="Número" required error={errors.numero}><Input value={data.numero || ""} onChange={v => set("numero", v)} /></Field>
-              <Field label="Complemento"><Input value={data.complemento || ""} onChange={v => set("complemento", v)} placeholder="Apto, bloco, etc." /></Field>
-              <Field label="Bairro" required error={errors.bairro}><Input value={data.bairro || ""} onChange={v => set("bairro", v)} /></Field>
-              <Field label="Cidade" required error={errors.city}><Input value={data.city || ""} onChange={v => set("city", v)} /></Field>
-              <Field label="UF" required error={errors.state}><Select value={data.state || ""} onChange={v => set("state", v)} options={UFS.map(u => ({ value: u, label: u }))} /></Field>
+              {(data.logradouro || (data.cep || "").replace(/\D/g, "").length >= 8) ? (
+                <>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <Field label="Logradouro" required error={errors.logradouro}><input value={data.logradouro || ""} readOnly style={{ ...inp, background: "#f5f5f5", color: "#666" }} /></Field>
+                  </div>
+                  <Field label="Numero" required error={errors.numero}><Input value={data.numero || ""} onChange={v => set("numero", v)} placeholder="Ex: 311" /></Field>
+                  <Field label="Complemento"><Input value={data.complemento || ""} onChange={v => set("complemento", v)} mask="capitalize" placeholder="Ex: Sala 205, Bloco B" /></Field>
+                  <Field label="Bairro" required error={errors.bairro}><input value={data.bairro || ""} readOnly style={{ ...inp, background: "#f5f5f5", color: "#666" }} /></Field>
+                  <Field label="Cidade" required error={errors.city}><input value={data.city || ""} readOnly style={{ ...inp, background: "#f5f5f5", color: "#666" }} /></Field>
+                  <Field label="UF" required error={errors.state}><input value={data.state || ""} readOnly style={{ ...inp, background: "#f5f5f5", color: "#666" }} /></Field>
+                </>
+              ) : (
+                <div style={{ gridColumn: "1 / -1", fontSize: 12, color: COLORS.gray, fontFamily: FONTS.body }}>
+                  Digite o CEP acima para preencher o endereco automaticamente.
+                </div>
+              )}
             </div>
           )}
 
@@ -358,11 +382,11 @@ export default function CompleteProfileWizard() {
                 <Field label="Banco" required error={errors.banco}><Select value={data.banco || ""} onChange={v => set("banco", v)} options={BANCOS} /></Field>
               </div>
               <Field label="Tipo de Conta" required error={errors.tipoConta}><Select value={data.tipoConta || ""} onChange={v => set("tipoConta", v)} options={TIPO_CONTA} /></Field>
-              <Field label="Agência (sem dígito)" required error={errors.agencia}><Input value={data.agencia || ""} onChange={v => set("agencia", v)} placeholder="0001" /></Field>
-              <Field label="Conta com Dígito" required error={errors.contaDigito}><Input value={data.contaDigito || ""} onChange={v => set("contaDigito", v)} placeholder="12345-6" /></Field>
+              <Field label="Agencia (somente numeros, sem digito)" required error={errors.agencia}><Input value={data.agencia || ""} onChange={v => set("agencia", v)} mask="agencia" placeholder="1234" /></Field>
+              <Field label="Conta com Digito" required error={errors.contaDigito}><Input value={data.contaDigito || ""} onChange={v => set("contaDigito", v)} mask="conta" placeholder="12345-6" /></Field>
               <div />
               <Field label="Tipo da Chave PIX" required error={errors.chavePixTipo}><Select value={data.chavePixTipo || ""} onChange={v => set("chavePixTipo", v)} options={CHAVE_PIX_TIPO} /></Field>
-              <Field label="Chave PIX" required error={errors.chavePix}><Input value={data.chavePix || ""} onChange={v => set("chavePix", v)} placeholder="CPF, e-mail, telefone ou chave aleatória" /></Field>
+              <Field label="Chave PIX" required error={errors.chavePix}><Input value={data.chavePix || ""} onChange={v => set("chavePix", v)} placeholder="Ex: 123.456.789-00 ou email@exemplo.com" /></Field>
             </div>
           )}
 
@@ -371,7 +395,7 @@ export default function CompleteProfileWizard() {
             <div style={{ display: "grid", gap: 16, gridTemplateColumns: "1fr 1fr" }}>
               <Field label="Telefone" required error={errors.phone}><Input value={data.phone || ""} onChange={v => set("phone", v)} mask="phone" placeholder="(31) 99999-9999" /></Field>
               <Field label="Nível" required error={errors.nivel}><Select value={data.nivel || ""} onChange={v => set("nivel", v)} options={NIVEL_OPTIONS} /></Field>
-              <Field label="Registro CBAT" required error={errors.registroCbat}><Input value={data.registroCbat || ""} onChange={v => set("registroCbat", v)} placeholder="Número de registro na CBAT" /></Field>
+              <Field label="Registro CBAT" required error={errors.registroCbat}><Input value={data.registroCbat || ""} onChange={v => set("registroCbat", v)} placeholder="Ex: 12345" /></Field>
               <Field label="Tamanho de Camisa" required error={errors.tamanhoCamisa}><Select value={data.tamanhoCamisa || ""} onChange={v => set("tamanhoCamisa", v)} options={CAMISA_OPTIONS} /></Field>
               <Field label="Tipo Sanguíneo (opcional)" error={errors.tipoSanguineo}><Select value={data.tipoSanguineo || ""} onChange={v => set("tipoSanguineo", v)} options={SANGUE_OPTIONS} /></Field>
               <Field label="Disponibilidade de Deslocamento" required error={errors.disponibilidadeDeslocamento}><Select value={data.disponibilidadeDeslocamento || ""} onChange={v => set("disponibilidadeDeslocamento", v)} options={DESLOCAMENTO} /></Field>
@@ -379,7 +403,7 @@ export default function CompleteProfileWizard() {
               <div style={{ gridColumn: "1 / -1", borderTop: `1px solid ${COLORS.grayLight}`, paddingTop: 16, marginTop: 4 }}>
                 <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark, textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>Contato de Emergência (opcional)</div>
               </div>
-              <Field label="Nome"><Input value={data.contatoEmergenciaNome || ""} onChange={v => set("contatoEmergenciaNome", v)} /></Field>
+              <Field label="Nome"><Input value={data.contatoEmergenciaNome || ""} onChange={v => set("contatoEmergenciaNome", v)} mask="capitalize" placeholder="Ex: Maria Santos (esposa)" /></Field>
               <Field label="Telefone"><Input value={data.contatoEmergenciaTelefone || ""} onChange={v => set("contatoEmergenciaTelefone", v)} mask="phone" placeholder="(31) 99999-9999" /></Field>
 
               {/* ── Consentimento LGPD ── */}
