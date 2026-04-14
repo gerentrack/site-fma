@@ -11,7 +11,9 @@ import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 import { FormField, SelectInput } from "../../components/ui/FormField";
 import { refereesAPI } from "../../data/api";
-import { TaxasConfigService } from "../../services/index";
+import { RefereesService, TaxasConfigService } from "../../services/index";
+import { useConfirm } from "../../components/ui/ConfirmModal";
+import { deleteFile } from "../../services/storageService";
 import { REFEREE_CATEGORIES, REFEREE_ROLES, REFEREE_STATUS } from "../../config/navigation";
 import { gerarDeclaracaoArbitroPdf } from "../../services/declaracaoArbitroPdf";
 import { gerarCredencialPdf } from "../../services/credencialArbitroPdf";
@@ -30,6 +32,8 @@ export default function ArbitroDetalheAdmin() {
   const [data, setData] = useState(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  const { confirm, ConfirmDialog } = useConfirm();
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     refereesAPI.get(id).then(r => {
@@ -47,6 +51,17 @@ export default function ArbitroDetalheAdmin() {
     setMsg(r.error ? `Erro: ${r.error}` : "Dados atualizados.");
   };
 
+  const handleDelete = async () => {
+    if (!await confirm(`Excluir o arbitro "${data.name}"?\n\nIsso removera permanentemente todos os dados, incluindo escalas, reembolsos e documentos.`, { danger: true, confirmLabel: "Excluir arbitro" })) return;
+    setDeleting(true);
+    // Excluir foto do Storage se existir
+    if (data.fotoPath) await deleteFile(data.fotoPath).catch(() => {});
+    else if (data.foto?.includes("firebasestorage.googleapis.com")) await deleteFile(data.foto).catch(() => {});
+    // Excluir doc do Firestore
+    await RefereesService.delete(id);
+    navigate("/admin/arbitros");
+  };
+
   if (!data) return <AdminLayout minLevel="admin"><div style={{ padding: 40, fontFamily: FONTS.body, color: COLORS.gray }}>Carregando...</div></AdminLayout>;
 
   const card = { background: "#fff", borderRadius: 12, padding: "24px 26px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 20 };
@@ -56,6 +71,7 @@ export default function ArbitroDetalheAdmin() {
 
   return (
     <AdminLayout minLevel="admin">
+      {ConfirmDialog}
       <div style={{ padding: 40, maxWidth: 800 }}>
         <PageHeader
           title={data.name || "Árbitro"}
@@ -200,6 +216,21 @@ export default function ArbitroDetalheAdmin() {
 
           <div style={{ marginTop: 16 }}>
             <Button variant="primary" onClick={save} loading={saving}>Salvar Alterações</Button>
+          </div>
+        </div>
+
+        {/* Excluir arbitro */}
+        <div style={{ ...card, borderLeft: "4px solid #dc2626" }}>
+          {section("Zona de perigo")}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.dark }}>Excluir este arbitro permanentemente</div>
+              <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, marginTop: 2 }}>Esta acao nao pode ser desfeita. Todos os dados serao removidos.</div>
+            </div>
+            <button onClick={handleDelete} disabled={deleting}
+              style={{ padding: "8px 18px", borderRadius: 8, border: "1.5px solid #dc2626", background: "#fff5f5", color: "#dc2626", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: deleting ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}>
+              {deleting ? "Excluindo..." : "Excluir arbitro"}
+            </button>
           </div>
         </div>
 
