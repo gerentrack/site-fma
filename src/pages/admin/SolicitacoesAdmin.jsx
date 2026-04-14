@@ -973,9 +973,9 @@ export function SolicitacaoEditor() {
                       <tbody>
                         {taxas.modalidades.map((m, i) => (
                           <tr key={i} style={{ borderBottom: `1px solid ${COLORS.grayLight}` }}>
-                            <td style={{ padding: "8px" }}>{m.nome || m.modalidade || `Modalidade ${i + 1}`}</td>
+                            <td style={{ padding: "8px" }}>{m.distancia || m.nome || m.modalidade || `Modalidade ${i + 1}`}</td>
                             <td style={{ padding: "8px", textAlign: "right" }}>{m.inscritos || "—"}</td>
-                            <td style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}>{formatarMoeda(m.valor || 0)}</td>
+                            <td style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}>{formatarMoeda(m.valorFinal || m.valorBruto || m.valor || 0)}</td>
                           </tr>
                         ))}
                       </tbody>
