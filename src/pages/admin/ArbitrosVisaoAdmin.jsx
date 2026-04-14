@@ -463,6 +463,11 @@ function CreateRefereeForm({ onClose, onCreated }) {
     });
     setSaving(false);
     if (r.error) { setError(r.error); return; }
+    notificarArbitroCadastro({
+      arbitroEmail: form.email,
+      arbitroNome: form.name,
+      senhaTemporaria: senhaTemp,
+    }).catch(() => {});
     onCreated();
   };
 
