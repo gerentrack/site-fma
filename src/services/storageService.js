@@ -39,8 +39,8 @@ function uniqueName(file) {
  */
 async function compressImage(file, maxSize = 1200, quality = 0.7) {
   if (!file.type.startsWith("image/") || file.type === "image/svg+xml") return file;
-  // Não comprimir PNGs pequenos (podem ser ícones/assinaturas com transparência)
-  if (file.type === "image/png" && file.size < 200 * 1024) return file;
+  // Não comprimir PNGs (podem ter transparência — logos, ícones, assinaturas)
+  if (file.type === "image/png") return file;
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
