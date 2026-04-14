@@ -941,8 +941,48 @@ export function SolicitacaoEditor() {
               {lbl("Local / endereço")}{val(sol.localEvento)}
             </div>
 
-            {/* Campos livres (objeto campos) */}
-            {/* Campos técnicos estruturados (novo formato) */}
+            {/* Resumo taxa + comprovante */}
+            {(() => {
+              const taxas = sol.taxas || {};
+              const pag = sol.pagamento || {};
+              const comprovanteArq = pag.comprovanteArquivoId ? arquivos.find(a => a.id === pag.comprovanteArquivoId) : null;
+              const temTaxa = taxas.total > 0;
+              if (!temTaxa) return null;
+              const pagStatusLabels = { pendente: "Pendente", comprovante_anexado: "Comprovante anexado", confirmado: "Confirmado", isento: "Isento" };
+              const pagStatusColors = { pendente: "#d97706", comprovante_anexado: "#0066cc", confirmado: "#15803d", isento: "#6b7280" };
+              const cor = pagStatusColors[pag.status] || "#6b7280";
+              return (
+                <div style={{ ...card, borderLeft: `4px solid ${cor}` }}>
+                  <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 14px", paddingBottom: 10, borderBottom: `1px solid ${COLORS.grayLight}` }}>
+                    Taxa e Pagamento
+                  </h3>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
+                    {lbl("Valor da taxa")}{val(formatarMoeda(taxas.total))}
+                    {lbl("Status pagamento")}
+                    <div style={{ fontFamily: FONTS.body, fontSize: 14, color: cor, fontWeight: 700, marginBottom: 12 }}>
+                      {pagStatusLabels[pag.status] || pag.status || "—"}
+                    </div>
+                    {pag.pagadorTerceiro && <>{lbl("Pagador (terceiro)")}{val(pag.pagadorNome)}</>}
+                  </div>
+                  {comprovanteArq && (
+                    <div style={{ marginTop: 8 }}>
+                      {lbl("Comprovante")}
+                      <a href={comprovanteArq.url || comprovanteArq.dataUrl} target="_blank" rel="noreferrer"
+                        style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 6, background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, textDecoration: "none" }}>
+                        {comprovanteArq.nome || "Comprovante"} — Ver arquivo
+                      </a>
+                    </div>
+                  )}
+                  {!comprovanteArq && pag.status === "pendente" && (
+                    <div style={{ marginTop: 8, fontSize: 12, fontFamily: FONTS.body, color: "#d97706", fontStyle: "italic" }}>
+                      Comprovante ainda nao anexado pelo organizador.
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Campos técnicos estruturados */}
             <CamposTecnicosView sol={sol} card={card} lbl={lbl} val={val} fmt={fmt} arquivos={arquivos} />
 
             {/* Datas do ciclo de vida */}
