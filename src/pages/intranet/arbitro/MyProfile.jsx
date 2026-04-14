@@ -46,6 +46,26 @@ function maskCpf(v) {
 function maskNis(v) {
   return (v || "").replace(/\D/g, "").slice(0, 11).replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3}\.\d{5})(\d)/, "$1.$2").replace(/(\d{3}\.\d{5}\.\d{2})(\d)/, "$1-$2");
 }
+function maskPhone(v) {
+  const d = (v || "").replace(/\D/g, "").replace(/^55/, "").slice(0, 11);
+  if (d.length <= 10) return d.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{4})(\d)/, "$1-$2");
+  return d.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d)/, "$1-$2");
+}
+function maskAgencia(v) {
+  return (v || "").replace(/\D/g, "").slice(0, 5);
+}
+function maskContaDigito(v) {
+  const d = (v || "").replace(/[^\d-]/g, "");
+  return d.slice(0, 13);
+}
+const PREPS = new Set(["da", "de", "do", "dos", "das", "e"]);
+function capitalize(v) {
+  return (v || "").toLowerCase().replace(/(?:^|\s)\S/g, (m, i) => {
+    const word = (v || "").toLowerCase().slice(i).split(/\s/)[0];
+    return i === 0 || !PREPS.has(word) ? m.toUpperCase() : m;
+  });
+}
+function lowercase(v) { return (v || "").toLowerCase(); }
 
 const inp = { width: "100%", padding: "10px 13px", borderRadius: 8, border: `1.5px solid #e8e8e8`, fontFamily: "'Barlow',sans-serif", fontSize: 14, outline: "none", boxSizing: "border-box" };
 const sel = { ...inp, cursor: "pointer" };
@@ -280,17 +300,17 @@ export default function MyProfile() {
         <div style={card}>
           {sectionTitle("Dados Pessoais")}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            <div style={{ gridColumn: "1 / -1" }}>{label("Nome completo")}<input value={data.name || ""} onChange={e => set("name", e.target.value)} style={inp} /></div>
+            <div style={{ gridColumn: "1 / -1" }}>{label("Nome completo")}<input value={data.name || ""} onBlur={e => set("name", capitalize(e.target.value))} onChange={e => set("name", e.target.value)} style={inp} /></div>
             <div>{label("Data de Nascimento")}<input type="date" value={data.dataNascimento || ""} onChange={e => set("dataNascimento", e.target.value)} style={inp} /></div>
             <div>{label("Sexo")}<select value={data.sexo || ""} onChange={e => set("sexo", e.target.value)} style={sel}><option value="">Selecione...</option>{SEXO.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
             <div>{label("Estado Civil")}<select value={data.estadoCivil || ""} onChange={e => set("estadoCivil", e.target.value)} style={sel}><option value="">Selecione...</option>{ESTADO_CIVIL.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
             <div>{label("Escolaridade")}<select value={data.escolaridade || ""} onChange={e => set("escolaridade", e.target.value)} style={sel}><option value="">Selecione...</option>{ESCOLARIDADE.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
-            <div>{label("Município de Nascimento")}<input value={data.municipioNascimento || ""} onChange={e => set("municipioNascimento", e.target.value)} style={inp} /></div>
+            <div>{label("Municipio de Nascimento")}<input value={data.municipioNascimento || ""} onBlur={e => set("municipioNascimento", capitalize(e.target.value))} onChange={e => set("municipioNascimento", e.target.value)} style={inp} /></div>
             <div>{label("UF de Nascimento")}<select value={data.ufNascimento || ""} onChange={e => set("ufNascimento", e.target.value)} style={sel}><option value="">Selecione...</option>{UFS.map(u => <option key={u} value={u}>{u}</option>)}</select></div>
-            <div>{label("Nome do Pai")}<input value={data.nomePai || ""} onChange={e => set("nomePai", e.target.value)} style={inp} /></div>
-            <div>{label("Nome da Mãe")}<input value={data.nomeMae || ""} onChange={e => set("nomeMae", e.target.value)} style={inp} /></div>
-            <div>{label("Telefone")}<input value={data.phone || ""} onChange={e => set("phone", e.target.value)} placeholder="(31) 99999-9999" style={inp} /></div>
-            <div>{label("E-mail")}<input value={data.email || ""} disabled style={{ ...inp, opacity: 0.6 }} /></div>
+            <div>{label("Nome do Pai")}<input value={data.nomePai || ""} onBlur={e => set("nomePai", capitalize(e.target.value))} onChange={e => set("nomePai", e.target.value)} style={inp} /></div>
+            <div>{label("Nome da Mae")}<input value={data.nomeMae || ""} onBlur={e => set("nomeMae", capitalize(e.target.value))} onChange={e => set("nomeMae", e.target.value)} style={inp} /></div>
+            <div>{label("Telefone")}<input value={maskPhone(data.phone)} onChange={e => set("phone", maskPhone(e.target.value))} placeholder="(31) 99999-9999" style={inp} /></div>
+            <div>{label("E-mail")}<input value={lowercase(data.email)} disabled style={{ ...inp, opacity: 0.6 }} /></div>
           </div>
         </div>
 
@@ -299,8 +319,8 @@ export default function MyProfile() {
           {sectionTitle("Documentos")}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <div>{label("CPF")}<input value={maskCpf(data.cpf)} onChange={e => set("cpf", maskCpf(e.target.value))} placeholder="000.000.000-00" style={inp} /></div>
-            <div>{label("RG")}<input value={data.rg || ""} onChange={e => set("rg", e.target.value)} style={inp} /></div>
-            <div>{label("Órgão Expedidor")}<input value={data.rgOrgao || ""} onChange={e => set("rgOrgao", e.target.value)} style={inp} /></div>
+            <div>{label("RG")}<input value={data.rg || ""} onChange={e => set("rg", e.target.value.toUpperCase())} style={inp} /></div>
+            <div>{label("Orgao Expedidor")}<input value={data.rgOrgao || ""} onChange={e => set("rgOrgao", e.target.value.toUpperCase())} placeholder="SSP/MG" style={inp} /></div>
             <div>{label("UF do RG")}<select value={data.rgUf || ""} onChange={e => set("rgUf", e.target.value)} style={sel}><option value="">Selecione...</option>{UFS.map(u => <option key={u} value={u}>{u}</option>)}</select></div>
             <div>{label("Data de Expedição")}<input type="date" value={data.rgDataExpedicao || ""} onChange={e => set("rgDataExpedicao", e.target.value)} style={inp} /></div>
             <div>{label("NIS/PIS/NIT")}<input value={maskNis(data.nisPis)} onChange={e => set("nisPis", maskNis(e.target.value))} placeholder="000.00000.00-0" style={inp} /></div>
@@ -313,12 +333,12 @@ export default function MyProfile() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <div>{label("CEP")}<input value={data.cep || ""} onChange={e => handleCep(e.target.value)} placeholder="00000-000" style={inp} />{cepLoading && <span style={{ fontSize: 11, color: COLORS.gray }}>Buscando...</span>}</div>
             <div />
-            <div style={{ gridColumn: "1 / -1" }}>{label("Logradouro")}<input value={data.logradouro || ""} onChange={e => set("logradouro", e.target.value)} style={inp} /></div>
-            <div>{label("Número")}<input value={data.numero || ""} onChange={e => set("numero", e.target.value)} style={inp} /></div>
-            <div>{label("Complemento")}<input value={data.complemento || ""} onChange={e => set("complemento", e.target.value)} style={inp} /></div>
-            <div>{label("Bairro")}<input value={data.bairro || ""} onChange={e => set("bairro", e.target.value)} style={inp} /></div>
-            <div>{label("Cidade")}<input value={data.city || ""} onChange={e => set("city", e.target.value)} style={inp} /></div>
-            <div>{label("UF")}<select value={data.state || ""} onChange={e => set("state", e.target.value)} style={sel}><option value="">Selecione...</option>{UFS.map(u => <option key={u} value={u}>{u}</option>)}</select></div>
+            <div style={{ gridColumn: "1 / -1" }}>{label("Logradouro")}<input value={data.logradouro || ""} readOnly style={{ ...inp, background: "#f5f5f5", color: "#666" }} /></div>
+            <div>{label("Numero")}<input value={data.numero || ""} onChange={e => set("numero", e.target.value)} style={inp} /></div>
+            <div>{label("Complemento")}<input value={data.complemento || ""} onBlur={e => set("complemento", capitalize(e.target.value))} onChange={e => set("complemento", e.target.value)} style={inp} /></div>
+            <div>{label("Bairro")}<input value={data.bairro || ""} readOnly style={{ ...inp, background: "#f5f5f5", color: "#666" }} /></div>
+            <div>{label("Cidade")}<input value={data.city || ""} readOnly style={{ ...inp, background: "#f5f5f5", color: "#666" }} /></div>
+            <div>{label("UF")}<input value={data.state || ""} readOnly style={{ ...inp, background: "#f5f5f5", color: "#666" }} /></div>
           </div>
         </div>
 
@@ -328,8 +348,8 @@ export default function MyProfile() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <div style={{ gridColumn: "1 / -1" }}>{label("Banco")}<select value={data.banco || ""} onChange={e => set("banco", e.target.value)} style={sel}><option value="">Selecione...</option>{BANCOS.map(b => <option key={b.value} value={b.value}>{b.label}</option>)}</select></div>
             <div>{label("Tipo de Conta")}<select value={data.tipoConta || ""} onChange={e => set("tipoConta", e.target.value)} style={sel}><option value="">Selecione...</option>{TIPO_CONTA.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
-            <div>{label("Agência (sem dígito)")}<input value={data.agencia || ""} onChange={e => set("agencia", e.target.value)} style={inp} /></div>
-            <div>{label("Conta com Dígito")}<input value={data.contaDigito || ""} onChange={e => set("contaDigito", e.target.value)} placeholder="12345-6" style={inp} /></div>
+            <div>{label("Agencia (somente numeros, sem digito)")}<input value={maskAgencia(data.agencia)} onChange={e => set("agencia", maskAgencia(e.target.value))} placeholder="1234" style={inp} /></div>
+            <div>{label("Conta com Digito")}<input value={maskContaDigito(data.contaDigito)} onChange={e => set("contaDigito", maskContaDigito(e.target.value))} placeholder="12345-6" style={inp} /></div>
             <div />
             <div>{label("Tipo da Chave PIX")}<select value={data.chavePixTipo || ""} onChange={e => set("chavePixTipo", e.target.value)} style={sel}><option value="">Selecione...</option>{CHAVE_PIX_TIPO.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
             <div>{label("Chave PIX")}<input value={data.chavePix || ""} onChange={e => set("chavePix", e.target.value)} style={inp} /></div>
@@ -346,8 +366,8 @@ export default function MyProfile() {
             <div>{label("Tipo Sanguíneo (opcional)")}<select value={data.tipoSanguineo || ""} onChange={e => set("tipoSanguineo", e.target.value)} style={sel}><option value="">Selecione...</option>{SANGUE.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
             <div>{label("Cor/Raça")}<select value={data.cor || ""} onChange={e => set("cor", e.target.value)} style={sel}><option value="">Selecione...</option>{COR.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
             <div>{label("Disponibilidade de Deslocamento")}<select value={data.disponibilidadeDeslocamento || ""} onChange={e => set("disponibilidadeDeslocamento", e.target.value)} style={sel}><option value="">Selecione...</option>{DESLOCAMENTO.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
-            <div>{label("Contato de Emergência — Nome (opcional)")}<input value={data.contatoEmergenciaNome || ""} onChange={e => set("contatoEmergenciaNome", e.target.value)} style={inp} /></div>
-            <div>{label("Contato de Emergência — Telefone (opcional)")}<input value={data.contatoEmergenciaTelefone || ""} onChange={e => set("contatoEmergenciaTelefone", e.target.value)} style={inp} /></div>
+            <div>{label("Contato de Emergencia — Nome (opcional)")}<input value={data.contatoEmergenciaNome || ""} onBlur={e => set("contatoEmergenciaNome", capitalize(e.target.value))} onChange={e => set("contatoEmergenciaNome", e.target.value)} style={inp} /></div>
+            <div>{label("Contato de Emergencia — Telefone (opcional)")}<input value={maskPhone(data.contatoEmergenciaTelefone)} onChange={e => set("contatoEmergenciaTelefone", maskPhone(e.target.value))} placeholder="(31) 99999-9999" style={inp} /></div>
           </div>
         </div>
 
