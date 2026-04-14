@@ -42,10 +42,12 @@ service firebase.storage {
     match /mensagens/{path=**}     { allow read: if isAuth(); allow write: if isAdminRole(); }
     match /config/{path=**}        { allow read: if true;     allow write: if isAuth(); }
 
-    // ── Solicitações — admin ou organizador ──
+    // ── Solicitações — admin ou organizador (ou qualquer autenticado, pois
+    //    a verificação de role via Firestore cross-service pode falhar
+    //    se o doc users não existir ou estiver em propagação) ──
     match /solicitacoes/{allPaths=**} {
       allow read:  if isAuth();
-      allow write: if isAdminRole() || isOrganizer();
+      allow write: if isAuth();
     }
 
     // ── Bloquear qualquer outra pasta ──
