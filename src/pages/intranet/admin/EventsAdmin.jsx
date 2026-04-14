@@ -316,7 +316,8 @@ export function IntranetEventEditor() {
                   <input type="file" accept=".pdf" onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
-                    const r = await uploadFile(file, "eventos/regulamentos");
+                    const sanitize = (s) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\s-]/g, "").trim().replace(/\s+/g, "_").slice(0, 60);
+                    const r = await uploadFile(file, `eventos/regulamentos/${sanitize(form.title) || "sem-titulo"}`);
                     if (r.url) set("regulamentoUrl", r.url);
                     e.target.value = "";
                   }} style={{ fontSize: 12 }} />
@@ -327,7 +328,8 @@ export function IntranetEventEditor() {
                   <input type="file" accept=".pdf,image/*" onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
-                    const r = await uploadFile(file, "eventos/mapas");
+                    const sanitizeM = (s) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\s-]/g, "").trim().replace(/\s+/g, "_").slice(0, 60);
+                    const r = await uploadFile(file, `eventos/mapas/${sanitizeM(form.title) || "sem-titulo"}`);
                     if (r.url) set("mapaPercursoUrl", r.url);
                     e.target.value = "";
                   }} style={{ fontSize: 12 }} />

@@ -421,7 +421,8 @@ function ResultadosTab({ sol, organizerId, organizerName, onUpdated }) {
       if (file.size > 10 * 1024 * 1024) { setError("Arquivo muito grande (máx. 10 MB)."); return; }
       setUploading(true);
       const ano = new Date(sol.dataEvento || Date.now()).getFullYear();
-      const { url, error: uploadErr } = await uploadFile(file, `eventos/resultados/${ano}`);
+      const sanitizeR = (s) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\s-]/g, "").trim().replace(/\s+/g, "_").slice(0, 60);
+      const { url, error: uploadErr } = await uploadFile(file, `eventos/resultados/${ano}/${sanitizeR(sol.nomeEvento) || "evento"}`);
       if (uploadErr) { setError("Erro ao enviar arquivo."); setUploading(false); return; }
       fileUrl = url;
       tipoArquivo = file.name.endsWith(".xlsx") || file.name.endsWith(".xls") ? "xlsx" : "pdf";

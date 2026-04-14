@@ -64,7 +64,8 @@ export default function MeusReembolsos() {
     if (file.size > 2 * 1024 * 1024) { setMsg("Arquivo deve ter no maximo 2MB."); return; }
 
     setSending(true); setMsg("");
-    const upload = await uploadFile(file, `reembolsos/${refereeId}`);
+    const sanitize = (s) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\s-]/g, "").trim().replace(/\s+/g, "_").slice(0, 60);
+    const upload = await uploadFile(file, `reembolsos/${sanitize(name) || refereeId}`);
     if (upload.error) { setMsg(`Erro no upload: ${upload.error}`); setSending(false); return; }
 
     const asgn = escalacoes.find(a => a.id === selAssignment);

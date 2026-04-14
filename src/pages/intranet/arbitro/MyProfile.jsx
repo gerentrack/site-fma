@@ -223,7 +223,8 @@ export default function MyProfile() {
               // Nome do arquivo com nome do árbitro
               const nomeArquivo = (data.name || "foto").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
               const file = new File([blob], `${nomeArquivo}.jpg`, { type: "image/jpeg" });
-              const r = await uploadFile(file, `arbitros/${refereeId}/foto`);
+              const sanitizeName = (s) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\s-]/g, "").trim().replace(/\s+/g, "_").slice(0, 60);
+              const r = await uploadFile(file, `arbitros/${sanitizeName(data.name) || refereeId}/foto`);
               if (r.url) {
                 await RefereesService.update(refereeId, { foto: r.url, fotoPath: r.path });
                 set("foto", r.url);

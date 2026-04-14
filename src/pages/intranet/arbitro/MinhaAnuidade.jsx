@@ -44,7 +44,8 @@ export default function MinhaAnuidade() {
     if (!file) { setMsg("Selecione o comprovante."); return; }
     if (!dataPagamento) { setMsg("Informe a data do pagamento."); return; }
     setUploading(true); setMsg("");
-    const result = await uploadFile(file, `anuidades/${ano}/${refereeId}`);
+    const sanitize = (s) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\s-]/g, "").trim().replace(/\s+/g, "_").slice(0, 60);
+    const result = await uploadFile(file, `anuidades/${ano}/${sanitize(name) || refereeId}`);
     if (result.error) {
       setMsg(`Erro ao enviar: ${result.error}`);
       setUploading(false);
