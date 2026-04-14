@@ -131,9 +131,10 @@ export function SolicitacoesList() {
     }
     return true;
   }).sort((a, b) => {
-    // Pendências primeiro, depois cronológico crescente (mais antigo primeiro)
-    const prioA = (a.status === "pendencia" || a.status === "em_analise") ? 0 : 1;
-    const prioB = (b.status === "pendencia" || b.status === "em_analise") ? 0 : 1;
+    // Em análise primeiro, pendências depois, demais por último — cronológico crescente
+    const prio = { em_analise: 0, pendencia: 1 };
+    const prioA = prio[a.status] ?? 2;
+    const prioB = prio[b.status] ?? 2;
     if (prioA !== prioB) return prioA - prioB;
     return new Date(a.enviadoEm || a.criadoEm || a.createdAt) - new Date(b.enviadoEm || b.criadoEm || b.createdAt);
   });
@@ -280,78 +281,103 @@ export function SolicitacoesList() {
             <div style={{ textAlign: "center", padding: "40px", fontFamily: FONTS.body, color: COLORS.gray }}>Carregando...</div>
           ) : filtered.length === 0 ? (
             <div style={{ textAlign: "center", padding: "40px", fontFamily: FONTS.body, color: COLORS.gray }}>Nenhuma solicitação encontrada.</div>
-          ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr style={{ borderBottom: `2px solid ${COLORS.grayLight}` }}>
-                    <th style={{ padding: "10px 8px", width: 32 }}>
-                      <input type="checkbox" checked={allFilteredSelected} onChange={toggleSelectAll} style={{ cursor: "pointer" }} />
-                    </th>
-                    {["Tipo", "Evento", "Organizador", "Data Evento", "Status", "Protocolo", "Responsável FMA", "Enviado em", ""].map(h => (
-                      <th key={h} style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, padding: "10px 12px", textAlign: "left", whiteSpace: "nowrap" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map(item => {
-                    const org = organizers[item.organizerId];
-                    return (
-                      <tr key={item.id} style={{ borderBottom: `1px solid ${COLORS.grayLight}` }}
-                        onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
-                        onMouseLeave={e => e.currentTarget.style.background = ""}>
-                        <td style={{ padding: "12px 8px" }}>
-                          <input type="checkbox" checked={selected.has(item.id)}
-                            onChange={() => toggleSelect(item.id)} onClick={e => e.stopPropagation()}
-                            style={{ cursor: "pointer" }} />
-                        </td>
-                        <td style={{ padding: "12px" }}><TipoBadge tipo={item.tipo} /></td>
-                        <td style={{ padding: "12px", minWidth: 200 }}>
-                          <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark }}>{item.nomeEvento}</div>
-                          <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>{item.cidadeEvento}</div>
-                        </td>
-                        <td style={{ padding: "12px" }}>
-                          <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.dark }}>{org?.name || item.organizerId}</div>
-                          {org?.organization && <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>{org.organization}</div>}
-                        </td>
-                        <td style={{ padding: "12px", fontFamily: FONTS.body, fontSize: 13, color: COLORS.grayDark, whiteSpace: "nowrap" }}>{fmt(item.dataEvento)}</td>
-                        <td style={{ padding: "12px" }}>
-                          <StatusBadge status={item.status} />
-                          {item.pendenciaRespondidaEm && item.status === "enviada" && (
-                            <div style={{ marginTop: 4, fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, color: "#d97706", background: "#fffbeb", padding: "2px 8px", borderRadius: 10, display: "inline-block" }}>
-                              Pendencia respondida
-                            </div>
-                          )}
-                        </td>
-                        <td style={{ padding: "12px", whiteSpace: "nowrap" }}>
-                          {item.protocoloFMA ? (
-                            <span style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800,
-                              color: "#15803d", background: "#f0fdf4", padding: "3px 8px",
-                              borderRadius: 6, border: "1px solid #86efac" }}>
-                              {item.protocoloFMA}
-                            </span>
-                          ) : (
-                            <span style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>—</span>
-                          )}
-                        </td>
-                        <td style={{ padding: "12px", fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>{item.responsavelFMA || "—"}</td>
-                        <td style={{ padding: "12px", fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, whiteSpace: "nowrap" }}>{fmt(item.enviadoEm)}</td>
-                        <td style={{ padding: "12px" }}>
-                          <button onClick={() => navigate(`/admin/solicitacoes/${item.id}`)}
-                            style={{ padding: "7px 14px", borderRadius: 6, background: COLORS.primary, color: "#fff", border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>
-                            Analisar →
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              <div style={{ padding: "12px 12px 0", fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>
-                {filtered.length} solicitação(ões) exibida(s) de {items.length} total
+          ) : (() => {
+            const thStyle = { fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, padding: "10px 12px", textAlign: "left", whiteSpace: "nowrap" };
+            const renderRow = (item) => {
+              const org = organizers[item.organizerId];
+              return (
+                <tr key={item.id} style={{ borderBottom: `1px solid ${COLORS.grayLight}` }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#f9fafb"}
+                  onMouseLeave={e => e.currentTarget.style.background = ""}>
+                  <td style={{ padding: "12px 8px" }}>
+                    <input type="checkbox" checked={selected.has(item.id)}
+                      onChange={() => toggleSelect(item.id)} onClick={e => e.stopPropagation()}
+                      style={{ cursor: "pointer" }} />
+                  </td>
+                  <td style={{ padding: "12px" }}><TipoBadge tipo={item.tipo} /></td>
+                  <td style={{ padding: "12px", minWidth: 200 }}>
+                    <div style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 700, color: COLORS.dark }}>{item.nomeEvento}</div>
+                    <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>{item.cidadeEvento}</div>
+                  </td>
+                  <td style={{ padding: "12px" }}>
+                    <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.dark }}>{org?.name || item.organizerId}</div>
+                    {org?.organization && <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>{org.organization}</div>}
+                  </td>
+                  <td style={{ padding: "12px", fontFamily: FONTS.body, fontSize: 13, color: COLORS.grayDark, whiteSpace: "nowrap" }}>{fmt(item.dataEvento)}</td>
+                  <td style={{ padding: "12px" }}>
+                    <StatusBadge status={item.status} />
+                    {item.pendenciaRespondidaEm && item.status === "enviada" && (
+                      <div style={{ marginTop: 4, fontSize: 10, fontFamily: FONTS.heading, fontWeight: 700, color: "#d97706", background: "#fffbeb", padding: "2px 8px", borderRadius: 10, display: "inline-block" }}>
+                        Pendencia respondida
+                      </div>
+                    )}
+                  </td>
+                  <td style={{ padding: "12px", whiteSpace: "nowrap" }}>
+                    {item.protocoloFMA ? (
+                      <span style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 800,
+                        color: "#15803d", background: "#f0fdf4", padding: "3px 8px",
+                        borderRadius: 6, border: "1px solid #86efac" }}>
+                        {item.protocoloFMA}
+                      </span>
+                    ) : (
+                      <span style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray }}>—</span>
+                    )}
+                  </td>
+                  <td style={{ padding: "12px", fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>{item.responsavelFMA || "—"}</td>
+                  <td style={{ padding: "12px", fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, whiteSpace: "nowrap" }}>{fmt(item.enviadoEm)}</td>
+                  <td style={{ padding: "12px" }}>
+                    <button onClick={() => navigate(`/admin/solicitacoes/${item.id}`)}
+                      style={{ padding: "7px 14px", borderRadius: 6, background: COLORS.primary, color: "#fff", border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>
+                      Analisar →
+                    </button>
+                  </td>
+                </tr>
+              );
+            };
+            const renderTable = (rows, sectionLabel, sectionColor) => {
+              if (!rows.length) return null;
+              return (
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                    <div style={{ width: 4, height: 20, borderRadius: 2, background: sectionColor }} />
+                    <span style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: sectionColor }}>{sectionLabel}</span>
+                    <span style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>({rows.length})</span>
+                  </div>
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr style={{ borderBottom: `2px solid ${COLORS.grayLight}` }}>
+                          <th style={{ padding: "10px 8px", width: 32 }}>
+                            <input type="checkbox" checked={rows.every(i => selected.has(i.id))} onChange={() => {
+                              const ids = rows.map(i => i.id);
+                              setSelected(prev => { const n = new Set(prev); const allSel = ids.every(id => n.has(id)); ids.forEach(id => allSel ? n.delete(id) : n.add(id)); return n; });
+                            }} style={{ cursor: "pointer" }} />
+                          </th>
+                          {["Tipo", "Evento", "Organizador", "Data Evento", "Status", "Protocolo", "Responsável FMA", "Enviado em", ""].map(h => (
+                            <th key={h} style={thStyle}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>{rows.map(renderRow)}</tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            };
+            const emAnalise = filtered.filter(i => i.status === "em_analise");
+            const pendencias = filtered.filter(i => i.status === "pendencia");
+            const demais = filtered.filter(i => i.status !== "pendencia" && i.status !== "em_analise");
+            return (
+              <div>
+                {renderTable(emAnalise, "Em analise", "#0066cc")}
+                {renderTable(pendencias, "Pendencias", "#d97706")}
+                {renderTable(demais, "Demais", COLORS.gray)}
+                <div style={{ padding: "12px 0 0", fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>
+                  {filtered.length} solicitacao(oes) exibida(s) de {items.length} total
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </div>
     </AdminLayout>
