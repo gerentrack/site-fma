@@ -2,7 +2,7 @@
  * Validação de CPF e CNPJ — algoritmo oficial dos dígitos verificadores.
  * Também inclui checagem de duplicidade no Firestore.
  */
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 
 // ── Validação matemática ─────────────────────────────────────────────────────
