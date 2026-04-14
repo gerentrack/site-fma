@@ -32,7 +32,7 @@ import { uploadFile, deleteFile, deleteFolder } from "../../services/storageServ
 import { normalizarCamposTecnicos, totalEstimativaInscritos, modalidadesLabel } from "../../utils/permitDefaults";
 import { useConfirm } from "../../components/ui/ConfirmModal";
 import PdfModal, { usePdfModal } from "../../components/ui/PdfModal";
-import { calcularTaxaTotal, formatarMoeda, TABELA_PADRAO, TABELA_ARBITRAGEM, PRAZOS } from "../../utils/taxaCalculator";
+import { calcularTaxaTotal, formatarMoeda, TABELA_PADRAO, PRAZOS } from "../../utils/taxaCalculator";
 import { reservarNumeroRecibo, formatarNumeroRecibo, getProximoNumeroRecibo, sincronizarContador } from "../../utils/reciboCounter";
 import { gerarReciboPdf } from "../../services/reciboPdfService";
 import { notificarStatusSolicitacao, notificarPagamentoConfirmado, notificarCobrancaPagamento, notificarArquivoFmaEnviado, notificarPermitGerado, notificarResultadoStatus } from "../../services/emailService";
@@ -2537,34 +2537,6 @@ function AbaTaxas({ sol, organizer, onSaved, flash, card, lbl, val, inp }) {
       {/* Bloco Pagamentos e Recibos */}
       <BlocoPagamentos sol={sol} organizer={organizer} taxas={taxas} recalc={recalc} onSaved={onSaved} flash={flash} card={card} inp={inp} />
 
-      {/* Bloco Arbitragem (informativo) */}
-      <div style={card}>
-        <h3 style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, margin: "0 0 4px" }}>
-          Arbitragem — Referencia (Art. 6)
-        </h3>
-        <p style={{ fontSize: 12, color: COLORS.gray, margin: "0 0 12px" }}>
-          Custeio integral do organizador (Art. 8), acrescido de transporte, hospedagem e alimentacao.
-        </p>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.grayDark, marginBottom: 6 }}>Corridas de Rua (ate 6h)</div>
-            {TABELA_ARBITRAGEM.corridaDeRua6h.map((r, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 2 }}>
-                <span>{r.funcao}</span><span style={{ fontWeight: 600 }}>{formatarMoeda(r.diaria)}</span>
-              </div>
-            ))}
-          </div>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.grayDark, marginBottom: 6 }}>Corridas de Rua (ate 12h)</div>
-            {TABELA_ARBITRAGEM.corridaDeRua12h.map((r, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 2 }}>
-                <span>{r.funcao}</span><span style={{ fontWeight: 600 }}>{formatarMoeda(r.diaria)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
     </>
   );
 }
