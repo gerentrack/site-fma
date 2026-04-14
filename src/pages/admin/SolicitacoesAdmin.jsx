@@ -31,6 +31,7 @@ import {
 import { uploadFile, deleteFile, deleteFolder } from "../../services/storageService";
 import { normalizarCamposTecnicos, totalEstimativaInscritos, modalidadesLabel } from "../../utils/permitDefaults";
 import { useConfirm } from "../../components/ui/ConfirmModal";
+import PdfModal, { usePdfModal } from "../../components/ui/PdfModal";
 import { calcularTaxaTotal, formatarMoeda, TABELA_PADRAO, TABELA_ARBITRAGEM, PRAZOS } from "../../utils/taxaCalculator";
 import { reservarNumeroRecibo, formatarNumeroRecibo } from "../../utils/reciboCounter";
 import { gerarReciboPdf } from "../../services/reciboPdfService";
@@ -357,6 +358,7 @@ export function SolicitacaoEditor() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const { confirm, ConfirmDialog } = useConfirm();
+  const { pdfModal, openPdf, closePdf } = usePdfModal();
 
   const [sol, setSol] = useState(null);
   const [organizer, setOrganizer] = useState(null);
@@ -856,6 +858,7 @@ export function SolicitacaoEditor() {
   return (
     <AdminLayout>
       {ConfirmDialog}
+      <PdfModal url={pdfModal.url} title={pdfModal.title} onClose={closePdf} />
       <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
       <div style={{ padding: "32px 32px 60px", maxWidth: 980, margin: "0 auto" }}>
 
@@ -956,21 +959,73 @@ export function SolicitacaoEditor() {
                   <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.dark, margin: "0 0 14px", paddingBottom: 10, borderBottom: `1px solid ${COLORS.grayLight}` }}>
                     Taxa e Pagamento
                   </h3>
+
+                  {/* Tabela de modalidades */}
+                  {taxas.modalidades?.length > 0 && (
+                    <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 14, fontSize: 13, fontFamily: FONTS.body }}>
+                      <thead>
+                        <tr style={{ borderBottom: `1.5px solid ${COLORS.grayLight}` }}>
+                          <th style={{ textAlign: "left", padding: "6px 8px", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, fontFamily: FONTS.heading }}>Modalidade</th>
+                          <th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, fontFamily: FONTS.heading }}>Inscritos</th>
+                          <th style={{ textAlign: "right", padding: "6px 8px", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, fontFamily: FONTS.heading }}>Valor</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {taxas.modalidades.map((m, i) => (
+                          <tr key={i} style={{ borderBottom: `1px solid ${COLORS.grayLight}` }}>
+                            <td style={{ padding: "8px" }}>{m.nome || m.modalidade || `Modalidade ${i + 1}`}</td>
+                            <td style={{ padding: "8px", textAlign: "right" }}>{m.inscritos || "—"}</td>
+                            <td style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}>{formatarMoeda(m.valor || 0)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+
+                  {/* Totais */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 14, fontSize: 13, fontFamily: FONTS.body }}>
+                    {taxas.subtotal > 0 && taxas.subtotal !== taxas.total && (
+                      <div style={{ display: "flex", justifyContent: "space-between", color: COLORS.gray }}>
+                        <span>Subtotal</span><span>{formatarMoeda(taxas.subtotal)}</span>
+                      </div>
+                    )}
+                    {taxas.urgencia > 0 && (
+                      <div style={{ display: "flex", justifyContent: "space-between", color: "#d97706" }}>
+                        <span>Taxa de urgencia</span><span>+{formatarMoeda(taxas.urgencia)}</span>
+                      </div>
+                    )}
+                    {taxas.descontoValor > 0 && (
+                      <div style={{ display: "flex", justifyContent: "space-between", color: "#15803d" }}>
+                        <span>Desconto{taxas.descontoDescricao ? ` (${taxas.descontoDescricao})` : ""}</span><span>-{formatarMoeda(taxas.descontoValor)}</span>
+                      </div>
+                    )}
+                    <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: 15, color: COLORS.dark, borderTop: `1.5px solid ${COLORS.grayLight}`, paddingTop: 8 }}>
+                      <span>Total</span><span style={{ color: cor }}>{formatarMoeda(taxas.total)}</span>
+                    </div>
+                  </div>
+
+                  {/* Status + pagador */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
-                    {lbl("Valor da taxa")}{val(formatarMoeda(taxas.total))}
                     {lbl("Status pagamento")}
                     <div style={{ fontFamily: FONTS.body, fontSize: 14, color: cor, fontWeight: 700, marginBottom: 12 }}>
                       {pagStatusLabels[pag.status] || pag.status || "—"}
                     </div>
-                    {pag.pagadorTerceiro && <>{lbl("Pagador (terceiro)")}{val(pag.pagadorNome)}</>}
+                    {pag.pagadorTerceiro && (
+                      <>
+                        {lbl("Pagador (terceiro)")}{val(pag.pagadorNome)}
+                        {lbl("CPF/CNPJ terceiro")}{val(pag.pagadorCpfCnpj)}
+                      </>
+                    )}
                   </div>
+
+                  {/* Comprovante */}
                   {comprovanteArq && (
                     <div style={{ marginTop: 8 }}>
                       {lbl("Comprovante")}
-                      <a href={comprovanteArq.url || comprovanteArq.dataUrl} target="_blank" rel="noreferrer"
-                        style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 6, background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, textDecoration: "none" }}>
+                      <button onClick={() => openPdf(comprovanteArq.url || comprovanteArq.dataUrl, comprovanteArq.nome || "Comprovante de pagamento")}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 6, background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                         {comprovanteArq.nome || "Comprovante"} — Ver arquivo
-                      </a>
+                      </button>
                     </div>
                   )}
                   {!comprovanteArq && pag.status === "pendente" && (
