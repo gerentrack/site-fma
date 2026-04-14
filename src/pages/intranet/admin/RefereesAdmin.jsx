@@ -519,14 +519,20 @@ export function IntranetRefereeEditor() {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
+  const gerarSenhaTemp = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+    let s = "";
+    for (let i = 0; i < 8; i++) s += chars[Math.floor(Math.random() * chars.length)];
+    return s;
+  };
+
   const save = async () => {
-    if (!form.name || !form.email) { setError("Nome e e-mail são obrigatórios."); return; }
-    if (isNew && !form.password) { setError("Senha temporária é obrigatória."); return; }
-    if (isNew && form.password.length < 6) { setError("Senha deve ter no mínimo 6 caracteres."); return; }
+    if (!form.name || !form.email) { setError("Nome e e-mail sao obrigatorios."); return; }
     setSaving(true); setError("");
 
+    const senhaTemp = isNew ? gerarSenhaTemp() : null;
     const payload = isNew
-      ? { ...form, mustChangePassword: true, profileComplete: false }
+      ? { ...form, password: senhaTemp, mustChangePassword: true, profileComplete: false }
       : form;
 
     const r = isNew ? await RefereesService.create(payload) : await RefereesService.update(id, payload);
@@ -536,7 +542,7 @@ export function IntranetRefereeEditor() {
       notificarArbitroCadastro({
         arbitroEmail: form.email,
         arbitroNome: form.name,
-        senhaTemporaria: form.password,
+        senhaTemporaria: senhaTemp,
       }).catch(() => {});
     }
     navigate("/intranet/admin/arbitros");
@@ -582,10 +588,11 @@ export function IntranetRefereeEditor() {
                   {label("E-mail (login)", true)}
                   <input type="email" value={form.email} onChange={e => set("email", e.target.value)} placeholder="email@exemplo.com" style={inp()} />
                 </div>
-                <div>
-                  {label("Senha temporária", true)}
-                  <input type="password" value={form.password} onChange={e => set("password", e.target.value)} placeholder="Mínimo 6 caracteres" style={inp()} />
-                </div>
+                {isNew && (
+                  <div style={{ padding: "10px 14px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0", gridColumn: "1 / -1" }}>
+                    <span style={{ fontFamily: FONTS.body, fontSize: 12, color: "#15803d" }}>Uma senha temporaria sera gerada automaticamente e enviada por e-mail ao arbitro.</span>
+                  </div>
+                )}
                 <div>
                   {label("Nível")}
                   <select value={form.nivel} onChange={e => set("nivel", e.target.value)} style={sel()}>

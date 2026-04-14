@@ -249,15 +249,16 @@ function ImportModal({ onClose, existingEmails }) {
     for (let i = 0; i < toImport.length; i++) {
       const r = toImport[i];
       try {
+        const senhaAuto = (() => { const c = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789"; let s = ""; for (let j = 0; j < 8; j++) s += c[Math.floor(Math.random() * c.length)]; return s; })();
         const result = await refereesAPI.create({
-          name: r.nome, email: r.email, password: r.senha,
+          name: r.nome, email: r.email, password: senhaAuto,
           nivel: r.nivel, role: r.role, status: "ativo",
           mustChangePassword: true, profileComplete: false,
         });
         if (result.error) {
           res.push({ ...r, result: "erro", msg: result.error });
         } else {
-          notificarArbitroCadastro({ arbitroEmail: r.email, arbitroNome: r.nome, senhaTemporaria: r.senha }).catch(() => {});
+          notificarArbitroCadastro({ arbitroEmail: r.email, arbitroNome: r.nome, senhaTemporaria: senhaAuto }).catch(() => {});
           res.push({ ...r, result: "criado", msg: "Conta criada e e-mail enviado" });
         }
       } catch (err) { res.push({ ...r, result: "erro", msg: err.message }); }
@@ -440,15 +441,22 @@ function CreateRefereeForm({ onClose, onCreated }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
+  const gerarSenhaTemp = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+    let s = "";
+    for (let i = 0; i < 8; i++) s += chars[Math.floor(Math.random() * chars.length)];
+    return s;
+  };
+
   const handleSubmit = async () => {
-    if (!form.name.trim()) { setError("Nome é obrigatório."); return; }
-    if (!form.email.trim()) { setError("E-mail é obrigatório."); return; }
-    if (!form.password) { setError("Senha temporária é obrigatória."); return; }
-    if (form.password.length < 6) { setError("Senha deve ter no mínimo 6 caracteres."); return; }
+    if (!form.name.trim()) { setError("Nome e obrigatorio."); return; }
+    if (!form.email.trim()) { setError("E-mail e obrigatorio."); return; }
     setSaving(true); setError("");
 
+    const senhaTemp = gerarSenhaTemp();
     const r = await refereesAPI.create({
       ...form,
+      password: senhaTemp,
       status: "ativo",
       mustChangePassword: true,
       profileComplete: false,
@@ -483,9 +491,9 @@ function CreateRefereeForm({ onClose, onCreated }) {
         <FormField label="E-mail (login)" required>
           <TextInput value={form.email} onChange={v => set("email", v)} placeholder="email@exemplo.com" type="email" />
         </FormField>
-        <FormField label="Senha temporária" required>
-          <TextInput value={form.password} onChange={v => set("password", v)} placeholder="Mínimo 6 caracteres" type="password" />
-        </FormField>
+        <div style={{ padding: "10px 14px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0" }}>
+          <span style={{ fontFamily: FONTS.body, fontSize: 12, color: "#15803d" }}>Uma senha temporaria sera gerada automaticamente e enviada por e-mail ao arbitro.</span>
+        </div>
         <FormField label="Nível">
           <SelectInput value={form.nivel} onChange={v => set("nivel", v)} placeholder="Selecione..." options={REFEREE_CATEGORIES.map(c => ({ value: c.value, label: c.label }))} />
         </FormField>
