@@ -2587,7 +2587,9 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
   }, [sol.id]);
 
   const totalPago = pagamentos.filter(p => p.status === "confirmado").reduce((a, p) => a + (p.valor || 0), 0);
-  const taxaTotal = taxas.total || recalc.total || 0;
+  const taxaPermit = taxas.total || recalc.total || 0;
+  const taxaArb = taxas.taxaArbitragem?.valor || 0;
+  const taxaTotal = taxaPermit + taxaArb;
   const saldo = taxaTotal - totalPago;
 
   const handleRegistrarPagamento = async () => {
@@ -2887,6 +2889,13 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
       )}
 
       {/* Resumo financeiro */}
+      {taxaArb > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 10, fontSize: 12, fontFamily: FONTS.body, color: COLORS.grayDark }}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span>Taxa de {sol.tipo === "chancela" ? "Chancela" : "Permit"}</span><span>{formatarMoeda(taxaPermit)}</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}><span>Taxa de Arbitragem</span><span>{formatarMoeda(taxaArb)}</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, borderTop: `1px solid ${COLORS.grayLight}`, paddingTop: 4 }}><span>Total</span><span>{formatarMoeda(taxaTotal)}</span></div>
+        </div>
+      )}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
         <div style={{ padding: "10px 14px", background: COLORS.offWhite, borderRadius: 8, textAlign: "center" }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: COLORS.gray, textTransform: "uppercase" }}>Taxa total</div>
