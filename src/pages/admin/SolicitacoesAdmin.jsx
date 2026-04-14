@@ -1224,6 +1224,10 @@ export function SolicitacaoEditor() {
               ).sort((a, b) => new Date(a.criadoEm) - new Date(b.criadoEm));
               if (interacoes.length === 0) return null;
               const docsOrganizador = arquivos.filter(a => a.enviadoPor === "organizador" && (a.url || a.dataUrl));
+              const docsFma = arquivos.filter(a => a.enviadoPor === "fma" && (a.url || a.dataUrl));
+              const parecerDocs = sol.parecerDocs || [];
+              const parecerPdfLegacy = sol.parecerPdfUrl ? [{ nome: "Parecer FMA", url: sol.parecerPdfUrl }] : [];
+              const todosDocsParecer = parecerDocs.length ? parecerDocs : parecerPdfLegacy;
               return (
                 <div style={{ marginBottom: 20 }}>
                   <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.5, color: COLORS.gray, display: "block", marginBottom: 10 }}>
@@ -1248,12 +1252,29 @@ export function SolicitacaoEditor() {
                           <div style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.dark, lineHeight: 1.5, whiteSpace: "pre-line" }}>
                             {mov.descricao}
                           </div>
-                          {/* Documentos anexados na resposta do organizador */}
-                          {isOrg && mov.tipoEvento === "comentario" && docsOrganizador.length > 0 && (
+                          {/* Documentos anexados — organizador */}
+                          {isOrg && docsOrganizador.length > 0 && (
                             <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
                               {docsOrganizador.map(arq => (
                                 <button key={arq.id} onClick={() => openPdf(arq.url || arq.dataUrl, arq.descricao || arq.nome || "Documento")}
                                   style={{ padding: "4px 10px", borderRadius: 6, background: "#fff", border: `1px solid ${COLORS.grayLight}`, fontSize: 11, color: COLORS.primary, fontWeight: 600, cursor: "pointer", fontFamily: FONTS.body }}>
+                                  {arq.descricao || arq.nome}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {/* Documentos anexados — FMA (parecer + arquivos enviados) */}
+                          {isFma && (todosDocsParecer.length > 0 || docsFma.length > 0) && (
+                            <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                              {todosDocsParecer.map((doc, j) => (
+                                <button key={`p${j}`} onClick={() => openPdf(doc.url, doc.nome || `Documento ${j + 1}`)}
+                                  style={{ padding: "4px 10px", borderRadius: 6, background: "#eff6ff", border: `1px solid #93c5fd`, fontSize: 11, color: "#0066cc", fontWeight: 600, cursor: "pointer", fontFamily: FONTS.body }}>
+                                  {doc.nome || `Documento ${j + 1}`}
+                                </button>
+                              ))}
+                              {docsFma.map(arq => (
+                                <button key={arq.id} onClick={() => openPdf(arq.url || arq.dataUrl, arq.descricao || arq.nome || "Documento")}
+                                  style={{ padding: "4px 10px", borderRadius: 6, background: "#eff6ff", border: `1px solid #93c5fd`, fontSize: 11, color: "#0066cc", fontWeight: 600, cursor: "pointer", fontFamily: FONTS.body }}>
                                   {arq.descricao || arq.nome}
                                 </button>
                               ))}
