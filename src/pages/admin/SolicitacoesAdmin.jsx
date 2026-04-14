@@ -370,7 +370,7 @@ export function SolicitacaoEditor() {
   // Formulário de análise FMA — protocoloFMA REMOVIDO: gerado automaticamente
   const [analise, setAnalise] = useState({
     responsavelFMA: "", parecerFMA: "", observacaoFMA: "",
-    parecerPdfUrl: "", parecerPdfPath: "",
+    parecerPdfUrl: "", parecerPdfPath: "", parecerDocs: [],
   });
   const [novoStatus, setNovoStatus] = useState("");
   const [iaLoading, setIaLoading] = useState(false);
@@ -399,12 +399,15 @@ export function SolicitacaoEditor() {
     if (r.error) { navigate("/admin/solicitacoes"); return; }
     setSol(r.data);
     setNovoStatus(r.data.status);
+    // Migrar campo único legado para array
+    const legacyDocs = [];
+    if (r.data.parecerPdfUrl) legacyDocs.push({ nome: "Parecer FMA", url: r.data.parecerPdfUrl, path: r.data.parecerPdfPath || "" });
     setAnalise({
       responsavelFMA: r.data.responsavelFMA || "",
       parecerFMA: r.data.parecerFMA || "",
       observacaoFMA: r.data.observacaoFMA || "",
-      parecerPdfUrl: r.data.parecerPdfUrl || "",
-      parecerPdfPath: r.data.parecerPdfPath || "",
+      parecerPdfUrl: "", parecerPdfPath: "",
+      parecerDocs: r.data.parecerDocs?.length ? r.data.parecerDocs : legacyDocs,
     });
     const [rOrg, rArq, rMov] = await Promise.all([
       OrganizersService.get(r.data.organizerId),
@@ -1207,36 +1210,47 @@ export function SolicitacaoEditor() {
                 rows={5} placeholder="Descreva o parecer técnico, documentos necessários, condicionantes da aprovação, motivo do indeferimento, etc."
                 style={{ ...inp(), resize: "vertical", lineHeight: 1.5 }} />
 
-              {/* Upload de PDF do parecer */}
-              <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray }}>
-                  Documento PDF (opcional)
-                </label>
-                {analise.parecerPdfUrl ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <a href={analise.parecerPdfUrl} target="_blank" rel="noreferrer"
-                      style={{ fontSize: 12, color: COLORS.primary, fontFamily: FONTS.body }}>
-                      Ver PDF anexado
-                    </a>
-                    <button type="button" onClick={async () => {
-                      if (analise.parecerPdfPath) await deleteFile(analise.parecerPdfPath).catch(() => {});
-                      setAnalise(a => ({ ...a, parecerPdfUrl: "", parecerPdfPath: "" }));
-                    }} style={{ padding: "3px 8px", borderRadius: 5, border: "1px solid #fca5a5", background: "#fff5f5", color: "#dc2626", cursor: "pointer", fontSize: 10, fontWeight: 600 }}>
-                      Remover
-                    </button>
-                  </div>
-                ) : (
-                  <input type="file" accept=".pdf" onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
+              {/* Upload de documentos do parecer (múltiplos) */}
+              <div style={{ marginTop: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                  <label style={{ fontFamily: FONTS.heading, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray }}>
+                    Documentos PDF (opcional)
+                  </label>
+                  <input type="file" accept=".pdf" multiple onChange={async (e) => {
                     const sanitize = (s) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9\s-]/g, "").trim().replace(/\s+/g, "_").slice(0, 60);
                     const folder = sol.storagePath || `solicitacoes/${new Date().getFullYear()}`;
-                    const nomeArq = `Parecer_FMA_${sanitize(sol.nomeEvento)}.pdf`;
-                    const renamedFile = new File([file], nomeArq, { type: "application/pdf" });
-                    const r = await uploadFile(renamedFile, folder);
-                    if (r.url) setAnalise(a => ({ ...a, parecerPdfUrl: r.url, parecerPdfPath: r.path }));
+                    const novos = [];
+                    for (const file of e.target.files) {
+                      const sugestao = file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
+                      const nomeArq = `${sanitize(sugestao)}_${sanitize(sol.nomeEvento)}.pdf`;
+                      const renamedFile = new File([file], nomeArq, { type: "application/pdf" });
+                      const r = await uploadFile(renamedFile, folder);
+                      if (r.url) novos.push({ nome: sugestao, url: r.url, path: r.path });
+                    }
+                    if (novos.length) setAnalise(a => ({ ...a, parecerDocs: [...(a.parecerDocs || []), ...novos] }));
                     e.target.value = "";
                   }} style={{ fontSize: 12 }} />
+                </div>
+                {(analise.parecerDocs || []).length > 0 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {analise.parecerDocs.map((doc, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0" }}>
+                        <input value={doc.nome} onChange={e => {
+                          const updated = [...analise.parecerDocs];
+                          updated[i] = { ...updated[i], nome: e.target.value };
+                          setAnalise(a => ({ ...a, parecerDocs: updated }));
+                        }} style={{ flex: 1, padding: "4px 8px", borderRadius: 5, border: `1px solid ${COLORS.grayLight}`, fontFamily: FONTS.body, fontSize: 12, outline: "none" }}
+                          placeholder="Nome do documento" />
+                        <a href={doc.url} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: COLORS.primary, fontFamily: FONTS.body, whiteSpace: "nowrap" }}>Ver</a>
+                        <button type="button" onClick={async () => {
+                          if (doc.path) await deleteFile(doc.path).catch(() => {});
+                          setAnalise(a => ({ ...a, parecerDocs: a.parecerDocs.filter((_, idx) => idx !== i) }));
+                        }} style={{ padding: "3px 8px", borderRadius: 5, border: "1px solid #fca5a5", background: "#fff5f5", color: "#dc2626", cursor: "pointer", fontSize: 10, fontWeight: 600 }}>
+                          Remover
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>

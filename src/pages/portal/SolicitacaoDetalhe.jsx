@@ -713,21 +713,30 @@ export default function SolicitacaoDetalhe() {
             )}
           </div>
           <h1 style={{ fontFamily:FONTS.heading, fontSize:"clamp(1.3rem,3vw,1.9rem)", fontWeight:900, color:COLORS.dark, margin:"0 0 8px", textTransform:"uppercase", lineHeight:1.2 }}>{sol.nomeEvento}</h1>
-          <div style={{ fontFamily:FONTS.body, fontSize:13, color:COLORS.gray, marginBottom:(sol.parecerFMA||sol.parecerPdfUrl)?16:0 }}>
+          <div style={{ fontFamily:FONTS.body, fontSize:13, color:COLORS.gray, marginBottom:(sol.parecerFMA||sol.parecerPdfUrl||sol.parecerDocs?.length)?16:0 }}>
             {sol.cidadeEvento} · {sol.dataEvento?new Date(sol.dataEvento+"T12:00:00").toLocaleDateString("pt-BR"):"—"} · Criado em {fmt(sol.criadoEm)}
           </div>
-          {(sol.parecerFMA || sol.parecerPdfUrl) && (
+          {(sol.parecerFMA || sol.parecerPdfUrl || sol.parecerDocs?.length > 0) && (
             <div style={{ background:`${st.color}08`, borderLeft:`3px solid ${st.color}`, borderRadius:"0 8px 8px 0", padding:"12px 16px" }}>
-              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
-                <div style={{ fontFamily:FONTS.heading, fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:1, color:st.color }}>Manifestacao da FMA</div>
-                {sol.parecerPdfUrl && (
-                  <button onClick={() => openPdf(sol.parecerPdfUrl, "Parecer FMA — " + (sol.nomeEvento || ""))}
-                    style={{ padding:"5px 12px", borderRadius:6, border:`1.5px solid ${st.color}`, background:"#fff", color:st.color, cursor:"pointer", fontFamily:FONTS.heading, fontSize:11, fontWeight:700, display:"flex", alignItems:"center", gap:5 }}>
-                    Ver documento
-                  </button>
-                )}
-              </div>
-              {sol.parecerFMA && <div style={{ fontFamily:FONTS.body, fontSize:13, color:COLORS.dark, lineHeight:1.6, whiteSpace:"pre-line" }}>{sol.parecerFMA}</div>}
+              <div style={{ fontFamily:FONTS.heading, fontSize:11, fontWeight:800, textTransform:"uppercase", letterSpacing:1, color:st.color, marginBottom:4 }}>Manifestacao da FMA</div>
+              {sol.parecerFMA && <div style={{ fontFamily:FONTS.body, fontSize:13, color:COLORS.dark, lineHeight:1.6, whiteSpace:"pre-line", marginBottom:(sol.parecerDocs?.length||sol.parecerPdfUrl)?10:0 }}>{sol.parecerFMA}</div>}
+              {/* Documentos do parecer (múltiplos) */}
+              {(sol.parecerDocs?.length > 0 || sol.parecerPdfUrl) && (
+                <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                  {sol.parecerPdfUrl && !sol.parecerDocs?.length && (
+                    <button onClick={() => openPdf(sol.parecerPdfUrl, "Parecer FMA")}
+                      style={{ padding:"6px 14px", borderRadius:6, border:`1.5px solid ${st.color}`, background:"#fff", color:st.color, cursor:"pointer", fontFamily:FONTS.heading, fontSize:11, fontWeight:700 }}>
+                      Ver documento
+                    </button>
+                  )}
+                  {(sol.parecerDocs || []).map((doc, i) => (
+                    <button key={i} onClick={() => openPdf(doc.url, doc.nome || `Documento ${i + 1}`)}
+                      style={{ padding:"6px 14px", borderRadius:6, border:`1.5px solid ${st.color}`, background:"#fff", color:st.color, cursor:"pointer", fontFamily:FONTS.heading, fontSize:11, fontWeight:700 }}>
+                      {doc.nome || `Documento ${i + 1}`}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {/* Responder pendência */}
