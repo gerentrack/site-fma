@@ -10,6 +10,7 @@ import { useSessionTimeout } from "../../hooks/useSessionTimeout";
 import { useMobileDrawer } from "../../hooks/useMobileDrawer";
 import SessionWarning from "../../components/ui/SessionWarning";
 import { COLORS, FONTS } from "../../styles/colors";
+import Icon from "../../utils/icons";
 import { PORTAL_NAV } from "../../config/navigation";
 
 function NavLink({ item }) {
@@ -26,7 +27,7 @@ function NavLink({ item }) {
       borderLeft: active ? "3px solid #60a5fa" : "3px solid transparent",
       transition: "all 0.15s",
     }}>
-      {item.icon && <span style={{ fontSize: 15 }}>{item.icon}</span>}
+      {item.icon && <span style={{ fontSize: 15 }}><Icon name={item.icon} size={16} /></span>}
       {item.label}
     </Link>
   );
