@@ -2821,11 +2821,13 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
   const handleCobrar = async () => {
     setSaving(true);
     const valorCobrado = saldo > 0 ? saldo : taxaTotal;
-    const descArb = taxaArb > 0 ? ` (Permit: ${formatarMoeda(taxaPermit)}, Arbitragem: ${formatarMoeda(taxaArb)})` : "";
+    const partes = [`Permit: ${formatarMoeda(taxaPermit)}`];
+    if (taxaArb > 0) partes.push(`Arbitragem: ${formatarMoeda(taxaArb)}`);
+    if (totalPago > 0) partes.push(`Ja pago: ${formatarMoeda(totalPago)}`);
     await MovimentacoesService.registrar({
       solicitacaoId: sol.id, tipoEvento: "pagamento_cobrado",
       statusAnterior: sol.status, statusNovo: sol.status,
-      descricao: `Cobranca de pagamento: ${formatarMoeda(valorCobrado)}${descArb}. Por favor, anexe o comprovante.`,
+      descricao: `Cobranca de pagamento: ${formatarMoeda(valorCobrado)} (${partes.join(", ")}). Por favor, anexe o comprovante.`,
       autor: "fma", autorNome: "Equipe FMA", autorId: "admin", visivel: true,
     });
     if (sol.organizadorEmail || sol.organizerEmail || organizer?.email) {
@@ -2834,12 +2836,13 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
         organizadorNome:  sol.organizadorNome  || sol.organizerName || organizer?.name || "Organizador",
         protocolo:        sol.protocoloFMA || sol.id,
         evento:           sol.nomeEvento || sol.titulo || sol.title || "Evento",
-        valor:            valorCobrado,
         solicitacaoId:    sol.id,
         tipo:             sol.tipo || "permit",
-        taxaPermit:       taxaPermit,
+        taxaPermit,
         taxaArbitragem:   taxaArb,
         descricaoArbitragem: taxas.taxaArbitragem?.descricao || "",
+        totalPago,
+        saldo:            valorCobrado,
       }).catch(() => {});
     }
     flash("Cobranca registrada e visivel ao organizador.");

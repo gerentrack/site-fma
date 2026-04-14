@@ -526,16 +526,30 @@ export async function notificarPagamentoConfirmado({ organizadorEmail, organizad
   return enviarEmail({ to: organizadorEmail, subject: `[FMA] Pagamento confirmado — ${evento}`, html });
 }
 
-export async function notificarCobrancaPagamento({ organizadorEmail, organizadorNome, protocolo, evento, valor, solicitacaoId = "", tipo = "permit", taxaPermit = 0, taxaArbitragem = 0, descricaoArbitragem = "" }) {
+export async function notificarCobrancaPagamento({ organizadorEmail, organizadorNome, protocolo, evento, solicitacaoId = "", tipo = "permit", taxaPermit = 0, taxaArbitragem = 0, descricaoArbitragem = "", totalPago = 0, saldo = 0 }) {
   const link = solicitacaoId ? `${PORTAL_LINK}/solicitacoes/${solicitacaoId}` : PORTAL_LINK;
   const fmt = (v) => `R$ ${(v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
   const temArbitragem = taxaArbitragem > 0;
-  const discriminacao = temArbitragem ? `
-    <table style="width:100%;border-collapse:collapse;margin:16px 0 4px;">
-      <tr><td style="padding:8px 14px;font-weight:700;border:1px solid #eee;">Taxa de ${tipo === "chancela" ? "Chancela" : "Permit"}</td><td style="padding:8px 14px;text-align:right;border:1px solid #eee;">${fmt(taxaPermit)}</td></tr>
-      <tr><td style="padding:8px 14px;font-weight:700;border:1px solid #eee;">Taxa de Arbitragem</td><td style="padding:8px 14px;text-align:right;border:1px solid #eee;">${fmt(taxaArbitragem)}</td></tr>
-      ${descricaoArbitragem ? `<tr><td colspan="2" style="padding:6px 14px;font-size:12px;color:#666;border:1px solid #eee;">${descricaoArbitragem}</td></tr>` : ""}
-    </table>` : "";
+  const temPagoParcial = totalPago > 0;
+  const totalGeral = taxaPermit + taxaArbitragem;
+  const valorPendente = saldo > 0 ? saldo : totalGeral;
+  const tipoLabel = tipo === "chancela" ? "Chancela" : "Permit";
+
+  // Discriminação — só mostra quando tem arbitragem OU pagamento parcial
+  let discriminacao = "";
+  if (temArbitragem || temPagoParcial) {
+    let rows = `<tr><td style="padding:8px 14px;border:1px solid #eee;">Taxa de ${tipoLabel}</td><td style="padding:8px 14px;text-align:right;border:1px solid #eee;">${fmt(taxaPermit)}</td></tr>`;
+    if (temArbitragem) {
+      rows += `<tr><td style="padding:8px 14px;border:1px solid #eee;">Taxa de Arbitragem</td><td style="padding:8px 14px;text-align:right;border:1px solid #eee;">${fmt(taxaArbitragem)}</td></tr>`;
+      if (descricaoArbitragem) rows += `<tr><td colspan="2" style="padding:6px 14px;font-size:12px;color:#666;border:1px solid #eee;">${descricaoArbitragem}</td></tr>`;
+    }
+    rows += `<tr style="background:#f8f8f8;"><td style="padding:8px 14px;font-weight:700;border:1px solid #eee;">Total</td><td style="padding:8px 14px;text-align:right;font-weight:700;border:1px solid #eee;">${fmt(totalGeral)}</td></tr>`;
+    if (temPagoParcial) {
+      rows += `<tr><td style="padding:8px 14px;color:#15803d;border:1px solid #eee;">Ja pago</td><td style="padding:8px 14px;text-align:right;color:#15803d;border:1px solid #eee;">-${fmt(totalPago)}</td></tr>`;
+      rows += `<tr style="background:#fffbeb;"><td style="padding:8px 14px;font-weight:700;color:#d97706;border:1px solid #eee;">Saldo pendente</td><td style="padding:8px 14px;text-align:right;font-weight:700;font-size:16px;color:#d97706;border:1px solid #eee;">${fmt(valorPendente)}</td></tr>`;
+    }
+    discriminacao = `<table style="width:100%;border-collapse:collapse;margin:16px 0 8px;">${rows}</table>`;
+  }
 
   const html = templateBase(`
     <p>Ola, <strong>${organizadorNome}</strong>!</p>
@@ -543,7 +557,7 @@ export async function notificarCobrancaPagamento({ organizadorEmail, organizador
     <table style="width:100%;border-collapse:collapse;margin:20px 0;">
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Protocolo</td><td style="padding:10px 14px;border:1px solid #eee;">${protocolo || "—"}</td></tr>
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Evento</td><td style="padding:10px 14px;border:1px solid #eee;">${evento}</td></tr>
-      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Valor total</td><td style="padding:10px 14px;border:1px solid #eee;font-weight:700;font-size:16px;color:#d97706;">${fmt(valor)}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Valor pendente</td><td style="padding:10px 14px;border:1px solid #eee;font-weight:700;font-size:16px;color:#d97706;">${fmt(valorPendente)}</td></tr>
     </table>
     ${discriminacao}
     <p>Acesse o Portal para anexar o comprovante de pagamento.</p>
