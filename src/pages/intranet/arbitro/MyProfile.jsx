@@ -60,10 +60,12 @@ function maskContaDigito(v) {
 }
 const PREPS = new Set(["da", "de", "do", "dos", "das", "e"]);
 function capitalize(v) {
-  return (v || "").toLowerCase().replace(/(?:^|\s)\S/g, (m, i) => {
-    const word = (v || "").toLowerCase().slice(i).split(/\s/)[0];
-    return i === 0 || !PREPS.has(word) ? m.toUpperCase() : m;
-  });
+  if (!v) return "";
+  return v.toLowerCase().split(/\s+/).map((w, i) => {
+    if (!w) return w;
+    if (i > 0 && PREPS.has(w)) return w;
+    return w.charAt(0).toUpperCase() + w.slice(1);
+  }).join(" ");
 }
 function lowercase(v) { return (v || "").toLowerCase(); }
 
@@ -329,16 +331,26 @@ export default function MyProfile() {
 
         {/* Endereço */}
         <div style={card}>
-          {sectionTitle("Endereço")}
+          {sectionTitle("Endereco")}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            <div>{label("CEP")}<input value={data.cep || ""} onChange={e => handleCep(e.target.value)} placeholder="00000-000" style={inp} />{cepLoading && <span style={{ fontSize: 11, color: COLORS.gray }}>Buscando...</span>}</div>
+            <div>
+              {label("CEP")}<input value={data.cep || ""} onChange={e => handleCep(e.target.value)} placeholder="00000-000" style={inp} />
+              {cepLoading && <span style={{ fontSize: 11, color: COLORS.primary }}>Buscando endereco...</span>}
+              {!data.logradouro && !cepLoading && (data.cep || "").replace(/\D/g, "").length < 8 && (
+                <span style={{ fontSize: 11, color: COLORS.gray }}>Digite o CEP para preencher o endereco automaticamente.</span>
+              )}
+            </div>
             <div />
-            <div style={{ gridColumn: "1 / -1" }}>{label("Logradouro")}<input value={data.logradouro || ""} readOnly style={{ ...inp, background: "#f5f5f5", color: "#666" }} /></div>
-            <div>{label("Numero")}<input value={data.numero || ""} onChange={e => set("numero", e.target.value)} style={inp} /></div>
-            <div>{label("Complemento")}<input value={data.complemento || ""} onBlur={e => set("complemento", capitalize(e.target.value))} onChange={e => set("complemento", e.target.value)} style={inp} /></div>
-            <div>{label("Bairro")}<input value={data.bairro || ""} readOnly style={{ ...inp, background: "#f5f5f5", color: "#666" }} /></div>
-            <div>{label("Cidade")}<input value={data.city || ""} readOnly style={{ ...inp, background: "#f5f5f5", color: "#666" }} /></div>
-            <div>{label("UF")}<input value={data.state || ""} readOnly style={{ ...inp, background: "#f5f5f5", color: "#666" }} /></div>
+            {(data.logradouro || (data.cep || "").replace(/\D/g, "").length >= 8) && (
+              <>
+                <div style={{ gridColumn: "1 / -1" }}>{label("Logradouro")}<input value={data.logradouro || ""} readOnly style={{ ...inp, background: "#f5f5f5", color: "#666" }} /></div>
+                <div>{label("Numero")}<input value={data.numero || ""} onChange={e => set("numero", e.target.value)} style={inp} /></div>
+                <div>{label("Complemento")}<input value={data.complemento || ""} onBlur={e => set("complemento", capitalize(e.target.value))} onChange={e => set("complemento", e.target.value)} style={inp} /></div>
+                <div>{label("Bairro")}<input value={data.bairro || ""} readOnly style={{ ...inp, background: "#f5f5f5", color: "#666" }} /></div>
+                <div>{label("Cidade")}<input value={data.city || ""} readOnly style={{ ...inp, background: "#f5f5f5", color: "#666" }} /></div>
+                <div>{label("UF")}<input value={data.state || ""} readOnly style={{ ...inp, background: "#f5f5f5", color: "#666" }} /></div>
+              </>
+            )}
           </div>
         </div>
 
