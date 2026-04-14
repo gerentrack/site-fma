@@ -50,6 +50,7 @@ export default function IntranetLayout({ children, requireRole = null }) {
   const { isAuthenticated, loading, logout, name, role, canManage, mustChangePassword, profileComplete, emailVerified, refereeId } = useIntranet();
   const navigate = useNavigate();
   const location = useLocation();
+  const { open: drawerOpen, setOpen: setDrawerOpen, toggle: toggleDrawer } = useMobileDrawer();
   const [notifs, setNotifs] = useState([]);
   const [showNotifs, setShowNotifs] = useState(false);
   const [notifsVistaHash, setNotifsVistaHash] = useState("");
@@ -151,8 +152,6 @@ export default function IntranetLayout({ children, requireRole = null }) {
 
   const nav = canManage ? INTRANET_NAV_ADMIN : INTRANET_NAV_ARBITRO;
   const roleInfo = roleMap[role] || { label: role, color: COLORS.gray };
-
-  const { open: drawerOpen, setOpen: setDrawerOpen, toggle: toggleDrawer } = useMobileDrawer();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "#f4f4f4" }}>

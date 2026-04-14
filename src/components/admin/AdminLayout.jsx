@@ -23,6 +23,7 @@ export default function AdminLayout({ children, minLevel = "viewer", section = n
   const { isAuthenticated, loading, logout } = useAdmin();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { open, setOpen, toggle } = useMobileDrawer();
 
   const timeoutMinutes = TIMEOUT_BY_LEVEL[user?.level] || 120;
   const { warningSecondsLeft, dismiss } = useSessionTimeout({
@@ -49,8 +50,6 @@ export default function AdminLayout({ children, minLevel = "viewer", section = n
   if (user?.level === "editor" && section && !user.permissions?.includes(section)) {
     return <Navigate to="/admin" replace />;
   }
-
-  const { open, setOpen, toggle } = useMobileDrawer();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: COLORS.offWhite }}>

@@ -36,6 +36,7 @@ export default function PortalLayout({ children }) {
   const { isAuthenticated, loading, logout, organizerName, organizerOrg, emailVerified } = useOrganizer();
   const navigate = useNavigate();
   const location = useLocation();
+  const { open, setOpen, toggle } = useMobileDrawer();
 
   const { warningSecondsLeft, dismiss } = useSessionTimeout({
     timeoutMinutes: 10080, // 7 dias
@@ -60,8 +61,6 @@ export default function PortalLayout({ children }) {
       </div>
     );
   }
-
-  const { open, setOpen, toggle } = useMobileDrawer();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "#f1f5f9" }}>
