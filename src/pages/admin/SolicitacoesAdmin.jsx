@@ -30,6 +30,7 @@ import {
 } from "../../services/index";
 import { uploadFile, deleteFile, deleteFolder } from "../../services/storageService";
 import { normalizarCamposTecnicos, totalEstimativaInscritos, modalidadesLabel } from "../../utils/permitDefaults";
+import { useConfirm } from "../../components/ui/ConfirmModal";
 import { calcularTaxaTotal, formatarMoeda, TABELA_PADRAO, TABELA_ARBITRAGEM, PRAZOS } from "../../utils/taxaCalculator";
 import { reservarNumeroRecibo, formatarNumeroRecibo } from "../../utils/reciboCounter";
 import { gerarReciboPdf } from "../../services/reciboPdfService";
@@ -89,6 +90,7 @@ function TipoBadge({ tipo }) {
 // ── LISTA ─────────────────────────────────────────────────────────────────────
 export function SolicitacoesList() {
   const navigate = useNavigate();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [items, setItems] = useState([]);
   const [organizers, setOrganizers] = useState({});
   const [loading, setLoading] = useState(true);
@@ -137,7 +139,7 @@ export function SolicitacoesList() {
 
   const handleBulkDelete = async (ids) => {
     if (!ids.length) return;
-    if (!confirm(`Excluir ${ids.length} solicitação(ões) permanentemente?\nIsso inclui arquivos anexos e histórico de movimentações.`)) return;
+    if (!await confirm(`Excluir ${ids.length} solicitacao(oes) permanentemente?\nIsso inclui arquivos anexos e historico de movimentacoes.`, { danger: true, confirmLabel: "Excluir" })) return;
     setBulkDeleting(true);
     for (const id of ids) {
       // 1. Excluir arquivos anexos do Storage + Firestore
@@ -179,6 +181,7 @@ export function SolicitacoesList() {
 
   return (
     <AdminLayout>
+      {ConfirmDialog}
       <div style={{ padding: "32px 32px 60px" }}>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
@@ -359,6 +362,7 @@ export function SolicitacaoEditor() {
   const { id } = useParams();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const [sol, setSol] = useState(null);
   const [organizer, setOrganizer] = useState(null);
@@ -795,7 +799,7 @@ export function SolicitacaoEditor() {
   };
 
   const handleDeleteArquivo = async (arq) => {
-    if (!confirm(`Excluir "${arq.nome}"?`)) return;
+    if (!await confirm(`Excluir "${arq.nome}"?`, { danger: true, confirmLabel: "Excluir" })) return;
     // Excluir do Storage se houver URL
     if (arq.storagePath) {
       await deleteFile(arq.storagePath).catch(() => {});
@@ -849,6 +853,7 @@ export function SolicitacaoEditor() {
 
   return (
     <AdminLayout>
+      {ConfirmDialog}
       <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
       <div style={{ padding: "32px 32px 60px", maxWidth: 980, margin: "0 auto" }}>
 
@@ -1319,7 +1324,7 @@ export function SolicitacaoEditor() {
                     </div>
                   </div>
                   <button onClick={async () => {
-                    if (!confirm("Deseja regerar os permits? Os PDFs anteriores serão excluídos.")) return;
+                    if (!await confirm("Deseja regerar os permits? Os PDFs anteriores serao excluidos.", { danger: true, confirmLabel: "Regerar" })) return;
                     // Excluir PDFs antigos de permits do Storage e do Firestore
                     const permitsAntigos = arquivos.filter(a =>
                       a.categoria === "resposta_fma" && a.nome?.startsWith("permit_") || a.nome?.startsWith("chancela_")
@@ -1341,7 +1346,7 @@ export function SolicitacaoEditor() {
                     Regerar
                   </button>
                   <button onClick={async () => {
-                    if (!confirm(`Excluir ${sol.tipo === "chancela" ? "chancelas" : "permits"} gerados (${sol.permitsNumeros.join(", ")})? Os PDFs serão removidos permanentemente.`)) return;
+                    if (!await confirm(`Excluir ${sol.tipo === "chancela" ? "chancelas" : "permits"} gerados (${sol.permitsNumeros.join(", ")})? Os PDFs serao removidos permanentemente.`, { danger: true, confirmLabel: "Excluir" })) return;
                     const permitsAntigos = arquivos.filter(a =>
                       a.categoria === "resposta_fma" && (a.nome?.startsWith("permit_") || a.nome?.startsWith("chancela_"))
                     );
@@ -1546,7 +1551,7 @@ function EventoVinculadoSection({
   };
 
   const handleDesvincular = async () => {
-    if (!confirm(`Desvincular o evento "${eventoVinculado?.title}"?\nO evento NÃO será excluído.`)) return;
+    if (!await confirm(`Desvincular o evento "${eventoVinculado?.title}"?\nO evento NAO sera excluido.`, { confirmLabel: "Desvincular" })) return;
     setVinculoSaving(true);
     const r = await SolicitacoesService.desvincularEvento(sol.id, eventoVinculado?.title, sol.status);
     setVinculoSaving(false);
@@ -2263,6 +2268,7 @@ function AbaTaxas({ sol, organizer, onSaved, flash, card, lbl, val, inp }) {
 // ─── Bloco Pagamentos e Recibos ──────────────────────────────────────────────
 
 function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, inp }) {
+  const { confirm, ConfirmDialog: ConfirmDialogPag } = useConfirm();
   const pagamento = sol.pagamento || {};
   const [pagamentos, setPagamentos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -2431,7 +2437,7 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
   };
 
   const handleExcluirRecibo = async (pag) => {
-    if (!confirm(`Excluir recibo ${pag.reciboNumero}? O arquivo será removido permanentemente.`)) return;
+    if (!await confirm(`Excluir recibo ${pag.reciboNumero}? O arquivo sera removido permanentemente.`, { danger: true, confirmLabel: "Excluir" })) return;
     setSaving(true);
     try {
       // 1. Excluir arquivo do Storage e do Firestore
@@ -2467,7 +2473,7 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
   };
 
   const handleExcluirPagamento = async (pag) => {
-    if (!confirm(`Excluir pagamento de ${formatarMoeda(pag.valor)}? Esta acao nao pode ser desfeita.`)) return;
+    if (!await confirm(`Excluir pagamento de ${formatarMoeda(pag.valor)}? Esta acao nao pode ser desfeita.`, { danger: true, confirmLabel: "Excluir" })) return;
     setSaving(true);
     try {
       // Excluir recibo associado se houver
@@ -2531,6 +2537,7 @@ function BlocoPagamentos({ sol, organizer, taxas, recalc, onSaved, flash, card, 
 
   return (
     <div style={card}>
+      {ConfirmDialogPag}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <h3 style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, margin: 0 }}>
           Pagamentos e Recibos
