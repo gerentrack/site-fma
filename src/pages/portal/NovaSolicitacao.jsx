@@ -314,6 +314,7 @@ export default function NovaSolicitacao() {
     const r = await SolicitacoesService.create({
       ...formFinal, tipo, organizerId, status: "rascunho", campos: {},
       camposTecnicos: ct, taxas: taxasData, pagamento: pagamentoData,
+      storagePath,
     });
     if (r.error) { setGlobalError(r.error); setSaving(false); return; }
     const sol = r.data;

@@ -142,23 +142,17 @@ export function SolicitacoesList() {
     if (!await confirm(`Excluir ${ids.length} solicitacao(oes) permanentemente?\nIsso inclui arquivos anexos e historico de movimentacoes.`, { danger: true, confirmLabel: "Excluir" })) return;
     setBulkDeleting(true);
     for (const id of ids) {
+      // 0. Buscar solicitação para obter storagePath
+      const solRes = await SolicitacoesService.get(id).catch(() => ({}));
       // 1. Excluir arquivos anexos do Storage + Firestore
       const arqRes = await ArquivosService.listBySolicitacao(id);
-      const storageFolders = new Set();
       for (const arq of (arqRes.data || [])) {
-        if (arq.storagePath) {
-          await deleteFile(arq.storagePath).catch(() => {});
-          const folder = arq.storagePath.replace(/\/[^/]+$/, "");
-          if (folder.startsWith("solicitacoes/")) storageFolders.add(folder);
-        } else if (arq.url?.includes("firebasestorage.googleapis.com")) {
-          await deleteFile(arq.url).catch(() => {});
-        }
+        if (arq.storagePath) await deleteFile(arq.storagePath).catch(() => {});
+        else if (arq.url?.includes("firebasestorage.googleapis.com")) await deleteFile(arq.url).catch(() => {});
         await ArquivosService.delete(arq.id).catch(() => {});
       }
-      // 1b. Limpar pasta inteira no Storage (pega arquivos órfãos)
-      for (const folder of storageFolders) {
-        await deleteFolder(folder).catch(() => {});
-      }
+      // 1b. Limpar pasta inteira no Storage usando o path salvo na solicitação
+      if (solRes.data?.storagePath) await deleteFolder(solRes.data.storagePath).catch(() => {});
       // 2. Excluir pagamentos do Firestore
       await PagamentosService.deleteBySolicitacao(id).catch(() => {});
       // 3. Excluir movimentações do Firestore

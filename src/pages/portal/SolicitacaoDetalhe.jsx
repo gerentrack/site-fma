@@ -605,22 +605,13 @@ export default function SolicitacaoDetalhe() {
     setDeleting(true);
     // 1. Excluir arquivos anexos do Storage + Firestore
     const arqRes = await ArquivosService.listBySolicitacao(id);
-    const storageFolders = new Set();
     for (const arq of (arqRes.data || [])) {
-      if (arq.storagePath) {
-        await deleteFile(arq.storagePath).catch(() => {});
-        // Guardar pasta pai para limpeza total depois
-        const folder = arq.storagePath.replace(/\/[^/]+$/, "");
-        if (folder.startsWith("solicitacoes/")) storageFolders.add(folder);
-      } else if (arq.url?.includes("firebasestorage.googleapis.com")) {
-        await deleteFile(arq.url).catch(() => {});
-      }
+      if (arq.storagePath) await deleteFile(arq.storagePath).catch(() => {});
+      else if (arq.url?.includes("firebasestorage.googleapis.com")) await deleteFile(arq.url).catch(() => {});
       await ArquivosService.delete(arq.id).catch(() => {});
     }
-    // 1b. Limpar pasta inteira no Storage (pega arquivos órfãos não registrados no Firestore)
-    for (const folder of storageFolders) {
-      await deleteFolder(folder).catch(() => {});
-    }
+    // 1b. Limpar pasta inteira no Storage usando o path salvo na solicitação
+    if (sol.storagePath) await deleteFolder(sol.storagePath).catch(() => {});
     // 2. Excluir pagamentos do Firestore
     await PagamentosService.deleteBySolicitacao(id).catch(() => {});
     // 3. Excluir movimentações do Firestore
