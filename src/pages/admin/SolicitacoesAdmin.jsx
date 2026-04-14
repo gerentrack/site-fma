@@ -130,6 +130,12 @@ export function SolicitacoesList() {
           !org?.organization?.toLowerCase().includes(q)) return false;
     }
     return true;
+  }).sort((a, b) => {
+    // Pendências primeiro, depois cronológico crescente (mais antigo primeiro)
+    const prioA = (a.status === "pendencia" || a.status === "em_analise") ? 0 : 1;
+    const prioB = (b.status === "pendencia" || b.status === "em_analise") ? 0 : 1;
+    if (prioA !== prioB) return prioA - prioB;
+    return new Date(a.enviadoEm || a.criadoEm || a.createdAt) - new Date(b.enviadoEm || b.criadoEm || b.createdAt);
   });
 
   const toggleSelect = (id) => setSelected(prev => {
