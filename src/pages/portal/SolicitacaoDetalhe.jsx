@@ -624,6 +624,7 @@ export default function SolicitacaoDetalhe() {
   const [respostaPendencia, setRespostaPendencia] = useState("");
   const [enviandoResposta, setEnviandoResposta] = useState(false);
   const respostaFileRef = useRef(null);
+  const [pendenciaFiles, setPendenciaFiles] = useState([]); // [{ file, descricao }]
   const { pdfModal, openPdf, closePdf } = usePdfModal();
 
   const load = useCallback(async () => {
@@ -728,37 +729,74 @@ export default function SolicitacaoDetalhe() {
               <textarea value={respostaPendencia} onChange={e => setRespostaPendencia(e.target.value)}
                 placeholder="Descreva a correção realizada ou justifique..."
                 style={{ width:"100%", padding:"10px 12px", border:`1px solid #fde68a`, borderRadius:8, fontSize:13, fontFamily:FONTS.body, minHeight:80, resize:"vertical", boxSizing:"border-box" }} />
-              <div style={{ marginTop:10 }}>
-                <label style={{ fontSize:11, fontWeight:600, color:"#92400e", display:"block", marginBottom:4 }}>Anexar documento (opcional)</label>
-                <input type="file" ref={respostaFileRef} accept="image/*,.pdf,.doc,.docx" style={{ fontSize:12 }} />
+
+              {/* Upload múltiplo de arquivos */}
+              <div style={{ marginTop:12 }}>
+                <label style={{ fontSize:11, fontWeight:600, color:"#92400e", display:"block", marginBottom:6 }}>Anexar documentos (opcional)</label>
+                <input type="file" ref={respostaFileRef} multiple accept="image/*,.pdf,.doc,.docx"
+                  onChange={e => {
+                    const novos = [];
+                    for (const f of e.target.files) {
+                      if (f.size > 5 * 1024 * 1024) continue;
+                      const sugestao = f.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+                      novos.push({ file: f, descricao: sugestao });
+                    }
+                    if (novos.length) setPendenciaFiles(prev => [...prev, ...novos]);
+                    e.target.value = "";
+                  }}
+                  style={{ fontSize:12 }} />
               </div>
-              <div style={{ display:"flex", gap:8, marginTop:10, justifyContent:"flex-end" }}>
+
+              {pendenciaFiles.length > 0 && (
+                <div style={{ display:"flex", flexDirection:"column", gap:6, marginTop:10 }}>
+                  {pendenciaFiles.map((item, i) => (
+                    <div key={i} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 12px", background:"#fff", borderRadius:8, border:"1px solid #fde68a" }}>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:10, color:"#92400e", fontFamily:FONTS.body, marginBottom:3 }}>{item.file.name} — {fmtSize(item.file.size)}</div>
+                        <input value={item.descricao}
+                          onChange={e => setPendenciaFiles(prev => prev.map((f, idx) => idx === i ? { ...f, descricao: e.target.value } : f))}
+                          placeholder="Nome do documento (ex: Alvara corrigido)"
+                          style={{ width:"100%", padding:"6px 8px", borderRadius:6, border:`1px solid ${!item.descricao.trim() ? "#fcd34d" : COLORS.grayLight}`, background:!item.descricao.trim()?"#fffbeb":"#fff", fontFamily:FONTS.body, fontSize:12, outline:"none", boxSizing:"border-box" }} />
+                      </div>
+                      <button onClick={() => setPendenciaFiles(prev => prev.filter((_, idx) => idx !== i))}
+                        style={{ padding:"4px 8px", borderRadius:5, border:"1px solid #fca5a5", background:"#fff5f5", color:"#dc2626", cursor:"pointer", fontSize:10, fontWeight:600 }}>Remover</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ display:"flex", gap:8, marginTop:12, justifyContent:"flex-end", alignItems:"center" }}>
+                {pendenciaFiles.length > 0 && <span style={{ fontFamily:FONTS.body, fontSize:11, color:"#92400e", marginRight:"auto" }}>{pendenciaFiles.length} arquivo(s)</span>}
                 <button disabled={enviandoResposta || !respostaPendencia.trim()} onClick={async () => {
                   setEnviandoResposta(true);
-                  // Upload do arquivo se houver
-                  const file = respostaFileRef.current?.files?.[0];
-                  if (file) {
-                    const sanitize = (s) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 80);
-                    const anoR = (sol.dataEvento || "").slice(0, 4) || String(new Date().getFullYear());
-                    const folder = `solicitacoes/${anoR}/${sanitize(organizerName)}/${sanitize(sol.nomeEvento)}`;
-                    const ext = file.name.includes(".") ? file.name.split(".").pop() : "pdf";
-                    const nomeRenomeado = `Resposta_pendencia_${sanitize(sol.nomeEvento)}.${ext}`;
-                    const renamedFile = new File([file], nomeRenomeado, { type: file.type });
+                  const sanitize = (s) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_\- ]/g, "").replace(/\s+/g, "_").slice(0, 80);
+                  const anoR = (sol.dataEvento || "").slice(0, 4) || String(new Date().getFullYear());
+                  const folder = sol.storagePath || `solicitacoes/${anoR}/${sanitize(organizerName)}/${sanitize(sol.nomeEvento)}`;
+                  const nomesEnviados = [];
+
+                  // Upload de todos os arquivos
+                  for (const item of pendenciaFiles) {
+                    const ext = item.file.name.includes(".") ? item.file.name.split(".").pop() : "pdf";
+                    const descLabel = sanitize(item.descricao || item.file.name.replace(/\.[^.]+$/, ""));
+                    const nomeRenomeado = `${descLabel}_${sanitize(sol.nomeEvento)}.${ext}`;
+                    const renamedFile = new File([item.file], nomeRenomeado, { type: item.file.type });
                     const { url, path } = await uploadFile(renamedFile, folder);
                     if (url) {
                       await ArquivosService.upload({
-                        solicitacaoId: id, nome: nomeRenomeado, tamanho: file.size,
-                        tipo: file.type || "application/octet-stream",
-                        descricao: `Resposta a pendencia: ${respostaPendencia.trim().slice(0, 60)}`,
+                        solicitacaoId: id, nome: nomeRenomeado, tamanho: item.file.size,
+                        tipo: item.file.type || "application/octet-stream",
+                        descricao: item.descricao || item.file.name,
                         categoria: "complementar", url, storagePath: path,
                         enviadoPor: "organizador", enviadoPorId: organizerId,
                       });
+                      nomesEnviados.push(nomeRenomeado);
                     }
                   }
+
                   await MovimentacoesService.registrar({
                     solicitacaoId: id, tipoEvento: "comentario",
                     statusAnterior: sol.status, statusNovo: sol.status,
-                    descricao: respostaPendencia.trim(),
+                    descricao: respostaPendencia.trim() + (nomesEnviados.length ? `\n\nArquivos: ${nomesEnviados.join(", ")}` : ""),
                     autor: "organizador", autorNome: organizerName, autorId: organizerId, visivel: true,
                   });
                   await SolicitacoesService.changeStatus(id, "em_analise");
@@ -766,19 +804,18 @@ export default function SolicitacaoDetalhe() {
                   await MovimentacoesService.registrar({
                     solicitacaoId: id, tipoEvento: "enviada",
                     statusAnterior: "pendencia", statusNovo: "em_analise",
-                    descricao: "Solicitacao reenviada apos correcao da pendencia.",
+                    descricao: `Solicitacao reenviada apos correcao da pendencia.${nomesEnviados.length ? ` ${nomesEnviados.length} arquivo(s) anexado(s).` : ""}`,
                     autor: "organizador", autorNome: organizerName, autorId: organizerId, visivel: true,
                   });
-                  // Notificar FMA por e-mail
                   notificarFmaPendenciaRespondida({
                     organizadorNome: organizerName,
                     evento: sol.nomeEvento || "",
                     protocolo: sol.protocoloFMA || "",
                     resposta: respostaPendencia.trim(),
-                    nomeArquivo: file?.name || "",
+                    nomeArquivo: nomesEnviados.join(", "),
                     solicitacaoId: id,
                   }).catch(() => {});
-                  setRespostaPendencia("");
+                  setRespostaPendencia(""); setPendenciaFiles([]);
                   if (respostaFileRef.current) respostaFileRef.current.value = "";
                   setEnviandoResposta(false);
                   load();
