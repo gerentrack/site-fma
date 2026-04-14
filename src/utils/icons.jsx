@@ -26,7 +26,7 @@ import {
   Zap, Flame, Sparkles,
   GraduationCap, BookOpen, FileQuestion,
   Handshake, BadgeCheck, ShieldCheck,
-  LayoutDashboard, PanelLeft, Table2,
+  LayoutDashboard, PanelLeft, Table2, CalendarCheck, ListChecks, History, DollarSign,
   ImagePlus, Images, GalleryVertical,
   Video, Play, Pause,
   Ruler, Mountain, TreePine, Footprints,
@@ -49,7 +49,7 @@ const ICON_MAP = {
   // Content
   Newspaper, FileText, File, Folder, FolderOpen,
   FileUp, FilePlus, FileCheck, FileX, FileSearch, FileSpreadsheet, FileQuestion,
-  ClipboardList, ClipboardCheck, Clipboard, ScrollText,
+  ClipboardList, ClipboardCheck, Clipboard, ScrollText, ListChecks,
   BookOpen, GraduationCap,
 
   // Media
@@ -76,7 +76,7 @@ const ICON_MAP = {
 
   // Sports & Events
   Trophy, Award, Medal,
-  Calendar, CalendarDays, CalendarClock,
+  Calendar, CalendarDays, CalendarCheck, CalendarClock,
   Activity, Zap, Flame, Sparkles,
   Mountain, TreePine, Footprints, Route, Ruler,
   PersonStanding, Timer, Hourglass,
@@ -85,7 +85,7 @@ const ICON_MAP = {
   MapPin, MapPinned, Map, Navigation, Globe,
 
   // Finance
-  CreditCard, Banknote, PiggyBank, Receipt, Wallet, CircleDollarSign,
+  CreditCard, Banknote, PiggyBank, Receipt, Wallet, CircleDollarSign, DollarSign,
 
   // Charts
   BarChart3, BarChart, PieChart, TrendingUp,
@@ -96,7 +96,7 @@ const ICON_MAP = {
   // Other
   Settings, Layers, Package, Archive, Box,
   Paintbrush, Palette, Vote, Gavel, Scale, Handshake,
-  Clock, Hash, AtSign, Smartphone, Monitor,
+  Clock, History, Hash, AtSign, Smartphone, Monitor,
 };
 
 export default function Icon({ name, size = 16, color, strokeWidth = 2, className, style, ...props }) {
