@@ -4,7 +4,7 @@
  */
 import {
   BarChart3, Newspaper, Calendar, Trophy, Camera, FileText, Building2,
-  Users, Settings, Image, Globe, Link2, Layers, MapPin, ChevronLeft,
+  User, Users, Settings, Image, Globe, Link2, Layers, MapPin, ChevronLeft,
   Search, X, Eye, Edit, Trash2, Plus, Check, AlertTriangle, Clock,
   Lock, Unlock, Star, Upload, Download, File, Folder, ExternalLink,
   Mail, Phone, MessageSquare, Send, ChevronDown, ChevronRight, Menu,
