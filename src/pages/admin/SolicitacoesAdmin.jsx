@@ -38,7 +38,8 @@ import { gerarReciboPdf } from "../../services/reciboPdfService";
 import { notificarStatusSolicitacao, notificarPagamentoConfirmado, notificarCobrancaPagamento, notificarArquivoFmaEnviado, notificarPermitGerado, notificarResultadoStatus } from "../../services/emailService";
 import { getProximoNumero, reservarNumeros, setContador, formatarNumero } from "../../utils/permitCounter";
 import { gerarPermitPdf, gerarChancelaPdf, preloadAssets } from "../../services/permitPdfService";
-import { analisarSolicitacaoFn } from "../../firebase";
+import { analisarSolicitacaoFn, db } from "../../firebase";
+import { collection, onSnapshot } from "firebase/firestore";
 
 // ── Constantes e helpers ──────────────────────────────────────────────────────
 const statusMap = Object.fromEntries(SOLICITACAO_STATUS.map(s => [s.value, s]));
@@ -101,22 +102,27 @@ export function SolicitacoesList() {
   const [selected, setSelected] = useState(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const [rSol, rOrg] = await Promise.all([
-      SolicitacoesService.list({}),
-      OrganizersService.list(),
-    ]);
-    if (rSol.data) setItems(rSol.data);
-    if (rOrg.data) {
-      const map = {};
-      rOrg.data.forEach(o => { map[o.id] = o; });
-      setOrganizers(map);
-    }
-    setLoading(false);
+  // Carregar organizadores uma vez
+  useEffect(() => {
+    OrganizersService.list().then(r => {
+      if (r.data) {
+        const map = {};
+        r.data.forEach(o => { map[o.id] = o; });
+        setOrganizers(map);
+      }
+    });
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  // Listener em tempo real para solicitações
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "solicitacoes"), (snap) => {
+      const docs = snap.docs.map(d => ({ id: d.id, ...d.data(), status: d.data().status || "rascunho" }));
+      docs.sort((a, b) => new Date(b.criadoEm || b.createdAt) - new Date(a.criadoEm || a.createdAt));
+      setItems(docs);
+      setLoading(false);
+    }, () => { setLoading(false); });
+    return () => unsub();
+  }, []);
 
   const filtered = items.filter(item => {
     if (filterStatus && item.status !== filterStatus) return false;
@@ -170,7 +176,6 @@ export function SolicitacoesList() {
     }
     setSelected(new Set());
     setBulkDeleting(false);
-    load();
   };
 
   // Contadores por status
