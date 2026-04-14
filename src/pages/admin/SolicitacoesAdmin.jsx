@@ -1031,8 +1031,21 @@ export function SolicitacaoEditor() {
                         <span>Desconto{taxas.descontoDescricao ? ` (${taxas.descontoDescricao})` : ""}</span><span>-{formatarMoeda(taxas.descontoValor)}</span>
                       </div>
                     )}
+                    {taxas.taxaArbitragem?.valor > 0 && (
+                      <>
+                        <div style={{ display: "flex", justifyContent: "space-between", color: COLORS.dark }}>
+                          <span>Subtotal {sol.tipo === "chancela" ? "Chancela" : "Permit"}</span><span>{formatarMoeda(taxas.total)}</span>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", color: "#0066cc" }}>
+                          <span>Taxa de Arbitragem</span><span>{formatarMoeda(taxas.taxaArbitragem.valor)}</span>
+                        </div>
+                        {taxas.taxaArbitragem.descricao && (
+                          <div style={{ fontSize: 11, color: COLORS.gray, paddingLeft: 8 }}>{taxas.taxaArbitragem.descricao}</div>
+                        )}
+                      </>
+                    )}
                     <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: 15, color: COLORS.dark, borderTop: `1.5px solid ${COLORS.grayLight}`, paddingTop: 8 }}>
-                      <span>Total</span><span style={{ color: cor }}>{formatarMoeda(taxas.total)}</span>
+                      <span>Total</span><span style={{ color: cor }}>{formatarMoeda((taxas.total || 0) + (taxas.taxaArbitragem?.valor || 0))}</span>
                     </div>
                   </div>
 
