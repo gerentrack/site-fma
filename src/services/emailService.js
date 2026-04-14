@@ -526,16 +526,26 @@ export async function notificarPagamentoConfirmado({ organizadorEmail, organizad
   return enviarEmail({ to: organizadorEmail, subject: `[FMA] Pagamento confirmado — ${evento}`, html });
 }
 
-export async function notificarCobrancaPagamento({ organizadorEmail, organizadorNome, protocolo, evento, valor, solicitacaoId = "" }) {
+export async function notificarCobrancaPagamento({ organizadorEmail, organizadorNome, protocolo, evento, valor, solicitacaoId = "", tipo = "permit", taxaPermit = 0, taxaArbitragem = 0, descricaoArbitragem = "" }) {
   const link = solicitacaoId ? `${PORTAL_LINK}/solicitacoes/${solicitacaoId}` : PORTAL_LINK;
+  const fmt = (v) => `R$ ${(v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+  const temArbitragem = taxaArbitragem > 0;
+  const discriminacao = temArbitragem ? `
+    <table style="width:100%;border-collapse:collapse;margin:16px 0 4px;">
+      <tr><td style="padding:8px 14px;font-weight:700;border:1px solid #eee;">Taxa de ${tipo === "chancela" ? "Chancela" : "Permit"}</td><td style="padding:8px 14px;text-align:right;border:1px solid #eee;">${fmt(taxaPermit)}</td></tr>
+      <tr><td style="padding:8px 14px;font-weight:700;border:1px solid #eee;">Taxa de Arbitragem</td><td style="padding:8px 14px;text-align:right;border:1px solid #eee;">${fmt(taxaArbitragem)}</td></tr>
+      ${descricaoArbitragem ? `<tr><td colspan="2" style="padding:6px 14px;font-size:12px;color:#666;border:1px solid #eee;">${descricaoArbitragem}</td></tr>` : ""}
+    </table>` : "";
+
   const html = templateBase(`
     <p>Ola, <strong>${organizadorNome}</strong>!</p>
     <p>Sua solicitacao possui um <strong style="color:#d97706;">pagamento pendente</strong>.</p>
     <table style="width:100%;border-collapse:collapse;margin:20px 0;">
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;width:130px;border:1px solid #eee;">Protocolo</td><td style="padding:10px 14px;border:1px solid #eee;">${protocolo || "—"}</td></tr>
       <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Evento</td><td style="padding:10px 14px;border:1px solid #eee;">${evento}</td></tr>
-      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Valor</td><td style="padding:10px 14px;border:1px solid #eee;">R$ ${(valor || 0).toFixed(2)}</td></tr>
+      <tr><td style="padding:10px 14px;background:#f8f8f8;font-weight:700;border:1px solid #eee;">Valor total</td><td style="padding:10px 14px;border:1px solid #eee;font-weight:700;font-size:16px;color:#d97706;">${fmt(valor)}</td></tr>
     </table>
+    ${discriminacao}
     <p>Acesse o Portal para anexar o comprovante de pagamento.</p>
     <p style="text-align:center;margin:24px 0;"><a href="${link}" style="display:inline-block;padding:12px 28px;background:#d97706;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Ver solicitacao</a></p>
   `);
