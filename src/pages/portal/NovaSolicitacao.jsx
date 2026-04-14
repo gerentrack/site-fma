@@ -429,7 +429,6 @@ export default function NovaSolicitacao() {
                   <div style={{ fontSize: 12, fontFamily: FONTS.body, color: COLORS.gray, lineHeight: 1.7, borderTop: `1px solid ${COLORS.grayLight}`, paddingTop: 10 }}>
                     <div><strong>Modalidades:</strong> {detalhes.modalidades}</div>
                     <div><strong>Distâncias:</strong> {detalhes.distancias}</div>
-                    <div><strong>Inclui:</strong> {detalhes.inclui}</div>
                     <div style={{ marginTop: 4, fontStyle: "italic", fontSize: 11, color: "#9ca3af" }}>Conforme {detalhes.norma}</div>
                   </div>
                   {tipo === t.value && (
