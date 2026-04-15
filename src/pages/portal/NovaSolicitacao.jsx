@@ -105,7 +105,9 @@ export default function NovaSolicitacao() {
   const {
     cep: pagadorCep, setCep: setPagadorCep,
     setNumero: pagadorCepSetNumero,
+    setManualEndereco: pagadorCepSetManual,
     loading: pagadorCepLoading, error: pagadorCepError, endereco: pagadorCepEndereco,
+    notFound: pagadorCepNotFound,
   } = useCep((found) => {
     const partes = [found.logradouro, pagadorNumero, pagadorComplemento, found.bairro, found.cidade, found.estado].filter(Boolean);
     setPagadorEndereco(partes.join(", "));
@@ -127,7 +129,7 @@ export default function NovaSolicitacao() {
   const [numero, setNumero] = useState("");
   const [complemento, setComplemento] = useState("");
   const [nomeLocal, setNomeLocal] = useState("");
-  const { cep, setCep, setNumero: cepSetNumero, loading: cepLoading, error: cepError, endereco: cepEndereco } = useCep((found) => {
+  const { cep, setCep, setNumero: cepSetNumero, setManualEndereco: cepSetManual, loading: cepLoading, error: cepError, endereco: cepEndereco, notFound: cepNotFound } = useCep((found) => {
     setF("cidadeEvento", found.cidade);
     setF("localEvento", `${found.logradouro}${numero ? ", " + numero : ""}${complemento ? ", " + complemento : ""}, ${found.bairro}`);
     setF("lat", found.lat ?? "");
@@ -479,6 +481,8 @@ export default function NovaSolicitacao() {
                       if (cepEndereco) setF("localEvento", [cepEndereco.logradouro, numero, v, cepEndereco.bairro].filter(Boolean).join(", "));
                     }}
                     setNumero={cepSetNumero}
+                    notFound={cepNotFound}
+                    onManualEndereco={cepSetManual}
                     required
                     nomeLocal={nomeLocal}
                     onNomeLocal={setNomeLocal}
@@ -778,6 +782,7 @@ function TaxaEstimativaCard({ taxaCalc, tipo, organizerData, taxasConfig, bloque
                   complemento={pagadorComplemento} onComplemento={onPagadorComplementoChange}
                   setNumero={pagadorCepSetNumero}
                   loading={pagadorCepLoading} error={pagadorCepError} endereco={pagadorCepEndereco}
+                  notFound={pagadorCepNotFound} onManualEndereco={pagadorCepSetManual}
                   required
                 />
               </div>

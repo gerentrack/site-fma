@@ -350,7 +350,7 @@ export function CalendarEditor() {
 
   const [numero, setNumero] = useState("");
   const [complemento, setComplemento] = useState("");
-  const { cep, setCep, setNumero: cepSetNumero, loading: cepLoading, error: cepError, endereco: cepEndereco } = useCep((found) => {
+  const { cep, setCep, setNumero: cepSetNumero, setManualEndereco: cepSetManual, loading: cepLoading, error: cepError, endereco: cepEndereco, notFound: cepNotFound } = useCep((found) => {
     set("location", `${found.logradouro}${numero ? ", " + numero : ""}${complemento ? ", " + complemento : ""}, ${found.bairro}`);
     set("city", found.cidade);
     if (found.lat) set("lat", found.lat);
@@ -426,6 +426,7 @@ export function CalendarEditor() {
                   if (cepEndereco) set("location", `${cepEndereco.logradouro}, ${v}, ${cepEndereco.bairro}`);
                 }}
                 loading={cepLoading} error={cepError} endereco={cepEndereco}
+                notFound={cepNotFound} onManualEndereco={cepSetManual}
                 required
               />
             </FormField>

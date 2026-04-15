@@ -143,7 +143,7 @@ export function PistasEditor() {
   const [numero, setNumero]   = useState("");
   const [complemento, setComplemento] = useState("");
 
-  const { cep, setCep, setNumero: cepSetNumero, loading: cepLoading, error: cepError, endereco } = useCep((found) => {
+  const { cep, setCep, setNumero: cepSetNumero, setManualEndereco: cepSetManual, loading: cepLoading, error: cepError, endereco, notFound: cepNotFound } = useCep((found) => {
     setForm(f => ({
       ...f,
       endereco: `${found.logradouro}${numero ? ", " + numero : ""}${complemento ? ", " + complemento : ""}, ${found.bairro}`,
@@ -252,6 +252,8 @@ export function PistasEditor() {
               complemento={complemento}
               onComplemento={setComplemento}
               setNumero={cepSetNumero}
+              notFound={cepNotFound}
+              onManualEndereco={cepSetManual}
               required
             />
           </div>

@@ -12,7 +12,16 @@ export default function CepField({
   loading, error, endereco,
   required = false,
   nomeLocal, onNomeLocal,
+  notFound = false,
+  onManualEndereco,
 }) {
+  const [manualLogradouro, setManualLogradouro] = useState("");
+  const [manualBairro, setManualBairro] = useState("");
+  const [manualCidade, setManualCidade] = useState("");
+  const [manualEstado, setManualEstado] = useState("MG");
+  const [manualNumero, setManualNumero] = useState("");
+  const [manualComplemento, setManualComplemento] = useState("");
+
   const [buscaAberta, setBuscaAberta] = useState(false);
   const [buscaUF, setBuscaUF] = useState("MG");
   const [buscaCidade, setBuscaCidade] = useState("");
@@ -106,7 +115,7 @@ export default function CepField({
             )}
           </div>
           {error && <div style={{ color: "#cc0000", fontSize: 12, marginTop: 4 }}>{error}</div>}
-          {!endereco && !loading && (
+          {!endereco && !loading && !notFound && (
             <button type="button" onClick={() => setBuscaAberta(!buscaAberta)}
               style={{ marginTop: 6, background: "none", border: "none", padding: 0,
                 color: "#0066cc", fontSize: 12, fontWeight: 700, cursor: "pointer",
@@ -133,8 +142,71 @@ export default function CepField({
         )}
       </div>
 
+      {/* Formulário manual — quando CEP não foi localizado */}
+      {notFound && !endereco && onManualEndereco && (
+        <div style={{ background: "#fffbeb", border: "1.5px solid #fbbf24", borderRadius: 10, padding: "16px 20px" }}>
+          <div style={{ fontWeight: 700, fontSize: 13, color: "#92400e", marginBottom: 12 }}>
+            Preencha o endereço manualmente
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+            <div>
+              {lbl("Logradouro", true)}
+              <input value={manualLogradouro} onChange={e => setManualLogradouro(e.target.value)}
+                placeholder="Ex: Rua Afonso Pena" style={inp({ border: "1.5px solid #d1d5db" })} />
+            </div>
+            <div>
+              {lbl("Bairro")}
+              <input value={manualBairro} onChange={e => setManualBairro(e.target.value)}
+                placeholder="Ex: Centro" style={inp({ border: "1.5px solid #d1d5db" })} />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 100px 120px 1fr", gap: 10, marginBottom: 10 }}>
+            <div>
+              {lbl("Cidade", true)}
+              <input value={manualCidade} onChange={e => setManualCidade(e.target.value)}
+                placeholder="Ex: Belo Horizonte" style={inp({ border: "1.5px solid #d1d5db" })} />
+            </div>
+            <div>
+              {lbl("UF", true)}
+              <select value={manualEstado} onChange={e => setManualEstado(e.target.value)}
+                style={{ ...inp({ border: "1.5px solid #d1d5db" }), padding: "10px 8px", cursor: "pointer" }}>
+                {UFS.map(uf => <option key={uf} value={uf}>{uf}</option>)}
+              </select>
+            </div>
+            <div>
+              {lbl("Número")}
+              <input value={manualNumero} onChange={e => setManualNumero(e.target.value)}
+                placeholder="Ex: 1200" style={inp({ border: "1.5px solid #d1d5db" })} />
+            </div>
+            <div>
+              {lbl("Complemento")}
+              <input value={manualComplemento} onChange={e => setManualComplemento(e.target.value)}
+                placeholder="Apto, sala, bloco..." style={inp({ border: "1.5px solid #d1d5db" })} />
+            </div>
+          </div>
+          <button type="button"
+            disabled={!manualLogradouro.trim() || !manualCidade.trim()}
+            onClick={() => onManualEndereco({
+              logradouro: manualLogradouro.trim(),
+              bairro: manualBairro.trim(),
+              cidade: manualCidade.trim(),
+              estado: manualEstado,
+              numero: manualNumero.trim(),
+              complemento: manualComplemento.trim(),
+            })}
+            style={{
+              padding: "10px 24px", borderRadius: 8, border: "none",
+              background: (!manualLogradouro.trim() || !manualCidade.trim()) ? "#d1d5db" : "#0066cc",
+              color: "#fff", fontWeight: 700, fontSize: 13, cursor: (!manualLogradouro.trim() || !manualCidade.trim()) ? "not-allowed" : "pointer",
+              fontFamily: "inherit",
+            }}>
+            Confirmar endereço
+          </button>
+        </div>
+      )}
+
       {/* Busca reversa de CEP */}
-      {buscaAberta && !endereco && (
+      {buscaAberta && !endereco && !notFound && (
         <div style={{ background: "#f8fafc", border: "1.5px solid #bfdbfe", borderRadius: 10, padding: "16px 20px" }}>
           <div style={{ fontWeight: 700, fontSize: 13, color: "#1e40af", marginBottom: 12 }}>
             Buscar CEP por endereço

@@ -54,6 +54,7 @@ export function useCep(onFound) {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
   const [endereco, setEndereco] = useState(null);
+  const [notFound, setNotFound] = useState(false); // CEP não localizado — modo manual
   const viaDataRef  = useRef(null); // armazena resposta ViaCEP para reuso com número
   const debounceRef = useRef(null);
   const numDebounce = useRef(null);
@@ -63,6 +64,7 @@ export function useCep(onFound) {
     const masked = digits.length > 5 ? `${digits.slice(0,5)}-${digits.slice(5)}` : digits;
     setCepRaw(masked);
     setError("");
+    setNotFound(false);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (digits.length === 8) {
       debounceRef.current = setTimeout(() => lookup(digits, ""), 400);
@@ -76,16 +78,34 @@ export function useCep(onFound) {
     numDebounce.current = setTimeout(() => reGeocode(viaDataRef.current, numero, complemento), 600);
   }
 
+  // Permite inserir endereço manualmente quando CEP não foi localizado
+  function setManualEndereco({ logradouro = "", bairro = "", cidade = "", estado = "", numero = "", complemento = "" }) {
+    const cepDigits = cep.replace(/\D/g, "");
+    const result = {
+      logradouro, bairro, cidade, estado,
+      cep: cepDigits,
+      numero, complemento,
+      manual: true,
+      enderecoCompleto: [logradouro, numero, complemento, bairro, cidade && estado ? `${cidade}/${estado}` : cidade || estado].filter(Boolean).join(", "),
+      lat: null, lng: null,
+    };
+    setEndereco(result);
+    if (onFound) onFound(result);
+  }
+
   async function lookup(digits, numero) {
     setLoading(true);
     setError("");
     setEndereco(null);
+    setNotFound(false);
     try {
       const via = await fetchCep(digits);
       viaDataRef.current = via;
       await reGeocode(via, numero);
     } catch (e) {
-      setError(e.message || "Erro ao consultar CEP.");
+      const isNotFound = e.message === "CEP não encontrado.";
+      setNotFound(isNotFound);
+      setError(isNotFound ? "CEP não localizado. Preencha o endereço manualmente abaixo." : (e.message || "Erro ao consultar CEP."));
       setLoading(false);
     }
   }
@@ -119,5 +139,5 @@ export function useCep(onFound) {
     }
   }
 
-  return { cep, setCep, setNumero, loading, error, endereco };
+  return { cep, setCep, setNumero, setManualEndereco, loading, error, endereco, notFound };
 }
