@@ -87,7 +87,7 @@ export default function Dashboard() {
         solicitacoes: solData.length,
         solicitacoesPendentes: solData.filter(s => ["enviada", "em_analise", "pendencia"].includes(s.status)).length,
         referees: refData.length,
-        refereesAtivos: refData.filter(r => r.status === "ativo").length,
+        refereesAtivos: refData.filter(r => r.status === "ativo" && r.profileComplete).length,
         eventosAbertos: revt?.data?.length || 0,
         equipes: eq?.data?.length || 0,
       });

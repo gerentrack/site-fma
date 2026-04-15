@@ -252,6 +252,7 @@ export default function CompleteProfileWizard() {
       bancoNome: bancoInfo ? bancoInfo.label.split(" - ")[1] || bancoInfo.label : "",
       cpf: (data.cpf || "").replace(/\D/g, ""),
       profileComplete: true,
+      status: "ativo",
       lgpdConsentAt: new Date().toISOString(),
       lgpdConsentVersion: LGPD_VERSIONS.privacidade,
       termosConsentVersion: LGPD_VERSIONS.termos,

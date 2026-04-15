@@ -11,9 +11,14 @@ import Badge from "../../components/ui/Badge";
 import Button from "../../components/ui/Button";
 import { FormField, TextInput, SelectInput } from "../../components/ui/FormField";
 import { refereesAPI } from "../../data/api";
-import { REFEREE_CATEGORIES, REFEREE_ROLES } from "../../config/navigation";
+import { RefereesService } from "../../services/index";
+import { collection, getDocs, deleteDoc } from "firebase/firestore";
+import { db, deleteAuthUserFn } from "../../firebase";
+import { deleteFile } from "../../services/storageService";
+import { REFEREE_CATEGORIES, REFEREE_ROLES, REFEREE_STATUS } from "../../config/navigation";
 import { COLORS, FONTS } from "../../styles/colors";
 import Icon from "../../utils/icons";
+import { useConfirm } from "../../components/ui/ConfirmModal";
 import { notificarArbitroCadastro } from "../../services/emailService";
 
 const NIVEL_ALIASES = { a: "A", b: "B", c: "C", ni: "NI", nar: "NI", "nível a": "A", "nível b": "B", "nível c": "C" };
@@ -42,11 +47,15 @@ const ROLE_LABEL = { admin: "Admin", coordenador: "Coordenador", arbitro: "Árbi
 
 export default function ArbitrosVisaoAdmin() {
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const [referees, setReferees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("todos");
   const [showForm, setShowForm] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [actionLoading, setActionLoading] = useState(null);
+  const [pageAtivos, setPageAtivos] = useState(1);
+  const [pageInativos, setPageInativos] = useState(1);
+  const PER_PAGE = 15;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -55,15 +64,143 @@ export default function ArbitrosVisaoAdmin() {
     setLoading(false);
   }, []);
 
+  const handleStatusChange = async (ref, newStatus) => {
+    if (ref.status === newStatus) return;
+    setActionLoading(ref.id);
+    await refereesAPI.update(ref.id, { status: newStatus });
+    setReferees(prev => prev.map(r => r.id === ref.id ? { ...r, status: newStatus } : r));
+    setActionLoading(null);
+  };
+
+  const handleDelete = async (ref) => {
+    if (!await confirm(
+      `Excluir o árbitro "${ref.name}"?\n\nIsso removerá permanentemente:\n- Conta de autenticação\n- Dados pessoais\n- Escalas, disponibilidade, reembolsos\n- Anuidades, relatórios, avaliações\n- Foto e documentos`,
+      { danger: true, confirmLabel: "Excluir árbitro" }
+    )) return;
+    setActionLoading(ref.id);
+    // 1. Auth
+    await deleteAuthUserFn({ email: ref.email }).catch(() => {});
+    // 2. Foto
+    if (ref.fotoPath) await deleteFile(ref.fotoPath).catch(() => {});
+    else if (ref.foto?.includes("firebasestorage.googleapis.com")) await deleteFile(ref.foto).catch(() => {});
+    // 3. Dados relacionados
+    const deleteByRefereeId = async (colName) => {
+      const snap = await getDocs(collection(db, colName));
+      const docs = snap.docs.filter(d => d.data().refereeId === ref.id);
+      await Promise.all(docs.map(d => deleteDoc(d.ref)));
+    };
+    await Promise.all([
+      deleteByRefereeId("refereeAssignments"),
+      deleteByRefereeId("refereeAvailability"),
+      deleteByRefereeId("reembolsos"),
+      deleteByRefereeId("anuidades"),
+      deleteByRefereeId("relatoriosArbitragem"),
+      deleteByRefereeId("avaliacoes"),
+      deleteByRefereeId("envioDocumentos"),
+    ]).catch(() => {});
+    // 4. Doc do árbitro
+    await RefereesService.delete(ref.id);
+    setReferees(prev => prev.filter(r => r.id !== ref.id));
+    setActionLoading(null);
+  };
+
   useEffect(() => { load(); }, [load]);
 
-  const filtered = filter === "todos" ? referees : referees.filter(r => r.status === filter);
-  const totals = {
-    total: referees.length,
-    ativos: referees.filter(r => r.status === "ativo").length,
-    inativos: referees.filter(r => r.status === "inativo").length,
-    suspensos: referees.filter(r => r.status === "suspenso").length,
+  // Perfil pendente = inativo efetivo
+  const efetivo = (ref) => (!ref.profileComplete && ref.status === "ativo") ? "inativo" : (ref.status || "inativo");
+  const ativos   = referees.filter(r => efetivo(r) === "ativo");
+  const inativos = referees.filter(r => efetivo(r) !== "ativo"); // inativo + suspenso + perfil pendente
+
+  const totals = { total: referees.length, ativos: ativos.length, inativos: inativos.length };
+
+  const totalPagesAtivos   = Math.max(1, Math.ceil(ativos.length / PER_PAGE));
+  const totalPagesInativos = Math.max(1, Math.ceil(inativos.length / PER_PAGE));
+  const pagedAtivos   = ativos.slice((pageAtivos - 1) * PER_PAGE, pageAtivos * PER_PAGE);
+  const pagedInativos = inativos.slice((pageInativos - 1) * PER_PAGE, pageInativos * PER_PAGE);
+
+  const gridCols = "2fr 2fr 1fr 1fr 1fr 80px";
+  const headers = ["Nome", "E-mail", "Nível", "Função", "Status", ""];
+
+  const renderHeader = () => (
+    <div style={{
+      display: "grid", gridTemplateColumns: gridCols,
+      padding: "12px 24px", background: COLORS.offWhite, borderBottom: `1px solid ${COLORS.grayLight}`,
+    }}>
+      {headers.map(h => (
+        <div key={h} style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray }}>{h}</div>
+      ))}
+    </div>
+  );
+
+  const renderRow = (ref) => {
+    const st = STATUS_BADGE[ref.status] || STATUS_BADGE.inativo;
+    const nivel = REFEREE_CATEGORIES.find(c => c.value === ref.nivel);
+    const isInativo = efetivo(ref) !== "ativo";
+    return (
+      <div key={ref.id} style={{
+        display: "grid", gridTemplateColumns: gridCols,
+        padding: "12px 24px", borderBottom: `1px solid ${COLORS.grayLight}`, alignItems: "center",
+        opacity: isInativo ? 0.55 : 1,
+      }}>
+        <div style={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.dark, fontWeight: 500 }}>
+          {ref.name}
+          {!ref.profileComplete && <span style={{ fontSize: 10, color: "#e67e22", marginLeft: 6 }}>perfil incompleto</span>}
+        </div>
+        <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>{ref.email}</div>
+        <div>{nivel ? <Badge label={nivel.label} bg={`${nivel.color}15`} color={nivel.color} /> : "—"}</div>
+        <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>{ROLE_LABEL[ref.role] || ref.role}</div>
+        <div>
+          <select
+            value={ref.status || "inativo"}
+            onChange={e => handleStatusChange(ref, e.target.value)}
+            disabled={actionLoading === ref.id}
+            style={{
+              padding: "4px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+              fontFamily: FONTS.heading, border: "1.5px solid #d1d5db", cursor: "pointer",
+              background: st.bg, color: st.color, outline: "none",
+            }}
+          >
+            {REFEREE_STATUS.map(s => (
+              <option key={s.value} value={s.value}>{s.label}</option>
+            ))}
+          </select>
+        </div>
+        <div style={{ display: "flex", gap: 4 }}>
+          <button onClick={() => navigate(`/admin/arbitros/${ref.id}`)} title="Ver detalhes"
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, padding: "4px" }}>
+            <Icon name="Eye" size={14} />
+          </button>
+          <button onClick={() => handleDelete(ref)} title="Excluir árbitro" disabled={actionLoading === ref.id}
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, padding: "4px", color: "#cc0000", opacity: actionLoading === ref.id ? 0.4 : 1 }}>
+            <Icon name="Trash2" size={14} />
+          </button>
+        </div>
+      </div>
+    );
   };
+
+  const renderPagination = (page, totalPages, setPage) => totalPages <= 1 ? null : (
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 8, padding: "14px 24px", borderTop: `1px solid ${COLORS.grayLight}` }}>
+      <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+        style={{ padding: "5px 14px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, background: page === 1 ? "#f5f5f5" : "#fff", cursor: page === 1 ? "default" : "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, color: page === 1 ? COLORS.grayLight : COLORS.dark }}>
+        Anterior
+      </button>
+      <span style={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.gray }}>
+        Página {page} de {totalPages}
+      </span>
+      <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+        style={{ padding: "5px 14px", borderRadius: 6, border: `1px solid ${COLORS.grayLight}`, background: page === totalPages ? "#f5f5f5" : "#fff", cursor: page === totalPages ? "default" : "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, color: page === totalPages ? COLORS.grayLight : COLORS.dark }}>
+        Próxima
+      </button>
+    </div>
+  );
+
+  const sectionTitle = (title, count, color) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+      <h2 style={{ fontFamily: FONTS.heading, fontSize: 14, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color, margin: 0 }}>{title}</h2>
+      <span style={{ fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, background: `${color}15`, color, padding: "2px 10px", borderRadius: 10 }}>{count}</span>
+    </div>
+  );
 
   return (
     <AdminLayout minLevel="admin">
@@ -88,8 +225,7 @@ export default function ArbitrosVisaoAdmin() {
           {[
             { label: "Total", value: totals.total, color: COLORS.dark },
             { label: "Ativos", value: totals.ativos, color: "#007733" },
-            { label: "Inativos", value: totals.inativos, color: "#6b7280" },
-            { label: "Suspensos", value: totals.suspensos, color: "#cc0000" },
+            { label: "Inativos / Suspensos", value: totals.inativos, color: "#6b7280" },
           ].map(s => (
             <div key={s.label} style={{
               background: "#fff", borderRadius: 10, padding: "16px 24px",
@@ -101,69 +237,34 @@ export default function ArbitrosVisaoAdmin() {
           ))}
         </div>
 
-        {/* Filtro */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-          {["todos", "ativo", "inativo", "suspenso"].map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              style={{
-                padding: "6px 16px", borderRadius: 20, border: "none", cursor: "pointer",
-                fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700,
-                background: filter === f ? COLORS.primary : "#f0f0f0",
-                color: filter === f ? "#fff" : COLORS.gray,
-                transition: "all 0.15s",
-              }}
-            >
-              {f === "todos" ? "Todos" : f.charAt(0).toUpperCase() + f.slice(1)}
-            </button>
-          ))}
-        </div>
-
-        {/* Tabela */}
         {loading ? (
           <div style={{ padding: 48, textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray }}>Carregando...</div>
-        ) : filtered.length === 0 ? (
-          <div style={{ padding: 48, textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray }}>Nenhum árbitro encontrado.</div>
         ) : (
-          <div style={{ background: "#fff", borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-            <div style={{
-              display: "grid", gridTemplateColumns: "2fr 2fr 1fr 1fr 1fr 1fr 80px",
-              padding: "12px 24px", background: COLORS.offWhite, borderBottom: `1px solid ${COLORS.grayLight}`,
-            }}>
-              {["Nome", "E-mail", "Nível", "Função", "Perfil", "Status", ""].map(h => (
-                <div key={h} style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray }}>{h}</div>
-              ))}
-            </div>
-            {filtered.map(ref => {
-              const st = STATUS_BADGE[ref.status] || STATUS_BADGE.inativo;
-              const nivel = REFEREE_CATEGORIES.find(c => c.value === ref.nivel);
-              return (
-                <div key={ref.id} style={{
-                  display: "grid", gridTemplateColumns: "2fr 2fr 1fr 1fr 1fr 1fr 80px",
-                  padding: "12px 24px", borderBottom: `1px solid ${COLORS.grayLight}`, alignItems: "center",
-                  opacity: ref.status === "inativo" ? 0.55 : 1,
-                }}>
-                  <div style={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.dark, fontWeight: 500 }}>
-                    {ref.name}
-                    {!ref.profileComplete && <span style={{ fontSize: 10, color: "#e67e22", marginLeft: 6 }}>perfil incompleto</span>}
-                  </div>
-                  <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>{ref.email}</div>
-                  <div>{nivel ? <Badge label={nivel.label} bg={`${nivel.color}15`} color={nivel.color} /> : "—"}</div>
-                  <div style={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>{ROLE_LABEL[ref.role] || ref.role}</div>
-                  <div><Badge label={ref.profileComplete ? "Completo" : "Pendente"} bg={ref.profileComplete ? "#e6f9ee" : "#fef3c7"} color={ref.profileComplete ? "#007733" : "#92400e"} /></div>
-                  <div><Badge label={st.label} bg={st.bg} color={st.color} /></div>
-                  <div>
-                    <button
-                      onClick={() => navigate(`/admin/arbitros/${ref.id}`)}
-                      title="Ver detalhes"
-                      style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, padding: "4px" }}
-                    ><Icon name="Eye" size={14} /></button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <>
+            {/* ── Ativos ── */}
+            {sectionTitle("Ativos", ativos.length, "#007733")}
+            {ativos.length === 0 ? (
+              <div style={{ padding: 32, textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray, background: "#fff", borderRadius: 12, marginBottom: 32 }}>Nenhum árbitro ativo.</div>
+            ) : (
+              <div style={{ background: "#fff", borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 32 }}>
+                {renderHeader()}
+                {pagedAtivos.map(renderRow)}
+                {renderPagination(pageAtivos, totalPagesAtivos, setPageAtivos)}
+              </div>
+            )}
+
+            {/* ── Inativos / Suspensos ── */}
+            {sectionTitle("Inativos / Suspensos", inativos.length, "#6b7280")}
+            {inativos.length === 0 ? (
+              <div style={{ padding: 32, textAlign: "center", fontFamily: FONTS.body, color: COLORS.gray, background: "#fff", borderRadius: 12 }}>Nenhum árbitro inativo.</div>
+            ) : (
+              <div style={{ background: "#fff", borderRadius: 12, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+                {renderHeader()}
+                {pagedInativos.map(renderRow)}
+                {renderPagination(pageInativos, totalPagesInativos, setPageInativos)}
+              </div>
+            )}
+          </>
         )}
       </div>
     </AdminLayout>
