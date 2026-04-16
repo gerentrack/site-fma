@@ -617,7 +617,7 @@ export function SolicitacaoEditor() {
           nome: fileName,
           tamanho: file.size,
           tipo: "application/pdf",
-          descricao: `${tipoDoc === "chancela" ? "Chancela" : "Permit"} N\u00BA ${numFormatado} \u2014 ${pn.modalidade}`,
+          descricao: `${tipoDoc === "chancela" ? "Chancela" : "Permit"} ${numFormatado} \u2014 ${sol.nomeEvento || ""} - ${pn.modalidade}`,
           categoria: "resposta_fma",
           enviadoPor: "fma",
           enviadoById: "admin",
