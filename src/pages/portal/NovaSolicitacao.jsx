@@ -257,7 +257,14 @@ export default function NovaSolicitacao() {
     const eBase = validateBase();
     const eTec  = enviar ? validarCamposConfig(ct, tipo) : {};
     if (Object.keys(eBase).length > 0) { setErrors(eBase); if (step === 3) setStep(2); return; }
-    if (Object.keys(eTec).length > 0)  { setCtErrors(eTec); return; }
+    if (Object.keys(eTec).length > 0) {
+      setCtErrors(eTec);
+      // Montar mensagem global com todos os campos pendentes
+      const msgs = Object.values(eTec);
+      setGlobalError(`Campos obrigatórios pendentes: ${msgs.join(" · ")}`);
+      setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 50);
+      return;
+    }
 
     // Validação de pagamento no envio
     if (enviar && precisaPagamento && !temComprovante) {

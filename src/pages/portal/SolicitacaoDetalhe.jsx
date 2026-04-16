@@ -653,6 +653,12 @@ export default function SolicitacaoDetalhe() {
   useEffect(()=>{ load(); },[load]);
 
   const handleEnviar = async () => {
+    // Validar modalidades antes de enviar
+    const ct = sol.camposTecnicos || {};
+    const mods = (ct.modalidades || []).filter(m => m.distancia && m.distancia.trim());
+    if (mods.length === 0) { alert("Adicione ao menos uma modalidade antes de enviar."); return; }
+    const semEstimativa = mods.some(m => !m.estimativaInscritos || Number(m.estimativaInscritos) <= 0);
+    if (semEstimativa) { alert("Informe a estimativa de inscritos para todas as modalidades."); return; }
     if (!confirm("Confirmar envio para análise da FMA?")) return;
     setSendingStatus(true);
     await SolicitacoesService.enviar(id,organizerId,organizerName);
