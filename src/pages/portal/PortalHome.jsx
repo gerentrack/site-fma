@@ -234,7 +234,7 @@ export default function PortalHome() {
                           </div>
                         </div>
                         <div style={{ fontFamily: FONTS.body, fontSize: 11, color: COLORS.gray, flexShrink: 0 }}>
-                          {fmtDate(sol.criadoEm)}
+                          {fmtDateTime(sol.criadoEm)}
                         </div>
                       </div>
                     </Link>

@@ -329,7 +329,7 @@ export function SolicitacoesList() {
                     )}
                   </td>
                   <td style={{ padding: "12px", fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>{item.responsavelFMA || "—"}</td>
-                  <td style={{ padding: "12px", fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, whiteSpace: "nowrap" }}>{fmt(item.enviadoEm)}</td>
+                  <td style={{ padding: "12px", fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray, whiteSpace: "nowrap" }}>{fmtDT(item.enviadoEm)}</td>
                   <td style={{ padding: "12px" }}>
                     <button onClick={() => navigate(`/admin/solicitacoes/${item.id}`)}
                       style={{ padding: "7px 14px", borderRadius: 6, background: COLORS.primary, color: "#fff", border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>

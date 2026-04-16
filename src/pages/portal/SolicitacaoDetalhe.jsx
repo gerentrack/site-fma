@@ -159,7 +159,7 @@ function TaxasPagamentoSection({ sol }) {
                       )}
                     </span>
                   )}
-                  {pag.confirmadoEm && <span style={{ fontSize:11, color:COLORS.gray }}>{new Date(pag.confirmadoEm).toLocaleDateString("pt-BR")}</span>}
+                  {pag.confirmadoEm && <span style={{ fontSize:11, color:COLORS.gray }}>{fmtDT(pag.confirmadoEm)}</span>}
                 </div>
               </div>
             ))}
@@ -727,7 +727,7 @@ export default function SolicitacaoDetalhe() {
           </div>
           <h1 style={{ fontFamily:FONTS.heading, fontSize:"clamp(1.3rem,3vw,1.9rem)", fontWeight:900, color:COLORS.dark, margin:"0 0 8px", textTransform:"uppercase", lineHeight:1.2 }}>{sol.nomeEvento}</h1>
           <div style={{ fontFamily:FONTS.body, fontSize:13, color:COLORS.gray, marginBottom:(sol.parecerFMA||sol.parecerPdfUrl||sol.parecerDocs?.length)?16:0 }}>
-            {sol.cidadeEvento} · {sol.dataEvento?new Date(sol.dataEvento+"T12:00:00").toLocaleDateString("pt-BR"):"—"} · Criado em {fmt(sol.criadoEm)}
+            {sol.cidadeEvento} · {sol.dataEvento?new Date(sol.dataEvento+"T12:00:00").toLocaleDateString("pt-BR"):"—"} · Criado em {fmtDT(sol.criadoEm)}
           </div>
           {(sol.parecerFMA || sol.parecerPdfUrl || sol.parecerDocs?.length > 0) && (
             <div style={{ background:`${st.color}08`, borderLeft:`3px solid ${st.color}`, borderRadius:"0 8px 8px 0", padding:"12px 16px" }}>
