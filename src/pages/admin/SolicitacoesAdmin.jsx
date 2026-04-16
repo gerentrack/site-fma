@@ -1879,13 +1879,35 @@ function EventoVinculadoSection({
       ).slice(0, 8)
     : calendarioItems.slice(0, 6);
 
+  // Propagar permits já gerados para o evento do calendário
+  const propagarPermits = async (eventoId) => {
+    if (!sol.permitsGerados || !eventoId) return;
+    const rArqs = await ArquivosService.listBySolicitacao(sol.id);
+    const permitArqs = (rArqs.data || []).filter(a => a.categoria === "resposta_fma" && a.url && a.descricao?.match(/^(Permit|Chancela)\s/));
+    if (permitArqs.length === 0) return;
+    const modalidadesDetalhes = permitArqs.map(a => {
+      const numMatch = a.descricao?.match(/(Permit|Chancela)\s+([\d]+\/[\d]+)/);
+      const nomeMatch = a.descricao?.match(/\u2014\s+.*?-\s+(.+)$/) || a.descricao?.match(/\u2014\s+(.+)$/);
+      return {
+        nome: nomeMatch?.[1]?.trim() || "",
+        permitFileUrl: a.url,
+        permitNumero: numMatch?.[2] || "",
+        resultsFileUrl: "",
+      };
+    });
+    await CalendarService.update(eventoId, { modalidadesDetalhes, status: "confirmado" });
+  };
+
   const handleCriar = async () => {
     setVinculoSaving(true);
     const orgName = organizer?.name || organizer?.organization || "";
     const r = await SolicitacoesService.criarEVincularEvento(sol, orgName, criarOpts);
     setVinculoSaving(false);
     if (r.error) { onError("Erro ao criar evento: " + r.error); return; }
-    onSuccess(`Evento criado e vinculado com sucesso! Acesse o calendário para publicar.`);
+    // Propagar permits se já existirem
+    const eventoId = r.data?.eventoCalendarioId || r.data?.eventoId;
+    if (eventoId) await propagarPermits(eventoId);
+    onSuccess(`Evento criado e vinculado com sucesso!${sol.permitsGerados ? " Permits carregados no calendário." : " Acesse o calendário para publicar."}`);
   };
 
   const handleVincular = async (evento) => {
@@ -1893,7 +1915,9 @@ function EventoVinculadoSection({
     const r = await SolicitacoesService.vincularEvento(sol.id, evento.id, evento.title, sol.status);
     setVinculoSaving(false);
     if (r.error) { onError("Erro ao vincular: " + r.error); return; }
-    onSuccess(`Evento "${evento.title}" vinculado com sucesso.`);
+    // Propagar permits se já existirem
+    await propagarPermits(evento.id);
+    onSuccess(`Evento "${evento.title}" vinculado com sucesso.${sol.permitsGerados ? " Permits carregados no calendário." : ""}`);
   };
 
   const handleDesvincular = async () => {

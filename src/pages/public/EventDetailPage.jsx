@@ -63,7 +63,7 @@ function InfoRow({ icon, label, value, href }) {
   if (!value) return null;
   return (
     <div style={{ display: "flex", gap: 12, alignItems: "flex-start", paddingBottom: 12, borderBottom: `1px solid ${COLORS.grayLight}` }}>
-      <span style={{ flexShrink: 0 }}>{icon}</span>
+      {icon && <span style={{ flexShrink: 0 }}>{icon}</span>}
       <div>
         <div style={{ fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: COLORS.gray, marginBottom: 2 }}>{label}</div>
         {href
@@ -210,7 +210,7 @@ export default function EventDetailPage() {
                           if (!mod.permitFileUrl && !mod.resultsFileUrl) return null;
                           return (
                             <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                              <span style={{ fontFamily: FONTS.heading, fontWeight: 700, fontSize: 12, color: COLORS.dark, minWidth: 60, display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="PersonStanding" size={12} /> {mod.nome}</span>
+                              <span style={{ fontFamily: FONTS.heading, fontWeight: 700, fontSize: 12, color: COLORS.dark, minWidth: 60 }}>{mod.nome}</span>
                               {mod.permitFileUrl  && <DownloadBtn href={mod.permitFileUrl}  label={mod.permitNumero ? `Permit N\u00BA ${mod.permitNumero}` : "Permit"} icon="" onView={openPdf} />}
                               {mod.resultsFileUrl && <DownloadBtn href={mod.resultsFileUrl} label="Resultados" icon="" onView={openPdf} />}
                             </div>
@@ -257,11 +257,11 @@ export default function EventDetailPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 16, position: "sticky", top: 80 }}>
           <div style={{ background: "#fff", borderRadius: 12, padding: "22px 20px", boxShadow: "0 2px 16px rgba(0,0,0,0.08)", display: "flex", flexDirection: "column", gap: 14 }}>
             <h3 style={{ fontFamily: FONTS.heading, fontSize: 13, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, color: COLORS.dark, margin: 0 }}>Detalhes</h3>
-            <InfoRow icon={<SvgCalendar />} label="Data" value={fmtDate(event.date)} />
-            <InfoRow icon={<SvgClock />} label="Horario" value={event.time} />
-            <InfoRow icon={<SvgPin />} label="Local" value={[event.location, event.city].filter(Boolean).join(", ")} />
-            <InfoRow icon={<SvgTag />} label="Tipo" value={cat.label || event.category} />
-            <InfoRow icon={<SvgUser />} label="Organizador" value={event.organizer} href={event.externalLink || undefined} />
+            <InfoRow label="Data" value={fmtDate(event.date)} />
+            <InfoRow label="Horario" value={event.time} />
+            <InfoRow label="Local" value={[event.location, event.city].filter(Boolean).join(", ")} />
+            <InfoRow label="Tipo" value={cat.label || event.category} />
+            <InfoRow label="Organizador" value={event.organizer} href={event.externalLink || undefined} />
             <div style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 4 }}>
               <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 12, fontFamily: FONTS.heading, fontWeight: 700, background: `${stat.color}18`, color: stat.color }}>{stat.label}</span>
             </div>
