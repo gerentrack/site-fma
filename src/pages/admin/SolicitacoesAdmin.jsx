@@ -1016,7 +1016,11 @@ export function SolicitacaoEditor() {
                           <tr key={i} style={{ borderBottom: `1px solid ${COLORS.grayLight}` }}>
                             <td style={{ padding: "8px" }}>{m.distancia || m.nome || m.modalidade || `Modalidade ${i + 1}`}</td>
                             <td style={{ padding: "8px", textAlign: "right" }}>{m.inscritos || "—"}</td>
-                            <td style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}>{formatarMoeda(m.valorFinal || m.valorBruto || m.valor || 0)}</td>
+                            <td style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}>
+                              {m.isenta
+                                ? <span style={{ color: "#16a34a", fontSize: 12 }}>Isenta</span>
+                                : formatarMoeda(m.valorFinal || m.valorBruto || m.valor || 0)}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -2363,7 +2367,11 @@ function AbaTaxas({ sol, organizer, onSaved, flash, card, lbl, val, inp }) {
                   <td style={{ padding: "8px 12px" }}>{m.distancia}</td>
                   <td style={{ padding: "8px 12px", textAlign: "right" }}>{m.inscritos.toLocaleString("pt-BR")}</td>
                   <td style={{ padding: "8px 12px", textAlign: "right", color: COLORS.gray }}>{formatarMoeda(m.valorBruto)}</td>
-                  <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600 }}>{formatarMoeda(m.valorFinal)}</td>
+                  <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 600 }}>
+                    {m.isenta
+                      ? <span style={{ color: "#16a34a", fontSize: 12 }}>Isenta</span>
+                      : formatarMoeda(m.valorFinal)}
+                  </td>
                   <td style={{ padding: "8px 4px", textAlign: "center", fontSize: 10, color: COLORS.gray }}>{expandido === m.id ? "▲" : "▼"}</td>
                 </tr>
                 {expandido === m.id && m.detalhamento && (

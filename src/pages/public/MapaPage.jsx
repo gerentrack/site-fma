@@ -1,6 +1,6 @@
 /**
  * MapaPage.jsx — Mapa interativo FMA
- * Abas: Eventos · Equipes Filiadas · Pistas Homologadas
+ * Abas: Eventos · Equipes Filiadas · Pistas de Atletismo
  * Usa react-leaflet + OpenStreetMap (gratuito, sem API key)
  */
 import { useState, useEffect, useRef } from "react";
@@ -116,7 +116,7 @@ function coordsFromCidade(cidade) {
 const TABS = [
   { id: "eventos",   label: "Eventos",           icon: "PersonStanding" },
   { id: "equipes",   label: "Equipes Filiadas",  icon: "Building" },
-  { id: "pistas",    label: "Pistas Homologadas", icon: "MapPin" },
+  { id: "pistas",    label: "Pistas de Atletismo", icon: "MapPin" },
 ];
 
 const CATEGORY_COLORS = {

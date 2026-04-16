@@ -55,6 +55,20 @@ export const TABELA_ARBITRAGEM = {
   ],
 };
 
+// ─── Modalidades isentas de cobrança ────────────────────────────────────────
+
+const MODALIDADES_ISENTAS = ["caminhada", "kids"];
+
+/**
+ * Verifica se a modalidade é isenta de taxa.
+ * Compara por substring case-insensitive (ex: "Corrida Kids 2km" → isenta).
+ */
+export function isModalidadeIsenta(distancia) {
+  if (!distancia) return false;
+  const d = distancia.toLowerCase();
+  return MODALIDADES_ISENTAS.some(termo => d.includes(termo));
+}
+
 // ─── Cálculo por modalidade ─────────────────────────────────────────────────
 
 /**
@@ -182,6 +196,10 @@ export function calcularTaxaTotal(modalidades, dataEvento, tipo = "permit", tabe
   const mods = (modalidades || [])
     .filter(m => m.distancia && Number(m.estimativaInscritos) > 0)
     .map(m => {
+      if (isModalidadeIsenta(m.distancia)) {
+        const n = Math.max(0, Math.round(Number(m.estimativaInscritos) || 0));
+        return { id: m.id, distancia: m.distancia, inscritos: n, valorBruto: 0, valorFinal: 0, detalhamento: [], aplicouMinimo: false, aplicouMaximo: false, isenta: true };
+      }
       const calc = calcularTaxaModalidade(m.estimativaInscritos, tabela);
       return { id: m.id, distancia: m.distancia, ...calc };
     });

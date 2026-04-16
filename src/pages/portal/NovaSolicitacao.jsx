@@ -673,7 +673,11 @@ function TaxaEstimativaCard({ taxaCalc, tipo, organizerData, taxasConfig, bloque
                   <td style={{ padding: "6px 10px", textAlign: "right", color: COLORS.gray, fontSize: 12 }}>
                     {m.valorBruto !== m.valorFinal ? formatarMoeda(m.valorBruto) : ""}
                   </td>
-                  <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 600 }}>{formatarMoeda(m.valorFinal)}</td>
+                  <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 600 }}>
+                    {m.isenta
+                      ? <span style={{ color: "#16a34a", fontSize: 12 }}>Isenta</span>
+                      : formatarMoeda(m.valorFinal)}
+                  </td>
                   <td style={{ padding: "6px 4px", textAlign: "center", fontSize: 10, color: COLORS.gray }}>
                     {expandido === m.id ? "▲" : "▼"}
                   </td>
