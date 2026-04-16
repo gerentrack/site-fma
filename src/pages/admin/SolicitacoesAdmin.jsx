@@ -418,6 +418,9 @@ export function SolicitacaoEditor() {
   const [novoStatus, setNovoStatus] = useState("");
   const [iaLoading, setIaLoading] = useState(false);
 
+  // Edição inline de dados do evento
+  const [editDataEvento, setEditDataEvento] = useState(null); // null = não editando, string = valor temp
+
   // Upload pela FMA
   const [uploading, setUploading] = useState(false);
   const [uploadDesc, setUploadDesc] = useState("");
@@ -979,7 +982,82 @@ export function SolicitacaoEditor() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
                 {lbl("Tipo de solicitação")}{val(`${tipo.icon} ${tipo.label}`)}
                 {lbl("Nome do evento")}{val(sol.nomeEvento)}
-                {lbl("Data do evento")}{val(fmt(sol.dataEvento))}
+                {lbl("Data do evento")}
+                {editDataEvento !== null ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                    <input type="date" value={editDataEvento} onChange={e => setEditDataEvento(e.target.value)}
+                      style={{ ...inp(), width: "auto", flex: "0 0 auto" }} />
+                    <button onClick={async () => {
+                      if (!editDataEvento) return;
+                      setSaving(true);
+                      const r = await SolicitacoesService.update(id, { dataEvento: editDataEvento });
+                      if (r.error) { flash(r.error, "err"); setSaving(false); return; }
+                      // Atualizar evento vinculado no calendário (se houver)
+                      const eventoId = sol.eventoCalendarioId || sol.eventoId;
+                      if (eventoId) {
+                        await CalendarService.update(eventoId, { date: editDataEvento });
+                      }
+                      // Recalcular taxa (urgência pode mudar com nova data)
+                      const taxas = sol.taxas || {};
+                      let taxaMsg = "";
+                      if (taxas.total > 0 && !taxas.ajustadoPorFMA) {
+                        const ct = normalizarCamposTecnicos(sol);
+                        const isParceiro = organizer?.parceiro;
+                        const tabela = (isParceiro && organizer?.parceiroTipo === "tabela_customizada" && organizer?.tabelaTaxas)
+                          ? organizer.tabelaTaxas : TABELA_PADRAO;
+                        const desconto = isParceiro
+                          ? { tipo: organizer.parceiroTipo, percentual: organizer.parceiroDesconto || 0 }
+                          : null;
+                        const recalc = calcularTaxaTotal(ct.modalidades || [], editDataEvento, sol.tipo, tabela, desconto);
+                        const novaTaxa = {
+                          modalidades: recalc.modalidades,
+                          subtotal: recalc.subtotal,
+                          urgencia: recalc.urgencia,
+                          descontoTipo: recalc.desconto?.tipo || "",
+                          descontoValor: recalc.desconto?.valor || 0,
+                          descontoDescricao: recalc.desconto?.descricao || "",
+                          total: recalc.total,
+                          calculadoEm: new Date().toISOString(),
+                          ajustadoPorFMA: false,
+                          observacaoAjuste: "",
+                          taxaArbitragem: taxas.taxaArbitragem || null,
+                        };
+                        await SolicitacoesService.update(id, { taxas: novaTaxa });
+                        if (recalc.urgencia !== (taxas.urgencia || 0)) {
+                          taxaMsg = recalc.urgencia > 0
+                            ? " Taxa de urgência aplicada."
+                            : " Taxa de urgência removida.";
+                        } else {
+                          taxaMsg = " Taxa recalculada.";
+                        }
+                      }
+                      await MovimentacoesService.registrar({
+                        solicitacaoId: id, tipoEvento: "campo_alterado",
+                        descricao: `Data do evento corrigida de ${fmt(sol.dataEvento)} para ${fmt(editDataEvento)}.${eventoId ? " Calendário atualizado." : ""}${taxaMsg}`,
+                        autor: "fma", autorNome: analise.responsavelFMA || "Equipe FMA", autorId: "admin", visivel: true,
+                      });
+                      flash(`Data do evento atualizada.${eventoId ? " Calendário também atualizado." : ""}${taxaMsg}`, "ok");
+                      setEditDataEvento(null);
+                      setSaving(false);
+                      await load();
+                    }} disabled={saving || !editDataEvento || editDataEvento === sol.dataEvento}
+                      style={{ padding: "7px 14px", borderRadius: 8, border: "none", background: COLORS.primary, color: "#fff", fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer", opacity: saving || !editDataEvento || editDataEvento === sol.dataEvento ? 0.5 : 1 }}>
+                      Salvar
+                    </button>
+                    <button onClick={() => setEditDataEvento(null)}
+                      style={{ padding: "7px 14px", borderRadius: 8, border: `1.5px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.gray, fontFamily: FONTS.heading, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                    <span style={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.dark }}>{fmt(sol.dataEvento) || "—"}</span>
+                    <button onClick={() => setEditDataEvento(sol.dataEvento || "")}
+                      style={{ padding: "3px 10px", borderRadius: 6, border: `1.5px solid ${COLORS.grayLight}`, background: "#fff", color: COLORS.primary, fontFamily: FONTS.heading, fontSize: 10, fontWeight: 700, cursor: "pointer", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                      Corrigir
+                    </button>
+                  </div>
+                )}
                 {lbl("Cidade")}{val(sol.cidadeEvento)}
               </div>
               {lbl("Local / endereço")}{val(sol.localEvento)}

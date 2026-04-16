@@ -377,6 +377,7 @@ export const MOVIMENTACAO_TIPOS = {
   pagamento_anexado:   { label: "Comprovante anexado",        icon: "", color: "#0066cc" },
   pagamento_confirmado:{ label: "Pagamento confirmado",       icon: "", color: "#15803d" },
   pagamento_cobrado:   { label: "Cobrança enviada",           icon: "", color: "#b45309" },
+  campo_alterado:      { label: "Dado corrigido",              icon: "", color: "#7c3aed" },
 };
 
 export const PAGAMENTO_STATUS = [
