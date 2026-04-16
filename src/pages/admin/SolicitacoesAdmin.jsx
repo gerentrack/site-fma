@@ -26,7 +26,7 @@ import {
 } from "../../config/navigation";
 import {
   SolicitacoesService, OrganizersService, ArquivosService, MovimentacoesService,
-  CalendarService, TaxasConfigService, PagamentosService,
+  CalendarService, TaxasConfigService, PagamentosService, ResultadosService,
 } from "../../services/index";
 import { uploadFile, deleteFile, deleteFolder } from "../../services/storageService";
 import { normalizarCamposTecnicos, totalEstimativaInscritos, modalidadesLabel } from "../../utils/permitDefaults";
@@ -369,17 +369,23 @@ export function SolicitacoesList() {
                 </div>
               );
             };
-            const emAnalise = filtered.filter(i => i.status === "em_analise");
+            const emAnalise  = filtered.filter(i => i.status === "em_analise");
             const pendencias = filtered.filter(i => i.status === "pendencia");
-            const aprovados = filtered.filter(i => i.status === "aprovada" || i.status === "aprovado");
+            const enviadas   = filtered.filter(i => i.status === "enviada");
+            const aprovados  = filtered.filter(i => i.status === "aprovada" || i.status === "aprovado");
             const concluidos = filtered.filter(i => i.status === "concluida" || i.status === "concluido");
-            const demais = filtered.filter(i => !["em_analise", "pendencia", "aprovada", "aprovado", "concluida", "concluido"].includes(i.status));
+            const indeferidos= filtered.filter(i => i.status === "indeferida");
+            const rascunhos  = filtered.filter(i => i.status === "rascunho");
+            const demais     = filtered.filter(i => !["em_analise", "pendencia", "enviada", "aprovada", "aprovado", "concluida", "concluido", "indeferida", "rascunho"].includes(i.status));
             return (
               <div>
                 {renderTable(emAnalise, "Em analise", "#0066cc")}
                 {renderTable(pendencias, "Pendencias", "#d97706")}
+                {renderTable(enviadas, "Enviadas", "#6366f1")}
                 {renderTable(aprovados, "Aprovados", "#15803d")}
-                {renderTable(concluidos, "Concluidos", "#6b7280")}
+                {renderTable(concluidos, "Concluidos", "#0891b2")}
+                {renderTable(indeferidos, "Indeferidos", "#dc2626")}
+                {renderTable(rascunhos, "Rascunhos", "#9ca3af")}
                 {renderTable(demais, "Demais", COLORS.gray)}
                 <div style={{ padding: "12px 0 0", fontFamily: FONTS.body, fontSize: 12, color: COLORS.gray }}>
                   {filtered.length} solicitacao(oes) exibida(s) de {items.length} total
@@ -599,7 +605,7 @@ export function SolicitacaoEditor() {
         });
 
         const sanitizeP = (s) => (s || "sem-nome").replace(/[^a-zA-Z0-9\u00C0-\u024F\s-]/g, "").trim().replace(/\s+/g, "_");
-        const fileName = `${tipoDoc}_${sanitizeP(sol.nomeEvento)}_${sanitizeP(pn.modalidade)}_${numFormatado.replace("/", "-")}.pdf`;
+        const fileName = `Permit ${numFormatado.replace("/", "-")} ${sanitizeP(sol.nomeEvento)} - ${sanitizeP(pn.modalidade)}.pdf`;
         const file = new File([pdfBlob], fileName, { type: "application/pdf" });
         const folderP = `solicitacoes/${ano}/${sanitizeP(organizer?.organization || organizer?.name || "")}/${sanitizeP(sol.nomeEvento)}`;
         const { url, path, error: uploadErr } = await uploadFile(file, folderP);
@@ -738,11 +744,39 @@ export function SolicitacaoEditor() {
         resultadoStatus: "aprovado",
         resultadoAprovadoEm: new Date().toISOString(),
       });
+      // Criar registro público de resultado
+      const categoria = sol.tipo === "chancela" ? "trail" : "corrida";
+      const tipoArquivo = sol.resultadoTipo === "link" ? "link" : (sol.resultadoTipo || "pdf");
+      const anoComp = sol.dataEvento ? Number(sol.dataEvento.slice(0, 4)) : new Date().getFullYear();
+      const resultadoData = {
+        nomeEvento: sol.nomeEvento || "",
+        dataEvento: sol.dataEvento || "",
+        cidade: sol.cidadeEvento || "",
+        categoria,
+        modalidade: modalidadesLabel(normalizarCamposTecnicos(sol).modalidades || []),
+        tipoArquivo,
+        fileUrl: tipoArquivo !== "link" ? (sol.resultadoFileUrl || "") : "",
+        externalLink: tipoArquivo === "link" ? (sol.resultadoFileUrl || "") : "",
+        descricao: sol.resultadoDescricao || "",
+        anoCompetitivo: anoComp,
+        published: true,
+        eventoId: eventoId || "",
+        solicitacaoId: id,
+      };
+      const rRes = await ResultadosService.create(resultadoData);
+      if (rRes.data?.id) {
+        await SolicitacoesService.update(id, { resultadoPublicoId: rRes.data.id });
+      }
+      // Marcar solicitação como concluída
+      const statusAnterior = sol.status;
+      if (statusAnterior !== "concluida") {
+        await SolicitacoesService.changeStatus(id, "concluida");
+      }
       await MovimentacoesService.registrar({
         solicitacaoId: id,
         tipoEvento: "resultado_aprovado",
-        statusAnterior: sol.status, statusNovo: sol.status,
-        descricao: "Resultado enviado pelo organizador foi aprovado e publicado no calendário.",
+        statusAnterior, statusNovo: "concluida",
+        descricao: "Resultado aprovado e publicado na pagina de resultados. Solicitação concluída.",
         autor: "fma", autorNome: analise.responsavelFMA || "Equipe FMA",
         autorId: "admin", visivel: true,
       });
@@ -865,7 +899,7 @@ export function SolicitacaoEditor() {
     em_analise: ["em_analise", "pendencia", "aprovada", "indeferida"],
     pendencia:  ["pendencia", "em_analise", "aprovada", "indeferida"],
     aprovada:   ["aprovada", "concluida"],
-    indeferida: ["indeferida", "concluida"],
+    indeferida: ["indeferida"],
     concluida:  ["concluida"],
   };
 
@@ -1259,16 +1293,10 @@ export function SolicitacaoEditor() {
                         </div>
                         <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                           {(arq.dataUrl || arq.url) && (
-                            <>
-                              <button onClick={() => openPdf(arq.url || arq.dataUrl, arq.descricao || arq.nome || "Documento")}
-                                style={{ padding: "6px 12px", borderRadius: 6, background: "#0066cc", color: "#fff", border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
-                                Ver
-                              </button>
-                              <a href={arq.dataUrl || arq.url} download={arq.nome} target="_blank" rel="noreferrer"
-                                style={{ padding: "6px 12px", borderRadius: 6, background: "#0f172a", color: "#fff", textDecoration: "none", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
-                                Baixar
-                              </a>
-                            </>
+                            <button onClick={() => openPdf(arq.url || arq.dataUrl, arq.descricao || arq.nome || "Documento")}
+                              style={{ padding: "6px 12px", borderRadius: 6, background: "#0066cc", color: "#fff", border: "none", cursor: "pointer", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
+                              Ver
+                            </button>
                           )}
                           <button onClick={() => handleDeleteArquivo(arq)}
                             style={{ padding: "6px 10px", borderRadius: 6, background: "#fff5f5", color: COLORS.primary, border: `1px solid #fca5a5`, cursor: "pointer", fontFamily: FONTS.heading, fontSize: 11, fontWeight: 700 }}>
